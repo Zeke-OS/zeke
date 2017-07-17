@@ -278,6 +278,40 @@ void ff_memfree(void* mblock);          /* Free memory block */
 #define ST_DWORD(ptr,val)   *(uint8_t*)(ptr)=(uint8_t)(val); *((uint8_t*)(ptr)+1)=(uint8_t)((WORD)(val)>>8); *((uint8_t*)(ptr)+2)=(uint8_t)((DWORD)(val)>>16); *((uint8_t*)(ptr)+3)=(uint8_t)((DWORD)(val)>>24)
 #endif
 
+/**
+ * Diskio
+ * @{
+ */
+
+#define _USE_WRITE  1   /* 1: Enable disk_write function */
+#define _USE_IOCTL  1   /* 1: Enable disk_ioctl fucntion */
+
+/* Results of Disk Functions */
+typedef enum {
+    RES_OK = 0,     /* 0: Successful */
+    RES_ERROR,      /* 1: R/W Error */
+    RES_WRPRT,      /* 2: Write Protected */
+    RES_NOTRDY,     /* 3: Not Ready */
+    RES_PARERR      /* 4: Invalid Parameter */
+} DRESULT;
+
+/* Prototypes for disk control functions */
+DRESULT fatfs_disk_read(FATFS * ff_fs, uint8_t * buff, DWORD sector,
+                        unsigned int count);
+DRESULT fatfs_disk_write(FATFS * ff_fs, const uint8_t * buff, DWORD sector,
+                         unsigned int count);
+DRESULT fatfs_disk_ioctl(FATFS * ff_fs, unsigned cmd, void * buff,
+                         size_t bsize);
+
+/* Generic command (used by FatFs) */
+#define CTRL_SYNC           0 /*!< Flush disk cache (for write functions) */
+#define CTRL_ERASE_SECTOR   4 /*!< Force erased a block of sectors
+                               *   (for only _USE_ERASE) */
+
+/**
+ * @}
+ */
+
 __END_DECLS
 
 #endif /* _FATFS */

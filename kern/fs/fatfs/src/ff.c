@@ -25,7 +25,6 @@
 #include <kmalloc.h>
 #include <kstring.h>
 #include "ff.h"         /* Declarations of FatFs API */
-#include "diskio.h"     /* Declarations of disk I/O functions */
 
 /*
  * Module Private Definitions
@@ -424,14 +423,14 @@ static FRESULT sync_window(FATFS * fs)
 
     if (fs->wflag) {    /* Write back the sector if it is dirty */
         wsect = fs->winsect;    /* Current sector number */
-        if (fatfs_disk_write(fs->drv, fs->win, wsect, fs->ssize))
+        if (fatfs_disk_write(fs, fs->win, wsect, fs->ssize))
             return FR_DISK_ERR;
         fs->wflag = 0;
         if (wsect - fs->fatbase < fs->fsize) { /* Is it in the FAT area? */
             /* Reflect the change to all FAT copies */
             for (nf = fs->n_fats; nf >= 2; nf--) {
                 wsect += fs->fsize;
-                fatfs_disk_write(fs->drv, fs->win, wsect, fs->ssize);
+                fatfs_disk_write(fs, fs->win, wsect, fs->ssize);
             }
         }
     }
@@ -447,7 +446,7 @@ static FRESULT move_window(FATFS * fs, DWORD sector)
 {
     if (sector != fs->winsect) {    /* Changed current window */
         if ((!(fs->opt & FATFS_READONLY) && sync_window(fs) != FR_OK) ||
-            fatfs_disk_read(fs->drv, fs->win, sector, fs->ssize)) {
+            fatfs_disk_read(fs, fs->win, sector, fs->ssize)) {
             return FR_DISK_ERR;
         }
         fs->winsect = sector;
@@ -482,11 +481,11 @@ static FRESULT sync_fs(FATFS * fs)
             ST_DWORD(fs->win + FSI_Nxt_Free, fs->last_clust);
             /* Write it into the FSINFO sector */
             fs->winsect = 1;
-            fatfs_disk_write(fs->drv, fs->win, fs->winsect, fs->ssize);
+            fatfs_disk_write(fs, fs->win, fs->winsect, fs->ssize);
             fs->fsi_flag = 0;
         }
         /* Make sure that no pending write process in the physical drive */
-        if (fatfs_disk_ioctl(fs->drv, IOCTL_FLSBLKBUF, NULL, 0) != RES_OK)
+        if (fatfs_disk_ioctl(fs, IOCTL_FLSBLKBUF, NULL, 0) != RES_OK)
             res = FR_DISK_ERR;
     }
 
@@ -654,7 +653,7 @@ static FRESULT remove_chain(FATFS * fs, DWORD clst)
             } else {                /* End of contiguous clusters */
                 rt[0] = clust2sect(fs, scl);                  /* Start sector */
                 rt[1] = clust2sect(fs, ecl) + fs->csize - 1;    /* End sector */
-                fatfs_disk_ioctl(fs->drv, CTRL_ERASE_SECTOR, rt, sizeof(rt));
+                fatfs_disk_ioctl(fs, CTRL_ERASE_SECTOR, rt, sizeof(rt));
                 scl = ecl = nxt;
             }
 #endif
@@ -1871,7 +1870,7 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
     /*
      * Get sector size
      */
-    derr = fatfs_disk_ioctl(fs->drv, IOCTL_GETBLKSIZE, &fs->ssize,
+    derr = fatfs_disk_ioctl(fs, IOCTL_GETBLKSIZE, &fs->ssize,
                             sizeof(fs->ssize));
     if (derr != RES_OK || fs->ssize < MIN_SS || fs->ssize > MAX_SS) {
 #ifdef configFATFS_DEBUG
@@ -2217,7 +2216,7 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
             if (cc) { /* Read maximum contiguous sectors directly */
                 if (csect + cc > fp->fs->csize) /* Clip at cluster boundary */
                     cc = fp->fs->csize - csect;
-                if (fatfs_disk_read(fp->fs->drv, rbuff, sect,
+                if (fatfs_disk_read(fp->fs, rbuff, sect,
                                     cc * fp->fs->ssize))
                     return ABORT(fp->fs, FR_DISK_ERR);
                 /*
@@ -2236,7 +2235,7 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
             if (fp->dsect != sect) { /* Load data sector if not in cache */
                 if (!(fp->fs->opt & FATFS_READONLY) && fp->flag & FA__DIRTY) {
                     /* Write-back dirty sector cache */
-                    if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect,
+                    if (fatfs_disk_write(fp->fs, fp->buf, fp->dsect,
                                          fp->fs->ssize)) {
                         return ABORT(fp->fs, FR_DISK_ERR);
                     }
@@ -2244,7 +2243,7 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
                 }
 
                 /* Fill sector cache */
-                if (fatfs_disk_read(fp->fs->drv, fp->buf, sect, fp->fs->ssize))
+                if (fatfs_disk_read(fp->fs, fp->buf, sect, fp->fs->ssize))
                     return ABORT(fp->fs, FR_DISK_ERR);
             }
             fp->dsect = sect;
@@ -2326,7 +2325,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
             }
 
             if (fp->flag & FA__DIRTY) {     /* Write-back sector cache */
-                if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect,
+                if (fatfs_disk_write(fp->fs, fp->buf, fp->dsect,
                                      fp->fs->ssize)) {
                     return ABORT(fp->fs, FR_DISK_ERR);
                 }
@@ -2341,7 +2340,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
             if (cc) { /* Write maximum contiguous sectors directly */
                 if (csect + cc > fp->fs->csize) /* Clip at cluster boundary */
                     cc = fp->fs->csize - csect;
-                if (fatfs_disk_write(fp->fs->drv, wbuff, sect,
+                if (fatfs_disk_write(fp->fs, wbuff, sect,
                                      cc * fp->fs->ssize))
                     return ABORT(fp->fs, FR_DISK_ERR);
                 if (fp->dsect - sect < cc) {
@@ -2361,8 +2360,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
             if (fp->dsect != sect) {
                 /* Fill sector cache with file data */
                 if (fp->fptr < fp->fsize &&
-                    fatfs_disk_read(fp->fs->drv, fp->buf, sect,
-                                    fp->fs->ssize)) {
+                    fatfs_disk_read(fp->fs, fp->buf, sect, fp->fs->ssize)) {
                         return ABORT(fp->fs, FR_DISK_ERR);
                 }
             }
@@ -2406,7 +2404,7 @@ FRESULT f_sync(FF_FIL * fp)
     if (fp->flag & FA__WRITTEN) { /* Has the file been written? */
         /* Write-back dirty buffer */
         if (fp->flag & FA__DIRTY) {
-            if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect,
+            if (fatfs_disk_write(fp->fs, fp->buf, fp->dsect,
                                  fp->fs->ssize)) {
                 res = FR_DISK_ERR;
                 goto fail;
@@ -2511,7 +2509,7 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
                     if (!(fp->fs->opt & FATFS_READONLY) &&
                         (fp->flag & FA__DIRTY)) {
                         /* Write-back dirty sector cache */
-                        if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect,
+                        if (fatfs_disk_write(fp->fs, fp->buf, fp->dsect,
                                              fp->fs->ssize)) {
                             return ABORT(fp->fs, FR_DISK_ERR);
                         }
@@ -2519,8 +2517,7 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
                     }
 
                     /* Load current sector */
-                    if (fatfs_disk_read(fp->fs->drv, fp->buf, dsc,
-                                        fp->fs->ssize))
+                    if (fatfs_disk_read(fp->fs, fp->buf, dsc, fp->fs->ssize))
                         return ABORT(fp->fs, FR_DISK_ERR);
                     fp->dsect = dsc;
                 }
@@ -2607,7 +2604,7 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
         if (fp->fptr % fp->fs->ssize && nsect != fp->dsect) {
             if (!(fp->fs->opt & FATFS_READONLY) && fp->flag & FA__DIRTY) {
                 /* Write-back dirty sector cache */
-                if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect,
+                if (fatfs_disk_write(fp->fs, fp->buf, fp->dsect,
                                      fp->fs->ssize)) {
                     return ABORT(fp->fs, FR_DISK_ERR);
                 }
@@ -2615,7 +2612,7 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
             }
 
             /* Fill sector cache */
-            if (fatfs_disk_read(fp->fs->drv, fp->buf, nsect, fp->fs->ssize)) {
+            if (fatfs_disk_read(fp->fs, fp->buf, nsect, fp->fs->ssize)) {
                 return ABORT(fp->fs, FR_DISK_ERR);
             }
             fp->dsect = nsect;
@@ -2871,7 +2868,7 @@ FRESULT f_truncate(FF_FIL * fp)
         }
 
         if (res == FR_OK && (fp->flag & FA__DIRTY)) {
-            if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect,
+            if (fatfs_disk_write(fp->fs, fp->buf, fp->dsect,
                                  fp->fs->ssize)) {
                 res = FR_DISK_ERR;
             } else {

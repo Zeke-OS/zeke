@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   IO wrapper for FatFs.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,32 +39,24 @@
 #include <kerror.h>
 #include <fs/fs.h>
 #include <fs/devfs.h>
-#include "src/diskio.h"
 #include "fatfs.h"
 
 /**
  * Read sector(s).
- * @param pdrv      is a (physical) drive nmuber to identify the drive.
  * @param buff      is a data buffer to store read data.
  * @param sector    is a sector address in LBA.
  * @param count     is the number of bytes to read.
  *
  */
-DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
+DRESULT fatfs_disk_read(FATFS * ff_fs, uint8_t * buff, DWORD sector,
                         unsigned int count)
 {
-    file_t * file;
-    vnode_t * vnode;
+    file_t * file = &get_ffsb_of_fffs(ff_fs)->ff_devfile;
+    struct vnode_ops * vnops = file->vnode->vnode_ops;
     struct uio uio;
     ssize_t retval;
 
-    if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])
-        return RES_PARERR;
-
-    file = &fatfs_sb_arr[pdrv]->ff_devfile;
-    vnode = file->vnode;
-
-    retval = vnode->vnode_ops->lseek(file, sector, SEEK_SET);
+    retval = vnops->lseek(file, sector, SEEK_SET);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_ERR, "%s(): err %i\n", __func__, retval);
@@ -73,7 +65,7 @@ DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
     }
 
     uio_init_kbuf(&uio, buff, count);
-    retval = file->vnode->vnode_ops->read(file, &uio, count);
+    retval = vnops->read(file, &uio, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_ERR, "fatfs_disk_read(): err %i\n", retval);
@@ -94,26 +86,19 @@ DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
 
 /**
  * Write sector(s).
- * @param pdrv      is a (physical) drive nmuber to identify the drive.
  * @param buff      is the data buffer to be written.
  * @param sector    is a sector address in LBA.
  * @param count     is the number of bytes to write.
  */
-DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
+DRESULT fatfs_disk_write(FATFS * ff_fs, const uint8_t * buff, DWORD sector,
                          unsigned int count)
 {
-    file_t * file;
-    vnode_t * vnode;
+    file_t * file = &get_ffsb_of_fffs(ff_fs)->ff_devfile;
+    struct vnode_ops * vnops = file->vnode->vnode_ops;
     struct uio uio;
     ssize_t retval;
 
-    if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])
-        return RES_PARERR;
-
-    file = &fatfs_sb_arr[pdrv]->ff_devfile;
-    vnode = file->vnode;
-
-    retval = vnode->vnode_ops->lseek(file, sector, SEEK_SET);
+    retval = vnops->lseek(file, sector, SEEK_SET);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_ERR, "%s(): err %i\n", __func__, retval);
@@ -122,7 +107,7 @@ DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
     }
 
     uio_init_kbuf(&uio, (void *)buff, count);
-    retval = file->vnode->vnode_ops->write(file, &uio, count);
+    retval = vnops->write(file, &uio, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_ERR, "%s(): err %i\n", __func__, retval);
@@ -136,9 +121,10 @@ DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
     return 0;
 }
 
-DRESULT fatfs_disk_ioctl(uint8_t pdrv, unsigned cmd, void * buff, size_t bsize)
+DRESULT fatfs_disk_ioctl(FATFS * ff_fs, unsigned cmd, void * buff, size_t bsize)
 {
-    file_t * file;
+    file_t * file = &get_ffsb_of_fffs(ff_fs)->ff_devfile;
+    struct vnode_ops * vnops = file->vnode->vnode_ops;
     ssize_t err;
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG,
@@ -146,11 +132,7 @@ DRESULT fatfs_disk_ioctl(uint8_t pdrv, unsigned cmd, void * buff, size_t bsize)
             (uint32_t)pdrv, (uint32_t)cmd, buff, (uint32_t)bsize);
 #endif
 
-    if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])
-        return RES_PARERR;
-
-    file = &fatfs_sb_arr[pdrv]->ff_devfile;
-    if (!file->vnode->vnode_ops->ioctl)
+    if (!vnops->ioctl)
         return RES_ERROR;
 
     switch (cmd) {
@@ -163,7 +145,7 @@ DRESULT fatfs_disk_ioctl(uint8_t pdrv, unsigned cmd, void * buff, size_t bsize)
         break;
     }
 
-    err = file->vnode->vnode_ops->ioctl(file, cmd, buff, bsize);
+    err = vnops->ioctl(file, cmd, buff, bsize);
     if (err)
         return RES_ERROR;
 
