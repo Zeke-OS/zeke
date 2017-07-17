@@ -143,7 +143,7 @@ static vnode_t * create_raw_inode(const struct fs_superblock * sb)
 
 static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 {
-    char * rootpath = &fatfs_sb->fpath_root;
+    char * rootpath = fatfs_sb->fpath_root;
     size_t vn_hash;
     struct fatfs_inode * in = NULL;
     int err;

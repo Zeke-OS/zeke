@@ -43,9 +43,9 @@
 #ifndef FATFS_H
 #define FATFS_H
 
-#include <libkern.h>
 #include <fs/fs.h>
 #include <fs/inpool.h>
+#include <libkern.h>
 #include "src/ff.h"
 
 #define FATFS_FSNAME            "fatfs"
