@@ -42,7 +42,6 @@
 struct vfs_hash_ctx {
     const char * ctx_fsname;
     LIST_HEAD(vfs_hash_head, vnode) * ctx_hash_tbl;
-    LIST_HEAD(,vnode) ctx_hash_side;
     size_t ctx_hash_mask;
     vfs_hash_cmp_t * ctx_cmp_fn;
     mtx_t ctx_lock;
@@ -78,7 +77,6 @@ id_t vfs_hash_new_ctx(const char * fsname, int desiredvnodes,
 
     ctx->ctx_fsname = fsname;
     ctx->ctx_hash_tbl = hashinit(desiredvnodes, &ctx->ctx_hash_mask);
-    LIST_INIT(&ctx->ctx_hash_side);
     ctx->ctx_cmp_fn = cmp_fn;
     mtx_init(&ctx->ctx_lock, MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
 
@@ -185,28 +183,18 @@ int vfs_hash_insert(id_t cid, struct vnode * vp, size_t hash,
     }
 
     *vpp = NULL;
-    while (1) {
-        mtx_lock(&ctx->ctx_lock);
-        LIST_FOREACH(vp2, vfs_hash_bucket(ctx, vp->sb, hash), vn_hashlist) {
-            if (vp2->vn_hash != hash)
-                continue;
-            if (vp2->sb != vp->sb)
-                continue;
-            if (ctx->ctx_cmp_fn && ctx->ctx_cmp_fn(vp2, cmp_arg))
-                continue;
-            //VN_LOCK(vp2);
-            mtx_unlock(&ctx->ctx_lock);
-            /* TODO incr refcount of vp2 */
-            mtx_lock(&ctx->ctx_lock);
-            LIST_INSERT_HEAD(&ctx->ctx_hash_side, vp, vn_hashlist);
-            mtx_unlock(&ctx->ctx_lock);
-            //VN_UNLOCK(vp);
-            *vpp = vp2;
-            return 0;
-        }
-        if (vp2 == NULL)
-            break;
-
+    mtx_lock(&ctx->ctx_lock);
+    LIST_FOREACH(vp2, vfs_hash_bucket(ctx, vp->sb, hash), vn_hashlist) {
+        if (vp2->vn_hash != hash)
+            continue;
+        if (vp2->sb != vp->sb)
+            continue;
+        if (ctx->ctx_cmp_fn && ctx->ctx_cmp_fn(vp2, cmp_arg))
+            continue;
+        mtx_unlock(&ctx->ctx_lock);
+        /* TODO incr refcount of vp2 */
+        *vpp = vp2;
+        return 0;
     }
     vp->vn_hash = hash;
     LIST_INSERT_HEAD(vfs_hash_bucket(ctx, vp->sb, hash), vp, vn_hashlist);
