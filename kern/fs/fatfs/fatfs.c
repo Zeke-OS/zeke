@@ -53,7 +53,6 @@ static int fatfs_umount(struct fs_superblock * fs_sb);
 static char * format_fpath(struct fatfs_inode * indir, const char * name);
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
                         char * fpath, size_t vn_hash, int oflags);
-static vnode_t * create_root(struct fatfs_sb * fatfs_sb);
 static void finalize_inode(vnode_t * vnode);
 static void destroy_vnode(vnode_t * vnode);
 static int fatfs_statfs(struct fs_superblock * sb, struct statvfs * st);
@@ -139,6 +138,30 @@ static vnode_t * create_raw_inode(const struct fs_superblock * sb)
 
     in = kzalloc(sizeof(struct fatfs_inode));
 
+    return &in->in_vnode;
+}
+
+static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
+{
+    char * rootpath = &fatfs_sb->fpath_root;
+    size_t vn_hash;
+    struct fatfs_inode * in = NULL;
+    int err;
+
+    rootpath[0] = '/';
+    vn_hash = halfsiphash32(rootpath, 1, fatfs_siphash_key);
+    err = create_inode(&in, fatfs_sb, rootpath, vn_hash,
+                       O_DIRECTORY | O_RDWR);
+    if (err || unlikely(!in)) {
+        KERROR(KERROR_ERR, "Failed to init a root vnode for fatfs (%d)\n", err);
+        return NULL;
+    }
+
+    /*
+     * Note that the refcount +2 should remain so that the root vnode won't be
+     * ever freed from the dirty vnode list.
+     */
+    in->in_fpath = rootpath;
     return &in->in_vnode;
 }
 
@@ -419,34 +442,6 @@ fail:
 
     inpool_insert_clean(&sb->inpool, vn); /* Return it back to the pool. */
     return retval;
-}
-
-static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
-{
-    char * rootpath;
-    size_t vn_hash;
-    struct fatfs_inode * in = NULL;
-    int err;
-
-    rootpath = kzalloc(2);
-    if (!rootpath)
-        return NULL;
-
-    rootpath[0] = '/';
-    vn_hash = halfsiphash32(rootpath, 1, fatfs_siphash_key);
-    err = create_inode(&in, fatfs_sb, rootpath, vn_hash,
-                       O_DIRECTORY | O_RDWR);
-    if (err || unlikely(!in)) {
-        KERROR(KERROR_ERR, "Failed to init a root vnode for fatfs (%d)\n", err);
-        return NULL;
-    }
-
-    /*
-     * Note that the refcount +2 should remain so that the root vnode won't be
-     * ever freed from the dirty vnode list.
-     */
-    in->in_fpath = rootpath;
-    return &in->in_vnode;
 }
 
 /**

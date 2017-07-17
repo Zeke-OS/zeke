@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   FatFs public header.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,6 +72,7 @@ struct fatfs_sb {
     inpool_t inpool;            /*!< inode pool. */
     file_t ff_devfile;          /*!< Fs device. */
     FATFS ff_fs;                /*!< ff descriptor. */
+    char fpath_root[2];         /*!< fpath for root. */
 };
 
 /**
