@@ -173,6 +173,8 @@ static int open_tty(struct gettytab_entry * entry)
     fd[1] = open(filename, O_WRONLY);
     fd[2] = open(filename, O_WRONLY);
 
+    /* FIXME Some issues with this one on real HW
+#if 0
     for (size_t i = 0; i < 3; i++) {
         struct termios termios;
 
@@ -192,6 +194,7 @@ static int open_tty(struct gettytab_entry * entry)
             return 1;
         }
     }
+#endif
 
     return 0;
 }
