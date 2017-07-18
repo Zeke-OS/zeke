@@ -6,6 +6,6 @@ echo "         Zeke booting"
 # TODO read /etc/rc.conf, fsck, set hostname etc
 
 # TODO Move to fstab when implemented
-# mount -t fatfs /dev/emmc0p0 /boot
+ mount -t fatfs /dev/emmc0p0 /boot
 
 exec /sbin/getty
