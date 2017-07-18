@@ -77,14 +77,6 @@ config configVFS_HASH
 
     This is usually auto selected.
 
-config configVFS_HASH_CTX_MAX
-    int "Max number of contexts"
-    default 1
-    depends on configVFS_HASH
-    ---help---
-    Maximum number of VFS hash contexts, ie. the number of file systems that
-    are willing to allocate a VFS hash cotext.
-
 endmenu
 
 endmenu

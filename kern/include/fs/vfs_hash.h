@@ -44,50 +44,49 @@ typedef int vfs_hash_cmp_t(struct vnode * vp, void * arg);
 /**
  * Get a new vfs_hash context.
  * @note Not thread-safe.
- * @return The id of the context.
+ * @return A pointer to the context.
  */
-id_t vfs_hash_new_ctx(const char * fsname, int desiredvnodes,
-                      vfs_hash_cmp_t * cmp_fn);
+void * vfs_hash_new_ctx(const char * fsname, unsigned desiredvnodes,
+                        vfs_hash_cmp_t * cmp_fn);
 
 /**
  * Get a vnode pointer from vfs_hash.
- * @param cid is the vfs_hash context ID.
  * @retval -EINVAL if cid is invalid.
  */
-int vfs_hash_get(id_t cid, const struct fs_superblock * mp,
+int vfs_hash_get(void * ctxp, const struct fs_superblock * mp,
                  size_t hash, struct vnode ** vpp, void * cmp_arg)
     __attribute__((nonnull(2, 4)));
 
-size_t vfs_hash_index(struct vnode * vp);
+size_t vfs_hash_index(struct vnode * vp)
+    __attribute__((nonnull(1)));
 
 /**
  * Walkthrough each vnode belonging to the given mp and call a callback cb.
  */
-int vfs_hash_foreach(id_t cid, const struct fs_superblock * mp,
+int vfs_hash_foreach(void * ctxp, const struct fs_superblock * mp,
                      void (*cb)(struct vnode *))
     __attribute__((nonnull(2, 3)));
 
 /**
  * Insert a vnode pointer to vfs_hash.
- * @param cid is the vfs_hash context ID.
  * @retval -EINVAL if cid is invalid.
  */
-int vfs_hash_insert(id_t cid, struct vnode * vp, size_t hash,
+int vfs_hash_insert(void * ctxp, struct vnode * vp, size_t hash,
                     struct vnode ** vpp, void * cmp_arg)
-    __attribute__((nonnull(2, 4)));
+    __attribute__((nonnull(1, 2, 4)));
 
 /**
  * Rehash.
- * @param cid is the vfs_hash context ID.
  * @retval -EINVAL if cid is invalid.
  */
-int vfs_hash_rehash(id_t cid, struct vnode * vp, size_t hash);
+int vfs_hash_rehash(void * ctxp, struct vnode * vp, size_t hash)
+    __attribute__((nonnull(1, 2)));
 
 /**
  * Remove a vnode from the hashmap of a vfs_hash context.
- * @param cid is the vfs_hash context ID.
  * @retval -EINVAL if cid is invalid.
  */
-int vfs_hash_remove(id_t cid, struct vnode * vp);
+int vfs_hash_remove(void * ctxp, struct vnode * vp)
+    __attribute__((nonnull(1, 2)));
 
 #endif /* VFS_HASH_H */

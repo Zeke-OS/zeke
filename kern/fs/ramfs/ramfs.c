@@ -182,7 +182,7 @@ vnode_ops_t ramfs_vnode_ops = {
 };
 
 static atomic_t ramfs_vdev_minor = ATOMIC_INIT(0);
-static id_t vfs_hash_cid; /*!< vfs_hash context ID. */
+static void * vfs_hash_ctx; /*!< vfs_hash context. */
 static uint32_t ramfs_siphash_key[2];
 
 int __kinit__ ramfs_init(void)
@@ -192,10 +192,10 @@ int __kinit__ ramfs_init(void)
 
     ramfs_siphash_key[0] = krandom();
     ramfs_siphash_key[1] = krandom();
-    vfs_hash_cid = vfs_hash_new_ctx("ramfs", configRAMFS_DESIREDVNODES,
+    vfs_hash_ctx = vfs_hash_new_ctx("ramfs", configRAMFS_DESIREDVNODES,
                                     NULL /* No comparator needed */);
-    if (vfs_hash_cid < 0)
-        return vfs_hash_cid;
+    if (!vfs_hash_ctx)
+        return -ENOMEM;
 
     /*
      * This must be static as it's referenced and used in the file system via
@@ -367,7 +367,7 @@ static int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
     int err;
 
     vn_hash = halfsiphash32(vnode_num, sizeof(ino_t), ramfs_siphash_key);
-    err = vfs_hash_get(vfs_hash_cid, sb, vn_hash, &vn, NULL);
+    err = vfs_hash_get(vfs_hash_ctx, sb, vn_hash, &vn, NULL);
     if (err || !vn) {
 #ifdef configRAMFS_DEBUG
         FS_KERROR_VNODE(KERROR_DEBUG, NULL, "inode doesn't exist\n");
@@ -416,7 +416,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
     destroy_inode_data(inode);
     vn_tmp = &inode->in_vnode;
 
-    vfs_hash_remove(vfs_hash_cid, vn_tmp);
+    vfs_hash_remove(vfs_hash_ctx, vn_tmp);
 
     /* Recycle this inode */
     inpool_insert_clean(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
@@ -940,7 +940,7 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
      * NOTE: There shouldn't be any references to vnodes in this fs
      * anymore.
      */
-    (void)vfs_hash_foreach(vfs_hash_cid, &ramfs_sb->sb, destroy_vnode);
+    (void)vfs_hash_foreach(vfs_hash_ctx, &ramfs_sb->sb, destroy_vnode);
 
     /* Destroy inode pool */
     inpool_destroy(&ramfs_sb->ramfs_ipool);
@@ -1048,7 +1048,7 @@ static int insert_inode(ramfs_inode_t * inode)
 
     vn_hash = halfsiphash32(&inode->in_vnode.vn_num, sizeof(ino_t),
                             ramfs_siphash_key);
-    err = vfs_hash_insert(vfs_hash_cid, &inode->in_vnode, vn_hash, &vp, NULL);
+    err = vfs_hash_insert(vfs_hash_ctx, &inode->in_vnode, vn_hash, &vp, NULL);
     if (vp)
         return -EEXIST;
     return err;

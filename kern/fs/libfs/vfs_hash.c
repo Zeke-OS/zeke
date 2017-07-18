@@ -47,40 +47,21 @@ struct vfs_hash_ctx {
     mtx_t ctx_lock;
 };
 
-static id_t next_ctx_id;
-static struct vfs_hash_ctx vfs_ctx[configVFS_HASH_CTX_MAX];
-
-static inline struct vfs_hash_ctx * vfs_hash_get_ctx(id_t cid)
+void * vfs_hash_new_ctx(const char * fsname, unsigned desiredvnodes,
+                        vfs_hash_cmp_t * cmp_fn)
 {
-    if (0 <= cid || cid < next_ctx_id) {
-        return vfs_ctx + cid;
-    }
-    return NULL;
-}
-
-id_t vfs_hash_new_ctx(const char * fsname, int desiredvnodes,
-                      vfs_hash_cmp_t * cmp_fn)
-{
-    id_t id;
     struct vfs_hash_ctx * ctx;
 
-    if (desiredvnodes <= 0) {
-        return -EINVAL;
-    }
-
-    if (next_ctx_id >= (id_t)num_elem(vfs_ctx)) {
-        return -ENOBUFS;
-    }
-
-    id = next_ctx_id++;
-    ctx = vfs_ctx + id;
+    ctx = kmalloc(sizeof(struct vfs_hash_ctx));
+    if (!ctx)
+        return NULL;
 
     ctx->ctx_fsname = fsname;
     ctx->ctx_hash_tbl = hashinit(desiredvnodes, &ctx->ctx_hash_mask);
     ctx->ctx_cmp_fn = cmp_fn;
     mtx_init(&ctx->ctx_lock, MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
 
-    return id;
+    return ctx;
 }
 
 size_t vfs_hash_index(struct vnode * vp)
@@ -96,15 +77,11 @@ vfs_hash_bucket(struct vfs_hash_ctx * ctx,
     return &ctx->ctx_hash_tbl[(hash + mp->sb_hashseed) & ctx->ctx_hash_mask];
 }
 
-int vfs_hash_get(id_t cid, const struct fs_superblock * mp,
+int vfs_hash_get(void * ctxp, const struct fs_superblock * mp,
                  size_t hash, struct vnode ** vpp, void * cmp_arg)
 {
     struct vnode * vp;
-    struct vfs_hash_ctx * ctx = vfs_hash_get_ctx(cid);
-
-    if (!ctx) {
-        return -EINVAL;
-    }
+    struct vfs_hash_ctx * ctx = ctxp;
 
     while (1) {
         mtx_lock(&ctx->ctx_lock);
@@ -129,13 +106,9 @@ int vfs_hash_get(id_t cid, const struct fs_superblock * mp,
     }
 }
 
-int vfs_hash_remove(id_t cid, struct vnode * vp)
+int vfs_hash_remove(void * ctxp, struct vnode * vp)
 {
-    struct vfs_hash_ctx * ctx = vfs_hash_get_ctx(cid);
-
-    if (!ctx) {
-        return -EINVAL;
-    }
+    struct vfs_hash_ctx * ctx = ctxp;
 
     mtx_lock(&ctx->ctx_lock);
     LIST_REMOVE(vp, vn_hashlist);
@@ -144,10 +117,10 @@ int vfs_hash_remove(id_t cid, struct vnode * vp)
     return 0;
 }
 
-int vfs_hash_foreach(id_t cid, const struct fs_superblock * mp,
+int vfs_hash_foreach(void * ctxp, const struct fs_superblock * mp,
                      void (*cb)(struct vnode *))
 {
-    struct vfs_hash_ctx * ctx = vfs_hash_get_ctx(cid);
+    struct vfs_hash_ctx * ctx = ctxp;
     struct vfs_hash_head * bucket;
 
     if (!ctx) {
@@ -172,15 +145,11 @@ int vfs_hash_foreach(id_t cid, const struct fs_superblock * mp,
     return 0;
 }
 
-int vfs_hash_insert(id_t cid, struct vnode * vp, size_t hash,
+int vfs_hash_insert(void * ctxp, struct vnode * vp, size_t hash,
                     struct vnode ** vpp, void * cmp_arg)
 {
     struct vnode * vp2;
-    struct vfs_hash_ctx * ctx = vfs_hash_get_ctx(cid);
-
-    if (!ctx) {
-        return -EINVAL;
-    }
+    struct vfs_hash_ctx * ctx = ctxp;
 
     *vpp = NULL;
     mtx_lock(&ctx->ctx_lock);
@@ -203,13 +172,9 @@ int vfs_hash_insert(id_t cid, struct vnode * vp, size_t hash,
     return 0;
 }
 
-int vfs_hash_rehash(id_t cid, struct vnode * vp, size_t hash)
+int vfs_hash_rehash(void * ctxp, struct vnode * vp, size_t hash)
 {
-    struct vfs_hash_ctx * ctx = vfs_hash_get_ctx(cid);
-
-    if (!ctx) {
-        return -EINVAL;
-    }
+    struct vfs_hash_ctx * ctx = ctxp;
 
     mtx_lock(&ctx->ctx_lock);
     LIST_REMOVE(vp, vn_hashlist);

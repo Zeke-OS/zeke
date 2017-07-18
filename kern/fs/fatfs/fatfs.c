@@ -72,7 +72,7 @@ static struct fs fatfs_fs = {
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
-static id_t vfs_hash_ctx_id;
+static void * vfs_hash_ctx;
 static uint32_t fatfs_siphash_key[2];
 
 vnode_ops_t fatfs_vnode_ops = {
@@ -110,10 +110,10 @@ int __kinit__ fatfs_init(void)
 
     fatfs_siphash_key[0] = krandom();
     fatfs_siphash_key[1] = krandom();
-    vfs_hash_ctx_id = vfs_hash_new_ctx("fatfs", configFATFS_DESIREDVNODES,
-                                       fatfs_vncmp);
-    if (vfs_hash_ctx_id < 0)
-        return vfs_hash_ctx_id;
+    vfs_hash_ctx = vfs_hash_new_ctx("fatfs", configFATFS_DESIREDVNODES,
+                                    fatfs_vncmp);
+    if (!vfs_hash_ctx)
+        return -ENOMEM;
 
     fs_inherit_vnops(&fatfs_vnode_ops, &nofs_vnode_ops);
 
@@ -400,7 +400,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     init_fatfs_vnode(vn, inum, vn_mode, &(sb->sb));
 
     /* Insert to the cache */
-    err = vfs_hash_insert(vfs_hash_ctx_id, vn, vn_hash, &xvp, fpath);
+    err = vfs_hash_insert(vfs_hash_ctx, vn, vn_hash, &xvp, fpath);
     if (err) {
         retval = -ENOMEM;
         goto fail;
@@ -440,7 +440,7 @@ static void finalize_inode(vnode_t * vnode)
     KERROR_DBG("%s(in %p), %s\n", __func__, in, in->in_fpath);
 
     vrele_nunlink(vnode); /* If called by inpool */
-    vfs_hash_remove(vfs_hash_ctx_id, &in->in_vnode);
+    vfs_hash_remove(vfs_hash_ctx, &in->in_vnode);
 
     /*
      * We use a negative value of vn_len to mark a deleted directory entry,
@@ -626,7 +626,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
      * Lookup from vfs_hash cache
      */
     vn_hash = halfsiphash32(in_fpath, in_fpath_len, fatfs_siphash_key);
-    retval = vfs_hash_get(vfs_hash_ctx_id,
+    retval = vfs_hash_get(vfs_hash_ctx,
                           dir->sb,      /* FS superblock */
                           vn_hash,      /* Hash */
                           &vn,          /* Retval */
