@@ -79,9 +79,7 @@ static SLIST_HEAD(fs_list, fs) fs_list_head =
 
 int fs_register(fs_t * fs)
 {
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(fs \"%s\")\n", __func__, fs->fsname);
-#endif
+    KERROR_DBG("%s(fs \"%s\")\n", __func__, fs->fsname);
 
     FS_LOCK();
     mtx_lock(&fs->fs_giant);
@@ -187,12 +185,9 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     istate_t s;
     int err;
 
-#ifdef configFS_DEBUG
-     KERROR(KERROR_DEBUG,
-            "%s(target \"%p\", source \"%s\", fsname \"%s\", "
-            "flags %x, parm \"%s\", parm_len %d)\n",
-            __func__, target, source, fsname, flags, parm, parm_len);
-#endif
+     KERROR_DBG("%s(target \"%p\", source \"%s\", fsname \"%s\", "
+                "flags %x, parm \"%s\", parm_len %d)\n",
+                __func__, target, source, fsname, flags, parm, parm_len);
     KASSERT(target, "target must be set");
 
     if (fsname) {
@@ -203,14 +198,11 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     if (!fs)
         return -ENOTSUP; /* fs doesn't exist. */
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "Found fs: %s\n", fsname);
-#endif
+    KERROR_DBG("Found fs: %s\n", fsname);
 
     if (!fs->mount) {
-#ifdef configFS_DEBUG
-        KERROR(KERROR_DEBUG, "fs %s isn't mountable\n", fsname);
-#endif
+        KERROR_DBG("fs %s isn't mountable\n", fsname);
+
         return -ENOTSUP; /* Not a mountable file system. */
     }
 
@@ -243,9 +235,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 
     /* TODO inherit permissions */
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "Mount OK\n");
-#endif
+    KERROR_DBG("Mount OK\n");
 
     return 0;
 }
@@ -256,9 +246,7 @@ int fs_umount(struct fs_superblock * sb)
     vnode_t * prev;
     vnode_t * next;
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(sb:%p)\n", __func__, sb);
-#endif
+    KERROR_DBG("%s(sb:%p)\n", __func__, sb);
     KASSERT(sb, "sb is set");
     KASSERT(sb->fs && sb->root && sb->root->vn_prev_mountpoint &&
             sb->root->vn_prev_mountpoint->vn_next_mountpoint,
@@ -303,11 +291,8 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
     char * lasts;
     int retval = 0;
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG,
-           "%s(result %p, root %pV, str \"%s\", oflags %x)\n",
-           __func__, result, root, str, oflags);
-#endif
+    KERROR_DBG("%s(result %p, root %pV, str \"%s\", oflags %x)\n",
+               __func__, result, root, str, oflags);
 
     if (!(result && root && root->vnode_ops && str))
         return -EINVAL;
@@ -375,9 +360,7 @@ again:  /* Get vnode by name in this dir. */
         }
         retval = 0;
 
-#ifdef configFS_DEBUG
         KASSERT(*result != NULL, "vfs is in inconsistent state");
-#endif
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
 
     if ((oflags & O_DIRECTORY) && !S_ISDIR((*result)->vn_mode)) {
@@ -388,10 +371,8 @@ again:  /* Get vnode by name in this dir. */
     }
 
 out:
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s: result %pV\n", __func__,
-           (result) ? *result : NULL);
-#endif
+    KERROR_DBG("%s: result %pV\n", __func__, (result) ? *result : NULL);
+
     if (retval && retval != -EDOM) {
         *result = NULL;
     }
@@ -405,11 +386,8 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     int oflags = atflags & AT_SYMLINK_NOFOLLOW;
     int retval;
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG,
-           "%s(result %p, fd %d, path \"%s\", atflags %x)\n",
-           __func__, result, fd, path, atflags);
-#endif
+    KERROR_DBG("%s(result %p, fd %d, path \"%s\", atflags %x)\n",
+               __func__, result, fd, path, atflags);
 
     if (path[0] == '\0')
         return -EINVAL;
@@ -544,10 +522,7 @@ static void fs_fildes_dtor(struct kobj * obj)
     file_t * file = containerof(obj, struct file, f_obj);
     vnode_t * vn = file->vnode;
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(%p), vnode %pV\n",
-           __func__, obj, vn);
-#endif
+    KERROR_DBG("%s(%p), vnode %pV\n", __func__, obj, vn);
 
     if (file->oflags & O_KFREEABLE)
         kfree(file);
@@ -571,10 +546,7 @@ int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
     file_t * new_fildes;
     int retval;
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(vnode %pV, oflags %x)\n",
-           __func__, vnode, oflags);
-#endif
+    KERROR_DBG("%s(vnode %pV, oflags %x)\n", __func__, vnode, oflags);
 
     if (!vnode)
         return -EINVAL;
@@ -740,10 +712,8 @@ void fs_fildes_close_exec(struct proc_info * p)
         file_t * file = p->files->fd[i];
 
         if (file && file->oflags & O_CLOEXEC) {
-#ifdef configFS_DEBUG
-            KERROR(KERROR_DEBUG, "%s(%d): Close O_CLOEXEC fd %d\n",
-                   __func__, p->pid, i);
-#endif
+            KERROR_DBG("%s(%d): Close O_CLOEXEC fd %d\n", __func__, p->pid, i);
+
             fs_fildes_close(p, i);
         }
     }
@@ -837,10 +807,8 @@ int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
     vnode_autorele vnode_t * dir = NULL;
     int retval = 0;
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(pathname \"%s\", mode %u)\n",
-           __func__, pathname, (unsigned)mode);
-#endif
+    KERROR_DBG("%s(pathname \"%s\", mode %u)\n",
+               __func__, pathname, (unsigned)mode);
 
     retval = getvndir(pathname, &dir, &name, O_CREAT);
     if (retval)
@@ -852,9 +820,7 @@ int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
     mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->create(dir, name, mode, result);
 
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s() result: %p\n", __func__, *result);
-#endif
+    KERROR_DBG("%s() result: %p\n", __func__, *result);
 
     return retval;
 }

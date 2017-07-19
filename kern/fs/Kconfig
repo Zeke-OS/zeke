@@ -21,10 +21,6 @@ config configROOTFS_PARMS
 
 endmenu
 
-config configFS_DEBUG
-    bool "fs subsystem debugging"
-    default n
-
 config configFS_VREF_DEBUG
     bool "fs vref debugging"
     default n
