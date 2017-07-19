@@ -47,8 +47,8 @@ struct vfs_hash_ctx {
     mtx_t ctx_lock;
 };
 
-void * vfs_hash_new_ctx(const char * fsname, unsigned desiredvnodes,
-                        vfs_hash_cmp_t * cmp_fn)
+vfs_hash_ctx_t vfs_hash_new_ctx(const char * fsname, unsigned desiredvnodes,
+                                vfs_hash_cmp_t * cmp_fn)
 {
     struct vfs_hash_ctx * ctx;
 
@@ -77,11 +77,10 @@ vfs_hash_bucket(struct vfs_hash_ctx * ctx,
     return &ctx->ctx_hash_tbl[(hash + mp->sb_hashseed) & ctx->ctx_hash_mask];
 }
 
-int vfs_hash_get(void * ctxp, const struct fs_superblock * mp,
+int vfs_hash_get(vfs_hash_ctx_t ctx, const struct fs_superblock * mp,
                  size_t hash, struct vnode ** vpp, void * cmp_arg)
 {
     struct vnode * vp;
-    struct vfs_hash_ctx * ctx = ctxp;
 
     while (1) {
         mtx_lock(&ctx->ctx_lock);
@@ -106,9 +105,8 @@ int vfs_hash_get(void * ctxp, const struct fs_superblock * mp,
     }
 }
 
-int vfs_hash_remove(void * ctxp, struct vnode * vp)
+int vfs_hash_remove(vfs_hash_ctx_t ctx, struct vnode * vp)
 {
-    struct vfs_hash_ctx * ctx = ctxp;
 
     mtx_lock(&ctx->ctx_lock);
     LIST_REMOVE(vp, vn_hashlist);
@@ -117,10 +115,9 @@ int vfs_hash_remove(void * ctxp, struct vnode * vp)
     return 0;
 }
 
-int vfs_hash_foreach(void * ctxp, const struct fs_superblock * mp,
+int vfs_hash_foreach(vfs_hash_ctx_t ctx, const struct fs_superblock * mp,
                      void (*cb)(struct vnode *))
 {
-    struct vfs_hash_ctx * ctx = ctxp;
     struct vfs_hash_head * bucket;
 
     if (!ctx) {
@@ -145,11 +142,10 @@ int vfs_hash_foreach(void * ctxp, const struct fs_superblock * mp,
     return 0;
 }
 
-int vfs_hash_insert(void * ctxp, struct vnode * vp, size_t hash,
+int vfs_hash_insert(vfs_hash_ctx_t ctx, struct vnode * vp, size_t hash,
                     struct vnode ** vpp, void * cmp_arg)
 {
     struct vnode * vp2;
-    struct vfs_hash_ctx * ctx = ctxp;
 
     *vpp = NULL;
     mtx_lock(&ctx->ctx_lock);
@@ -172,10 +168,8 @@ int vfs_hash_insert(void * ctxp, struct vnode * vp, size_t hash,
     return 0;
 }
 
-int vfs_hash_rehash(void * ctxp, struct vnode * vp, size_t hash)
+int vfs_hash_rehash(vfs_hash_ctx_t ctx, struct vnode * vp, size_t hash)
 {
-    struct vfs_hash_ctx * ctx = ctxp;
-
     mtx_lock(&ctx->ctx_lock);
     LIST_REMOVE(vp, vn_hashlist);
     LIST_INSERT_HEAD(vfs_hash_bucket(ctx, vp->sb, hash), vp, vn_hashlist);

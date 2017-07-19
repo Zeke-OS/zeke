@@ -182,7 +182,7 @@ vnode_ops_t ramfs_vnode_ops = {
 };
 
 static atomic_t ramfs_vdev_minor = ATOMIC_INIT(0);
-static void * vfs_hash_ctx; /*!< vfs_hash context. */
+static vfs_hash_ctx_t vfs_hash_ctx; /*!< vfs_hash context. */
 static uint32_t ramfs_siphash_key[2];
 
 int __kinit__ ramfs_init(void)

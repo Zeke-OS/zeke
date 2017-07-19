@@ -72,7 +72,7 @@ static struct fs fatfs_fs = {
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
-static void * vfs_hash_ctx;
+static vfs_hash_ctx_t vfs_hash_ctx;
 static uint32_t fatfs_siphash_key[2];
 
 vnode_ops_t fatfs_vnode_ops = {
