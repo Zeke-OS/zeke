@@ -64,6 +64,8 @@ SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
 SYSCTL_DECL(_vfs_limits);
 SYSCTL_NODE(_vfs, OID_AUTO, limits, CTLFLAG_RD, 0,
             "File system limits and information");
+SYSCTL_NODE(_vfs, OID_AUTO, generic, CTLFLAG_RD, 0,
+            "Generic information and config knobs");
 
 SYSCTL_INT(_vfs_limits, OID_AUTO, name_max, CTLFLAG_RD, NULL, NAME_MAX,
            "Limit for the length of a file name component.");
@@ -558,7 +560,7 @@ int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
         return -EINVAL;
     vref(vnode);
 
-    if (curproc->cred.euid == 0)
+    if (priv_check(&curproc->cred, PRIV_VFS_ADMIN) == 0)
         goto perms_ok;
 
     /* Check if user perms gives access */

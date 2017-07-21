@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   User credentials.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2006 nCircle Network Security, Inc.
  * All rights reserved.
  *
@@ -163,9 +163,9 @@
 /*
  * VFS privileges.
  */
-#define PRIV_VFS_READ       110 /* vnode read perm. */
-#define PRIV_VFS_WRITE      111 /* vnode write perm. */
-#define PRIV_VFS_ADMIN      112 /* vnode admin perm. */
+#define PRIV_VFS_ADMIN      110 /* vnode admin perm. Override any DAC. */
+#define PRIV_VFS_READ       111 /* vnode read perm. */
+#define PRIV_VFS_WRITE      112 /* vnode write perm. */
 #define PRIV_VFS_EXEC       113 /* vnode exec perm. */
 #define PRIV_VFS_LOOKUP     114 /* vnode lookup perm. */
 #define PRIV_VFS_CHOWN      115 /* Can set user; group to non-member. */
