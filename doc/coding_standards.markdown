@@ -7,39 +7,39 @@ new code for Zeke.
 Source Tree Directory Structure
 -------------------------------
 
-+ kern/include/         Most of the shared kernel header files.
-+ kern/                 Most of the kernel code.
-+ kern/fs/              Virtual file system abstraction and other file systems.
-+ kern/hal/             Harware abstraction layer.
-+ kern/kunit/           In-kernel unit test framework (KUnit).
-+ kern/libkern/         Kernel "standard" library.
-+ kern/libkern/kstring/ String functions.
-+ kern/sched/           Thread scheduling.
-+ kern/test/            Kernel space unit tests.
-+ bin/                  Essential commands.
-+ config/               Kernel build config.
-+ include/              User space library headers.
-+ lib/                  C runtime libraries and user space libraries.
-+ modmakefiles/         Kernel module makefiles.
-+ sbin/                 Essential system utilities.
-+ test/                 User space unit tests.
-+ test/punit/           User space unit test framework (PUnit).
-+ tools/                Build tools and scripts.
-+ usr/games/            Sources for games and demos.
++ `kern/include/`           Most of the shared kernel header files.
++ `kern/`                   Most of the kernel code.
++ `kern/fs/`                Virtual file system abstraction and file systems.
++ `kern/hal/`               Harware abstraction layer.
++ `kern/kunit/`             In-kernel unit test framework (KUnit).
++ `kern/libkern/`           Kernel "standard" library.
++ `kern/libkern/kstring/`   String functions.
++ `kern/sched/`             Thread scheduling.
++ `kern/test/`              Kernel space unit tests.
++ `bin/`                    Essential commands.
++ `config/`                 Kernel build config.
++ `include/`                User space library headers.
++ `lib/`                    C runtime libraries and user space libraries.
++ `modmakefiles/`           Kernel module makefiles.
++ `sbin/`                   Essential system utilities.
++ `opt/test/`               User space unit tests and PUnit unit test framework.
++ `tools/`                  Build tools and scripts.
++ `usr/examples/`           Examples programs for Zeke.
++ `usr/games/`              Sources for games and demos.
 
 
 Root Filesystem Hierarchy
 -------------------------
 
-+ /bin/                 Essential command binaries.
-+ /dev/                 Virtual file system providing access to devices.
-+ /lib/                 Essential libraries for /bin/ and /sbin/.
-+ /mnt/                 Mount point for temporarily mounted filesystems.
-+ /proc/                Virtual filesystem providing process information.
-+ /sbin/                Essential system binaries.
-+ /tmp/                 Temporary files.
-+ /usr/games/           Games and demos.
-+ kernel.img            The kernel image.
++ `/bin/`                   Essential command binaries.
++ `/dev/`                   Virtual file system providing access to devices.
++ `/lib/`                   Essential libraries for /bin/ and /sbin/.
++ `/mnt/`                   Mount point for temporarily mounted filesystems.
++ `/proc/`                  Virtual filesystem providing process information.
++ `/sbin/`                  Essential system binaries.
++ `/tmp/`                   Temporary files.
++ `/usr/games/`             Games and demos.
++ `kernel.img`              The kernel image.
 
 
 Naming Conventions
@@ -60,17 +60,11 @@ Naming Conventions
 
 ### Global variables
 
-Historically both naming conventions have been used mixed case with underline
-between module name and rest of the name, and everyting writen small case with
-underlines. Third conventions was some ugly convention inherited from CMSIS,
-which was somewhat hard to get rid of. All new source code must use the
-following naming convention:
-
 + `module_feature_name`
 
 ### Function names
 
-+ `module_comp_function` + module = name that also appears in filename
++ `module_comp_function` + module = name that also appears in the filename
                          + comp   = component/functionality eg. thread
                                     components will change thread status
 
@@ -86,23 +80,31 @@ or have to change the actual underlying type depending on the actual hardware
 platform. Usually there should be no need to use typedef for structs unles it's
 stated in POSIX or some other standard we wan't to follow.
 
+Typedefs can be also used if the user of the data doesn't need to know the
+exact type information for the data, i.e. the user is only passing a pointer
+to the data. In this case the actual data might be stored in a struct only
+defined in a source file and referenced elsewhere (i.e. headers) using a
+forward declaration and a pointer.
+
 ### Enums
 
-Avoid using enums in kernel space, they are ugly, doesn't behave nicely and
+Avoid using enums in kernel space, they are ugly, doesn't behave nicely, and
 doesn't add any additional protection. Usually enums even seems to generate
-more code than using #defined values.
+more code than using #defined values. Though there might be some good use
+cases for enums due to better debuggability with GDB.
 
 Enums are ok in user space and in interfaces between user space and kernel
 space. Some standard things may even require using enums. Especially some
-POSIX interfaces requires use of enums.
+POSIX interfaces require use of enums.
 
 
 ABI and Calling Convention
 --------------------------
 
-Zeke uses mainly the default calling convention defined by GCC and Clang, which
-is a bit different than the standard calling convention for ARM. Here is a brief
-description of ABI and calling convention used in Zeke.
+Zeke is mainly utilizing the default calling convention defined by GCC and
+Clang, which is a bit different from the standard calling convention
+defined by ARM. Here follows is a brief description of ABI and calling
+convention used in Zeke.
 
     +----------+------+-----------------------------------------------------+
     | Register | Alt. | Usage                                               |
