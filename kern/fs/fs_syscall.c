@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system syscalls.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -60,12 +60,6 @@ static int sys_readwrite(__user void * user_args, int write)
     vnode_t * vnode;
     file_t * file;
     struct uio uio;
-
-    err = priv_check(&curproc->cred, (write) ? PRIV_VFS_WRITE : PRIV_VFS_READ);
-    if (err) {
-        set_errno(EPERM);
-        return -1;
-    }
 
     /* Copyin args. */
     err = copyin(user_args, &args, sizeof(args));

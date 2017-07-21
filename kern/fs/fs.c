@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,9 +65,9 @@ SYSCTL_DECL(_vfs_limits);
 SYSCTL_NODE(_vfs, OID_AUTO, limits, CTLFLAG_RD, 0,
             "File system limits and information");
 
-SYSCTL_INT(_vfs_limits, OID_AUTO, name_max, CTLFLAG_RD, 0, NAME_MAX,
+SYSCTL_INT(_vfs_limits, OID_AUTO, name_max, CTLFLAG_RD, NULL, NAME_MAX,
            "Limit for the length of a file name component.");
-SYSCTL_INT(_vfs_limits, OID_AUTO, path_max, CTLFLAG_RD, 0, PATH_MAX,
+SYSCTL_INT(_vfs_limits, OID_AUTO, path_max, CTLFLAG_RD, NULL, PATH_MAX,
            "Limit for for length of an entire file name.");
 
 /**
@@ -455,8 +455,10 @@ int chkperm(struct stat * stat, const struct cred * cred, int oflags)
             req_perm |= S_IRGRP;
         req_perm |= S_IROTH;
 
-        if (!(req_perm & stat->st_mode))
+        if (!(req_perm & stat->st_mode) ||
+            priv_check(cred, PRIV_VFS_READ)) {
             return -EPERM;
+        }
     }
 
     if (oflags & W_OK) {
@@ -468,8 +470,10 @@ int chkperm(struct stat * stat, const struct cred * cred, int oflags)
             req_perm |= S_IWGRP;
         req_perm |= S_IWOTH;
 
-        if (!(req_perm & stat->st_mode))
+        if (!(req_perm & stat->st_mode) ||
+            priv_check(cred, PRIV_VFS_WRITE)) {
             return -EPERM;
+        }
     }
 
     if ((oflags & X_OK) || (S_ISDIR(stat->st_mode))) {
@@ -481,8 +485,10 @@ int chkperm(struct stat * stat, const struct cred * cred, int oflags)
             req_perm |= S_IXGRP;
         req_perm |= S_IXOTH;
 
-        if (!(req_perm & stat->st_mode))
+        if (!(req_perm & stat->st_mode) ||
+            priv_check(cred, PRIV_VFS_EXEC)) {
             return -EPERM;
+        }
     }
 
     return 0;
