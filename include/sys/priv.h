@@ -117,6 +117,7 @@
 #define PRIV_PROC_LIMIT     60 /* Exceed user process limit. */
 #define PRIV_PROC_SETLOGIN  61 /* Can call setlogin. */
 #define PRIV_PROC_SETRLIMIT 62 /* Can raise resources limits. */
+#define PRIV_PROC_STAT      63 /* Can get status info of any process. */
 
 /*
  * IPC

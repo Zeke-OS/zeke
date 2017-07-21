@@ -155,7 +155,8 @@ static int proc_sysctl_pid(struct sysctl_oid * oidp, int * mib, int len,
         return -ESRCH;
     }
 
-    if (!(curproc->cred.euid == 0 || curproc->cred.euid == proc->cred.euid)) {
+    if (curproc->cred.euid != proc->cred.euid ||
+        priv_check(&curproc->cred, PRIV_PROC_STAT)) {
         retval = -ESRCH;
         goto out;
     }
