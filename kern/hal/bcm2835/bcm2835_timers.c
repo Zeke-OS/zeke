@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief Timer service routines.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -71,7 +71,7 @@
 #define ARM_TIMER_EN            0x80
 #define ARM_TIMER_INT_EN        0x20
 
-#define SYS_CLOCK       700000 /* kHz */
+#define SYS_CLOCK               700000 /* kHz */
 
 static int enable_arm_timer(unsigned freq_hz)
 {
@@ -102,7 +102,7 @@ static int enable_arm_timer(unsigned freq_hz)
                ARM_TIMER_INT_EN | ARM_TIMER_23BIT);
 
     /* Enable ARM timer IRQ */
-    mmio_write(BCMIRQ_ENABLE_BASIC, 0x1);
+    mmio_write(BCMIRQ_ENABLE_BASIC, BCMIRQ_EN_BASIC_ARM_TIMER);
 
     mmio_end(&s_entry);
 
