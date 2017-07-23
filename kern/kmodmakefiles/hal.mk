@@ -1,6 +1,6 @@
 # Common to all platforms
 hal-SRC-y += hal/hal_mib.c
-hal-SRC-y += hal/hw_timers.c
+hal-SRC-y += hal/irq.c
 hal-SRC-$(configATAG) += hal/atag.c
 hal-SRC-$(configMMU) += hal/mmu.c
 hal-SRC-$(configUART) += hal/uart.c
@@ -13,8 +13,9 @@ ifeq ($(configBCM2835),y)
 	MEMMAP := memmap_bcm2835.ld
 	STARTUP := hal/arm11/arm11_startup.S
 	hal-ASRC-y += $(wildcard hal/bcm2835/*.S)
-	hal-SRC-y += hal/bcm2835/bcm2835_mmio.c
 	hal-SRC-y += hal/bcm2835/bcm2835_gpio.c
+	hal-SRC-y += hal/bcm2835/bcm2835_interrupt.c
+	hal-SRC-y += hal/bcm2835/bcm2835_mmio.c
 	hal-SRC-y += hal/bcm2835/bcm2835_timers.c
 	hal-SRC-$(configBCM_MB) += hal/bcm2835/bcm2835_mailbox.c
 	hal-SRC-$(configBCM_MB) += hal/bcm2835/bcm2835_prop.c

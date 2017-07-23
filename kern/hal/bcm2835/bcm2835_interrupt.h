@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    bcm2835_interrput.h
+ * @file    bcm2835_interrupt.h
  * @author  Olli Vanhoja
  * @brief   Header for BCN2835 interrupt controllers.
  * @section LICENSE
@@ -43,6 +43,34 @@
 #define BCM2835_INTERRUPT_H
 
 #include <stdint.h>
+
+/*
+ * IRQ Numbering in Zeke
+ * This mapping differs from BCM's numbering as ARM basic interrupts are
+ * mapped from 0 to 7 while BCM documents a separate table for them.
+ *
+ * - 0 ARM Timer
+ * - 1 ARM Mailbox
+ * - 2 ARM Doorbell 0
+ * - 3 ARM Doorbell 1
+ * - 4 GPU0 halted
+ * - 5 GPU1 halted
+ * - 6 Illegal access type 1
+ * - 7 Illegal access type 0
+ * - 29 Aux int
+ * - 43 i2c slv int
+ * - 46 pwa0
+ * - 46 pwa1
+ * - 48 smi
+ * - 49 gpio_int[0]
+ * - 50 gpio_int[1]
+ * - 51 gpio_int[2]
+ * - 52 gpio_int[3]
+ * - 53 i2c_int
+ * - 54 spi_int
+ * - 55 pcm_int
+ * - 57 uart_int
+ */
 
 /* Peripheral Addresses */
 #define BCMIRQ_BASE                 0x2000b200

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file hw_timers.h
- * @author Olli Vanhoja
- * @brief HW timer services.
+ * @file    irq.c
+ * @author  Olli Vanhoja
+ * @brief   Generic interrupt handling.
  * @section LICENSE
- * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,28 +30,30 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef HW_TIMERS_H
-#define HW_TIMERS_H
+#include <errno.h>
+#include <hal/irq.h>
 
-#include <stddef.h>
-#include <stdint.h>
+struct irq_handler * irq_handlers[NR_IRQ];
 
-/**
- * Get us timestamp.
- * @return Returns us timestamp.
- */
-uint64_t get_utime(void);
+int irq_register(int irq, struct irq_handler * handler)
+{
+    if (irq < 0 || irq >= NR_IRQ)
+        return -EINVAL;
 
-void udelay(uint32_t delay);
+    if (irq_handlers[irq])
+        return -EBUSY;
 
-#define TIMEOUT_WAIT(stop_if_true, usec)                \
-do {                                                    \
-    uint64_t i = (usec), __start_time = get_utime();    \
-    do {                                                \
-        if((stop_if_true))                              \
-            break;                                      \
-    } while((get_utime() - __start_time) >= i);         \
-} while(0)
+    irq_handlers[irq] = handler;
 
-#endif /* HW_TIMERS_H */
+    return 0;
+}
+
+int irq_deregister(int irq)
+{
+    if (irq < 0 || irq >= NR_IRQ)
+        return -EINVAL;
+
+    irq_handlers[irq] = NULL;
+
+    return 0;
+}

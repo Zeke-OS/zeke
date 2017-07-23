@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU control.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -255,10 +255,6 @@ void mmu_pf_event(void)
 static void mmu_calc_pfcps(void)
 {
     static int count = PFC_FREQ;
-
-    /* Run only on kernel tick */
-    if (!flag_kernel_tick)
-        return;
 
     /* Tanenbaum suggests in one of his books that pf/s count could be first
      * averaged and then on each iteration summed with the current value and

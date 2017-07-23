@@ -32,9 +32,11 @@
  *******************************************************************************
  */
 
-#include <kinit.h>
-#include <kerror.h>
 #include <hal/hw_timers.h>
+#include <hal/irq.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <ksched.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_interrupt.h"
 #include "bcm2835_timers.h"
@@ -73,6 +75,26 @@
 
 #define SYS_CLOCK               700000 /* kHz */
 
+static void arm_timer_clear_if_pend(int irq)
+{
+    istate_t s_entry;
+
+    /* Handle scheduling timer */
+    mmio_start(&s_entry);
+    if (mmio_read(ARM_TIMER_MASK_IRQ)) {
+        mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
+        sched_handler();
+    }
+    mmio_end(&s_entry);
+}
+
+static struct irq_handler bcm2835_timer_irq_handler = {
+    .fn = arm_timer_clear_if_pend,
+    .flags = {
+        .fast_irq = 1,
+    }
+};
+
 static int enable_arm_timer(unsigned freq_hz)
 {
     istate_t s_entry;
@@ -106,33 +128,9 @@ static int enable_arm_timer(unsigned freq_hz)
 
     mmio_end(&s_entry);
 
-    return 0;
+    /* TODO defines for IRQ nums? */
+    return irq_register(0, &bcm2835_timer_irq_handler);
 }
-
-static int arm_timer_clear_if_pend(void)
-{
-    istate_t s_entry;
-    int retval = 0;
-
-    /* Handle scheduling timer */
-    mmio_start(&s_entry);
-    if (mmio_read(ARM_TIMER_MASK_IRQ)) {
-        mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-        retval = 1;
-    }
-    mmio_end(&s_entry);
-
-    return retval;
-}
-
-/*
- * Use ARM timer as a scheduling timer for the kernel.
- */
-struct hal_schedtimer hal_schedtimer = {
-    .enable = enable_arm_timer,
-    .disable = NULL, /* TODO ARM timer disable() */
-    .reset_if_pending = arm_timer_clear_if_pend,
-};
 
 __weak_reference(bcm_udelay, udelay);
 void bcm_udelay(uint32_t delay)
@@ -155,3 +153,11 @@ uint64_t get_utime(void)
 
     return now;
 }
+
+static int bcm_interrupt_postinit(void)
+{
+    SUBSYS_INIT("schedtimer");
+
+    return enable_arm_timer(configSCHED_HZ);
+}
+HW_POSTINIT_ENTRY(bcm_interrupt_postinit);

@@ -265,10 +265,6 @@ static void sched_calc_loads(void)
     static int count = LOAD_FREQ;
     uint32_t active_threads = 0; /* Fixed-point value. */
 
-    /* Run only on a kernel tick. */
-    if (!flag_kernel_tick)
-        return;
-
     count--;
     if (count >= 0)
         return;

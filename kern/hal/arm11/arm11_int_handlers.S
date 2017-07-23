@@ -85,26 +85,10 @@ interrupt_sys:
 
     bl      _thread_suspend
 
-    /* Handler IRQ */
-    bl      schedtimer_test_and_clear /* if kernel_tick */
-    cmp     r0, #0
-    bne     1f
-    /* TODO Other interrupts */
-    b       2f
-
-    /* kernel_tick
-     * Set Context ID to 0 (as we need ASID to be 0 in kernel mode)
-     */
-1:  mov     r0, #0
+    mov     r0, #0
     bl      arm11_set_cid
 
-    /* Run scheduler */
-    bl      sched_handler
-
-    /* End of a kernel tick */
-    ldr     r5, =flag_kernel_tick
-    mov     r0, #0
-    str     r0, [r5]
+    bl      arm_handle_sys_interrupt
 
     /* Update process system state */
     bl      proc_update
@@ -120,7 +104,7 @@ interrupt_sys:
     bl      arm11_set_current_thread_stackframe
 
 /* Load/Restore context */
-2:  popcontext 0            /* Pop context from SCHED_SFRAME_SYS */
+    popcontext 0            /* Pop context from SCHED_SFRAME_SYS */
     subs    pc, lr, #4      /* Return back (return address is PC+4) */
 
 

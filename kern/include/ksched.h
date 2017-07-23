@@ -135,6 +135,8 @@ int get_cpu_index(void);
  */
 void sched_get_loads(uint32_t loads[3]);
 
+void sched_handler(void);
+
 #endif /* KSCHED_H */
 
 /**

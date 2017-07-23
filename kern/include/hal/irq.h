@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file hw_timers.h
- * @author Olli Vanhoja
- * @brief HW timer services.
+ * @file    irq.h
+ * @author  Olli Vanhoja
+ * @brief   Generic interrupt handling.
  * @section LICENSE
- * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,28 +30,30 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef HW_TIMERS_H
-#define HW_TIMERS_H
-
-#include <stddef.h>
-#include <stdint.h>
+#define NR_IRQ 64
 
 /**
- * Get us timestamp.
- * @return Returns us timestamp.
+ * IRQ handler descriptor.
  */
-uint64_t get_utime(void);
+struct irq_handler {
+    void (*fn)(int irq); /* IRQ callback */
+    struct {
+        unsigned fast_irq : 1; /*!< Handle the interrupt immediately with
+                                *  interrupts disabled. */
+    } flags; /*!< IRQ handler control flags */
+};
 
-void udelay(uint32_t delay);
+/**
+ * An array of interrupt handlers.
+ */
+extern struct irq_handler * irq_handlers[NR_IRQ];
 
-#define TIMEOUT_WAIT(stop_if_true, usec)                \
-do {                                                    \
-    uint64_t i = (usec), __start_time = get_utime();    \
-    do {                                                \
-        if((stop_if_true))                              \
-            break;                                      \
-    } while((get_utime() - __start_time) >= i);         \
-} while(0)
+/**
+ * Register an interrupt handler.
+ */
+int irq_register(int irq, struct irq_handler * handler);
 
-#endif /* HW_TIMERS_H */
+/**
+ * Deregister an interrupt handler.
+ */
+int irq_deregister(int irq);

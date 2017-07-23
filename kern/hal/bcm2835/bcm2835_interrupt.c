@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file hw_timers.c
- * @author Olli Vanhoja
- * @brief HW timer services.
+ * @file    bcm2835_interrupt.c
+ * @author  Olli Vanhoja
+ * @brief   ARM11 interrupt handling.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,23 +30,37 @@
  *******************************************************************************
  */
 
-#include <hal/hw_timers.h>
-#include <kinit.h>
+#include <stdint.h>
+#include <hal/irq.h>
+#include "bcm2835_mmio.h"
+#include "bcm2835_interrupt.h"
 
-volatile uint32_t flag_kernel_tick;
-
-int schedtimer_test_and_clear(void)
+void arm_handle_sys_interrupt(void)
 {
-    if (hal_schedtimer.reset_if_pending()) {
-        flag_kernel_tick = 1;
+    istate_t s_entry;
+    int irq = -1;
+    uint32_t pending[3];
+
+    mmio_start(&s_entry);
+    pending[0] = mmio_read(BCMIRQ_BASIC_PEND);
+    pending[1] = mmio_read(BCMIRQ_IRQ1_PEND);
+    pending[2] = mmio_read(BCMIRQ_IRQ2_PEND);
+    mmio_end(&s_entry);
+
+    for (size_t i = 0; i < num_elem(pending); i++) {
+        for (int j = 0; j < 32; j++) {
+            if (((pending[i] >> j) & 1) != 0) {
+                irq = 32 * i + j;
+                break;
+            }
+        }
     }
-    return flag_kernel_tick;
+    if (irq != -1 && irq < NR_IRQ && irq_handlers[irq]) {
+        struct irq_handler * handler = irq_handlers[irq];
+        if (handler->flags.fast_irq) {
+            handler->fn(irq);
+        } else {
+            /* TODO Implement lazy IRQ handling */
+        }
+    }
 }
-
-int bcm_interrupt_postinit(void)
-{
-    SUBSYS_INIT("schedtimer");
-
-    return hal_schedtimer.enable(configSCHED_HZ);
-}
-HW_POSTINIT_ENTRY(bcm_interrupt_postinit);
