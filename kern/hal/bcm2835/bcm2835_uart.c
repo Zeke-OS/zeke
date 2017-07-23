@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   UART source code for BCM2835.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -135,16 +135,24 @@ static void bcm2835_uart_setconf(struct termios * conf)
 
     mmio_start(&s_entry);
 
-    /* Mask all interrupts. */
-#if 0
-    /mio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
-            (1 << 6) | (1 << 7) | (1 << 8) |
-            (1 << 9) | (1 << 10));
-#endif
+    /* Enable interrupts. */
+    mmio_write(UART0_IMSC,
+               (1 << 1) |    /* CTS */
+               (1 << 4) |    /* RX */
+               (1 << 5) |    /* TX */
+               (1 << 6) |    /* Receive timeout */
+               (1 << 7) |    /* Framing error */
+               (1 << 8) |    /* Parity error */
+               (1 << 9) |    /* Break error */
+               (1 << 10)     /* Overrun error */
+    );
 
     /* Enable UART0, receive & transfer part of the UART.*/
-    mmio_write(UART0_CR, (1 << 0) | (1 << 8) |
-            (conf->c_cflag & CREAD) ? (1 << 9) : 0);
+    mmio_write(UART0_CR,
+               (1 << 0) |                               /* UART Enable */
+               (1 << 8) |                               /* TX Enable */
+               (conf->c_cflag & CREAD) ? (1 << 9) : 0   /* RX Enable */
+    );
 
     mmio_end(&s_entry);
 }
