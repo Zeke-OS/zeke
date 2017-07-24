@@ -57,6 +57,19 @@
  * - 5 GPU1 halted
  * - 6 Illegal access type 1
  * - 7 Illegal access type 0
+ * - 8 reserved
+ * - 9 reserved
+ * - 10 GPU IRQ 7
+ * - 11 GPU IRQ 9
+ * - 12 GPU IRQ 10
+ * - 13 GPU IRQ 18
+ * - 14 GPU IRQ 19
+ * - 15 GPU IRQ 53
+ * - 16 GPU IRQ 54
+ * - 17 GPU IRQ 55
+ * - 18 GPU IRQ 56
+ * - 19 GPU IRQ 57
+ * - 20 GPU IRQ 62
  * - 29 Aux int
  * - 43 i2c slv int
  * - 46 pwa0

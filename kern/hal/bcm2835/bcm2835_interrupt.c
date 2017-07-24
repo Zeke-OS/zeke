@@ -32,6 +32,7 @@
 
 #include <stdint.h>
 #include <hal/irq.h>
+#include <libkern.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_interrupt.h"
 
@@ -47,12 +48,14 @@ void arm_handle_sys_interrupt(void)
     pending[2] = mmio_read(BCMIRQ_IRQ2_PEND);
     mmio_end(&s_entry);
 
+    pending[0] &= ~0xffe00300;
+    pending[1] &= ~0xc0680;
+    pending[2] &= ~0x43e00000;
+
     for (size_t i = 0; i < num_elem(pending); i++) {
-        for (int j = 0; j < 32; j++) {
-            if (((pending[i] >> j) & 1) != 0) {
-                irq = 32 * i + j;
-                break;
-            }
+        int bit = ffs(pending[i]);
+        if (bit != 0) {
+            irq = 32 * i + bit - 1;
         }
     }
     if (irq != -1 && irq < NR_IRQ && irq_handlers[irq]) {
