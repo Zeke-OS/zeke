@@ -37,14 +37,17 @@
  * IRQ handler descriptor.
  */
 struct irq_handler {
-    void (*ack)(int irq); /* IRQ verify, ack & clear function for threaded
+    void (*ack)(int irq); /*!< IRQ verify, ack & clear function for threaded
                            * handlers. */
-    void (*handle)(int irq); /* IRQ handler callback. */
+    void (*handle)(int irq); /*!< IRQ handler callback. */
     struct {
         unsigned fast_irq : 1; /*!< Handle the interrupt immediately with
                                 *  interrupts disabled. Otherwise a threaded
                                 *  interrupt handler is used. */
     } flags; /*!< IRQ handler control flags */
+    unsigned int cnt; /*!< Interrupts received count. */
+    char name[]; /*!< Name of the handler/IRQ. Should be incremented by the
+                  *   HW specific IRQ resolver. */
 };
 
 /**

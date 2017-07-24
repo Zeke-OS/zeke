@@ -33,6 +33,8 @@
 #include <errno.h>
 #include <sched.h>
 #include <bitmap.h>
+#include <fs/procfs.h>
+#include <fs/procfs_dbgfile.h>
 #include <hal/irq.h>
 #include <kinit.h>
 #include <thread.h>
@@ -92,6 +94,30 @@ static void * irq_handler_thread(void * arg)
         }
     }
 }
+
+static int read_irq_file(void * buf, size_t max, void * elem)
+{
+    struct irq_handler * handler = *((struct irq_handler **)elem);
+    int irq;
+
+    if (!handler)
+        return 0;
+
+    irq = (int)(((uintptr_t)elem - (uintptr_t)irq_handlers) /
+                (uintptr_t)sizeof(struct irq_handler *));
+
+    return ksprintf(buf, max, "%d: %u %s\n", irq, handler->cnt, handler->name);
+}
+
+static ssize_t write_irq_file(const void * buf, size_t bufsize)
+{
+    return -ENOTSUP;
+}
+
+PROCFS_DBGFILE(irq,
+               &irq_handlers[0],
+               irq_handlers + NR_IRQ,
+               read_irq_file, write_irq_file);
 
 static int __kinit__ irq_init(void)
 {
