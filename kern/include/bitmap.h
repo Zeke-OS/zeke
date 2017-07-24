@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Bitmap allocation functions.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,7 @@ typedef uint32_t bitmap_t;
 #define E2BITMAP_SIZE(entries) ((entries) / (4 * 8))
 
 /**
- * Search for a contiguous block of block_len in bitmap.
+ * Search for a contiguous block of zeroes of block_len in bitmap.
  * @param[out] retval   is the index of the first contiguous block of requested
  *                      length.
  * @param block_len     is the lenght of contiguous block searched for.
@@ -79,7 +79,7 @@ int bitmap_block_search(size_t * retval, size_t block_len,
                         const bitmap_t * bitmap, const size_t size);
 
 /**
- * Search for a contiguous block of block_len in bitmap.
+ * Search for a contiguous block of zeroes of block_len in bitmap.
  * @param       start       is the index where lookup starts from.
  * @param[out] retval       is the index of the first contiguous block of
  *                          the requested length.

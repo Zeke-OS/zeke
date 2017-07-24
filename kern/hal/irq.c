@@ -31,14 +31,25 @@
  */
 
 #include <errno.h>
+#include <sched.h>
+#include <bitmap.h>
 #include <hal/irq.h>
+#include <kinit.h>
+#include <thread.h>
 
+static bitmap_t irq_pending[E2BITMAP_SIZE(NR_IRQ)];
+static pthread_t irq_handler_tid;
 struct irq_handler * irq_handlers[NR_IRQ];
 
 int irq_register(int irq, struct irq_handler * handler)
 {
     if (irq < 0 || irq >= NR_IRQ)
         return -EINVAL;
+
+    /* A threaded IRQ handler must specify an ACK function. */
+    if (!handler->flags.fast_irq && !handler->ack) {
+        return -EINVAL;
+    }
 
     if (irq_handlers[irq])
         return -EBUSY;
@@ -54,6 +65,47 @@ int irq_deregister(int irq)
         return -EINVAL;
 
     irq_handlers[irq] = NULL;
+
+    return 0;
+}
+
+void irq_threaded_wakeup(int irq)
+{
+    bitmap_set(irq_pending, irq, sizeof(irq_pending));
+    thread_release(irq_handler_tid);
+}
+
+static void * irq_handler_thread(void * arg)
+{
+    while (1) {
+        thread_wait(); /* Wait until the HW specific handler calls
+                        * irq_threaded_wakeup().
+                        */
+
+        for (int irq = 0; irq < NR_IRQ; irq++) {
+            /* NOTE: Ignoring errors */
+            if (bitmap_status(irq_pending, irq, sizeof(irq_pending))) {
+                struct irq_handler * handler = irq_handlers[irq];
+                handler->handle(irq);
+                bitmap_clear(irq_pending, irq, sizeof(irq_pending));
+            }
+        }
+    }
+}
+
+static int __kinit__ irq_init(void)
+{
+    SUBSYS_INIT("irq");
+
+    struct sched_param param = {
+        .sched_policy = SCHED_FIFO,
+        .sched_priority = NICE_MIN,
+    };
+    irq_handler_tid = kthread_create(&param, 0, irq_handler_thread, NULL);
+    if (irq_handler_tid < 0) {
+        KERROR(KERROR_ERR, "Failed to create a thread for IRQ handling");
+        return irq_handler_tid;
+    }
 
     return 0;
 }

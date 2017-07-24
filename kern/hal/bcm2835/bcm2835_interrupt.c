@@ -48,6 +48,9 @@ void arm_handle_sys_interrupt(void)
     pending[2] = mmio_read(BCMIRQ_IRQ2_PEND);
     mmio_end(&s_entry);
 
+    /*
+     * Clear ambiguous bits.
+     */
     pending[0] &= ~0xffe00300;
     pending[1] &= ~0xc0680;
     pending[2] &= ~0x43e00000;
@@ -61,9 +64,12 @@ void arm_handle_sys_interrupt(void)
     if (irq != -1 && irq < NR_IRQ && irq_handlers[irq]) {
         struct irq_handler * handler = irq_handlers[irq];
         if (handler->flags.fast_irq) {
-            handler->fn(irq);
+            handler->handle(irq);
         } else {
-            /* TODO Implement lazy IRQ handling */
+            /* TODO disable the interrupt temporarily and figure out the way to
+             * enable it again */
+            handler->ack(irq);
+            irq_threaded_wakeup(irq);
         }
     }
 }

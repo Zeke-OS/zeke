@@ -30,16 +30,20 @@
  *******************************************************************************
  */
 
+
 #define NR_IRQ 64
 
 /**
  * IRQ handler descriptor.
  */
 struct irq_handler {
-    void (*fn)(int irq); /* IRQ callback */
+    void (*ack)(int irq); /* IRQ verify, ack & clear function for threaded
+                           * handlers. */
+    void (*handle)(int irq); /* IRQ handler callback. */
     struct {
         unsigned fast_irq : 1; /*!< Handle the interrupt immediately with
-                                *  interrupts disabled. */
+                                *  interrupts disabled. Otherwise a threaded
+                                *  interrupt handler is used. */
     } flags; /*!< IRQ handler control flags */
 };
 
@@ -57,3 +61,8 @@ int irq_register(int irq, struct irq_handler * handler);
  * Deregister an interrupt handler.
  */
 int irq_deregister(int irq);
+
+/**
+ * Postpone IRQ handling to the threaded IRQ handler.
+ */
+void irq_threaded_wakeup(int irq);

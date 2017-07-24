@@ -89,7 +89,7 @@ static void arm_timer_clear_if_pend(int irq)
 }
 
 static struct irq_handler bcm2835_timer_irq_handler = {
-    .fn = arm_timer_clear_if_pend,
+    .handle = arm_timer_clear_if_pend,
     .flags = {
         .fast_irq = 1,
     }

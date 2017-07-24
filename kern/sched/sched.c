@@ -701,12 +701,6 @@ int thread_ready(pthread_t thread_id)
 
     prev_state = thread_state_set(thread, THREAD_STATE_READY);
     if (prev_state == THREAD_STATE_READY) {
-        /* TODO Figure out why this happens. */
-#if 0
-        KERROR(KERROR_WARN,
-               "%s: thread %d was already in THREAD_STATE_READY state\n",
-               __func__, thread_id);
-#endif
         return 0;
     }
 
