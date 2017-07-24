@@ -234,9 +234,9 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     /* Init super block */
     fs_init_superblock(&fatfs_sb->sb, fs);
     fatfs_sb->sb.mode_flags = mode;
-    fatfs_sb->sb.root = create_root(fatfs_sb);
     fatfs_sb->sb.sb_dev = vndev;
     fatfs_sb->sb.sb_hashseed = fatfs_sb->sb.vdev_id;
+    fatfs_sb->sb.root = create_root(fatfs_sb);
     /* Function pointers to superblock methods */
     fatfs_sb->sb.statfs = fatfs_statfs;
     fatfs_sb->sb.delete_vnode = fatfs_delete_vnode;
@@ -397,7 +397,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         FS_KERROR_FS(KERROR_DEBUG, sb->sb.fs, "Open ok\n");
 #endif
 
-    init_fatfs_vnode(vn, inum, vn_mode, &(sb->sb));
+    init_fatfs_vnode(vn, inum, vn_mode, &sb->sb);
 
     /* Insert to the cache */
     err = vfs_hash_insert(vfs_hash_ctx, vn, vn_hash, &xvp, fpath);
@@ -620,6 +620,15 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
             }
             in_fpath[i] = '\0';
         }
+    }
+
+    /* Short circuit for root */
+    if (in_fpath[0] == '/' && in_fpath[1] == '\0') {
+        kfree(in_fpath);
+        *result = dir->sb->root;
+        vref(*result);
+
+        return 0;
     }
 
     /*
