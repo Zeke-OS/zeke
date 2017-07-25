@@ -52,6 +52,7 @@ int irq_register(int irq, struct irq_handler * handler)
         return -EBUSY;
 
     irq_handlers[irq] = handler;
+    irq_enable(irq);
 
     return 0;
 }
@@ -62,6 +63,7 @@ int irq_deregister(int irq)
         return -EINVAL;
 
     irq_handlers[irq] = NULL;
+    irq_disable(irq);
 
     return 0;
 }

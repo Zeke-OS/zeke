@@ -122,7 +122,6 @@ static int enable_arm_timer(unsigned freq_hz)
     }
 
     mmio_start(&s_entry);
-
     /* Interrupt every (value * prescaler) timer ticks */
     mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (freq_hz * 16)));
     mmio_write(ARM_TIMER_RELOAD, (SYS_CLOCK / (freq_hz * 16)));
@@ -130,10 +129,6 @@ static int enable_arm_timer(unsigned freq_hz)
     mmio_write(ARM_TIMER_CONTROL,
                ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN |
                ARM_TIMER_INT_EN | ARM_TIMER_23BIT);
-
-    /* Enable ARM timer IRQ */
-    mmio_write(BCMIRQ_ENABLE_BASIC, BCMIRQ_EN_BASIC_ARM_TIMER);
-
     mmio_end(&s_entry);
 
     /* TODO defines for IRQ nums? */
