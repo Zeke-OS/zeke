@@ -52,6 +52,11 @@ struct irq_handler {
      */
     void (*handle)(int irq);
 
+    struct {
+        unsigned allow_multiple : 1; /*!< Allow multiple IRQs to be received for
+                                      *   a threaded handler. */
+    } flags; /*!< IRQ handler control flags */
+
     unsigned int cnt; /*!< Interrupts received count. */
     char name[]; /*!< Name of the handler/IRQ. Should be incremented by the
                   *   HW specific IRQ resolver. */
@@ -61,6 +66,18 @@ struct irq_handler {
  * An array of interrupt handlers.
  */
 extern struct irq_handler * irq_handlers[NR_IRQ];
+
+/**
+ * Enable irq.
+ * HW specific.
+ */
+void irq_enable(int irq);
+
+/**
+ * Disable irq.
+ * HW specific.
+ */
+void irq_disable(int irq);
 
 /**
  * Register an interrupt handler.

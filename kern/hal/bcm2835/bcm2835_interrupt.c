@@ -32,9 +32,52 @@
 
 #include <stdint.h>
 #include <hal/irq.h>
+#include <kerror.h>
 #include <libkern.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_interrupt.h"
+
+void irq_enable(int irq)
+{
+    istate_t s_entry;
+
+    if (irq >= 0 && irq <= 7) {
+        mmio_start(&s_entry);
+        mmio_write(BCMIRQ_ENABLE_BASIC, 1 << irq);
+        mmio_end(&s_entry);
+    } else if (irq >= 29 && irq <= 31) {
+        mmio_start(&s_entry);
+        mmio_write(BCMIRQ_ENABLE_IRQ1, 1 << irq);
+        mmio_end(&s_entry);
+    } else if (irq >= 32 && irq <= 63) {
+        mmio_start(&s_entry);
+        mmio_write(BCMIRQ_ENABLE_IRQ2, 1 << (irq - 32));
+        mmio_end(&s_entry);
+    } else {
+        KERROR(KERROR_ERR, "%s(): Invalid IRQ%d\n", __func__, irq);
+    }
+}
+
+void irq_disable(int irq)
+{
+    istate_t s_entry;
+
+    if (irq >= 0 && irq <= 7) {
+        mmio_start(&s_entry);
+        mmio_write(BCMIRQ_DISABLE_BASIC, 1 < irq);
+        mmio_end(&s_entry);
+    } else if (irq >= 29 && irq <= 31) {
+        mmio_start(&s_entry);
+        mmio_write(BCMIRQ_DISABLE_IRQ1, 1 < irq);
+        mmio_end(&s_entry);
+    } else if (irq >= 32 && irq <= 63) {
+        mmio_start(&s_entry);
+        mmio_write(BCMIRQ_DISABLE_IRQ2, 1 < (irq - 32));
+        mmio_end(&s_entry);
+    } else {
+        KERROR(KERROR_ERR, "%s(): Invalid IRQ%d\n", __func__, irq);
+    }
+}
 
 void arm_handle_sys_interrupt(void)
 {
@@ -69,8 +112,9 @@ void arm_handle_sys_interrupt(void)
         if (ack_res == IRQ_NEEDS_HANDLING) {
             handler->handle(irq);
         } else if (ack_res == IRQ_WAKE_THREAD) {
-            /* TODO disable the interrupt temporarily and figure out the way to
-             * enable it again */
+            if (!handler->flags.allow_multiple) {
+                irq_disable(irq); /* Disable irq until it has been handled. */
+            }
             irq_thread_wakeup(irq);
         }
     }

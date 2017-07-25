@@ -85,6 +85,10 @@ static void * irq_handler_thread(void * arg)
                 struct irq_handler * handler = irq_handlers[irq];
                 handler->handle(irq);
                 bitmap_clear(irq_pending, irq, sizeof(irq_pending));
+
+                if (!handler->flags.allow_multiple) {
+                    irq_enable(irq);
+                }
             }
         }
     }
