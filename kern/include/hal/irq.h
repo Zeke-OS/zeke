@@ -33,18 +33,25 @@
 
 #define NR_IRQ 64
 
+enum irq_ack {
+    IRQ_HANDLED = 0,
+    IRQ_NEEDS_HANDLING,
+    IRQ_WAKE_THREAD
+};
+
 /**
  * IRQ handler descriptor.
  */
 struct irq_handler {
-    void (*ack)(int irq); /*!< IRQ verify, ack & clear function for threaded
-                           * handlers. */
-    void (*handle)(int irq); /*!< IRQ handler callback. */
-    struct {
-        unsigned fast_irq : 1; /*!< Handle the interrupt immediately with
-                                *  interrupts disabled. Otherwise a threaded
-                                *  interrupt handler is used. */
-    } flags; /*!< IRQ handler control flags */
+    /**
+     * IRQ verify, ack & clear function for threaded handlers.
+     */
+    enum irq_ack (*ack)(int irq);
+    /**
+     * IRQ handler callback.
+     */
+    void (*handle)(int irq);
+
     unsigned int cnt; /*!< Interrupts received count. */
     char name[]; /*!< Name of the handler/IRQ. Should be incremented by the
                   *   HW specific IRQ resolver. */
@@ -68,4 +75,4 @@ int irq_deregister(int irq);
 /**
  * Postpone IRQ handling to the threaded IRQ handler.
  */
-void irq_threaded_wakeup(int irq);
+void irq_thread_wakeup(int irq);

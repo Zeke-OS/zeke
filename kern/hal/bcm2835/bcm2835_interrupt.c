@@ -64,13 +64,14 @@ void arm_handle_sys_interrupt(void)
     if (irq != -1 && irq < NR_IRQ && irq_handlers[irq]) {
         struct irq_handler * handler = irq_handlers[irq];
         handler->cnt++;
-        if (handler->flags.fast_irq) {
+        enum irq_ack ack_res = handler->ack(irq);
+
+        if (ack_res == IRQ_NEEDS_HANDLING) {
             handler->handle(irq);
-        } else {
+        } else if (ack_res == IRQ_WAKE_THREAD) {
             /* TODO disable the interrupt temporarily and figure out the way to
              * enable it again */
-            handler->ack(irq);
-            irq_threaded_wakeup(irq);
+            irq_thread_wakeup(irq);
         }
     }
 }

@@ -48,11 +48,6 @@ int irq_register(int irq, struct irq_handler * handler)
     if (irq < 0 || irq >= NR_IRQ)
         return -EINVAL;
 
-    /* A threaded IRQ handler must specify an ACK function. */
-    if (!handler->flags.fast_irq && !handler->ack) {
-        return -EINVAL;
-    }
-
     if (irq_handlers[irq])
         return -EBUSY;
 
@@ -71,7 +66,7 @@ int irq_deregister(int irq)
     return 0;
 }
 
-void irq_threaded_wakeup(int irq)
+void irq_thread_wakeup(int irq)
 {
     bitmap_set(irq_pending, irq, sizeof(irq_pending));
     thread_release(irq_handler_tid);

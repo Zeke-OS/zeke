@@ -75,25 +75,31 @@
 
 #define SYS_CLOCK               700000 /* kHz */
 
-static void arm_timer_clear_if_pend(int irq)
+static enum irq_ack arm_timer_ack(int irq)
 {
     istate_t s_entry;
+    enum irq_ack retval = IRQ_HANDLED;
 
     /* Handle scheduling timer */
     mmio_start(&s_entry);
     if (mmio_read(ARM_TIMER_MASK_IRQ)) {
         mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-        sched_handler();
+        retval = IRQ_NEEDS_HANDLING;
     }
     mmio_end(&s_entry);
+
+    return retval;
+}
+
+static void arm_timer_handle(int irq)
+{
+    sched_handler();
 }
 
 static struct irq_handler bcm2835_timer_irq_handler = {
     .name = "ARM Timer",
-    .handle = arm_timer_clear_if_pend,
-    .flags = {
-        .fast_irq = 1,
-    }
+    .ack = arm_timer_ack,
+    .handle = arm_timer_handle,
 };
 
 static int enable_arm_timer(unsigned freq_hz)
