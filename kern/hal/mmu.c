@@ -272,4 +272,4 @@ static void mmu_calc_pfcps(void)
         _pf_raw_count = 0;
     }
 }
-SCHED_POST_SCHED_TASK(mmu_calc_pfcps);
+TIMER_TASK(mmu_calc_pfcps);

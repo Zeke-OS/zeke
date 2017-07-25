@@ -292,7 +292,7 @@ static void sched_calc_loads(void)
         rwlock_wrwait(&loadavg_lock);
     }
 }
-DATA_SET(post_sched_tasks, sched_calc_loads);
+TIMER_TASK(sched_calc_loads);
 
 void sched_get_loads(uint32_t loads[3])
 {

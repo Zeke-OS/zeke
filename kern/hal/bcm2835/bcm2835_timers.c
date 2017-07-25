@@ -94,6 +94,7 @@ static enum irq_ack arm_timer_ack(int irq)
 static void arm_timer_handle(int irq)
 {
     sched_handler();
+    hw_timers_run();
 }
 
 static struct irq_handler bcm2835_timer_irq_handler = {

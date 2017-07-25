@@ -54,4 +54,15 @@ do {                                                    \
     } while((get_utime() - __start_time) >= i);         \
 } while(0)
 
+typedef void timer_task_t(void);
+
+#define TIMER_TASK(fun) \
+    DATA_SET(timer_tasks, fun)
+
+/**
+ * Run timer tasks.
+ * Shall be called by the HW specific timer handler.
+ */
+void hw_timers_run(void);
+
 #endif /* HW_TIMERS_H */
