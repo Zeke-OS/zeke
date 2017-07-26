@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual Region Allocator.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -319,12 +319,13 @@ static struct buf * vr_rclone(struct buf * old_region)
     new_region = geteblk(rsize);
     if (!new_region) {
         KERROR(KERROR_ERR, "%s: Out of memory, tried to allocate %d bytes\n",
-               __func__, rsize);
+               __func__, (unsigned)rsize);
         return NULL;
     }
 
-    KERROR_DBG("clone %x -> %x, %u bytes\n", old_region->b_data,
-               new_region->b_data, rsize);
+    KERROR_DBG("clone %x -> %x, %u bytes\n",
+               (unsigned)old_region->b_data, (unsigned)new_region->b_data,
+               (unsigned)rsize);
 
     /* Copy data */
     memcpy((void *)(new_region->b_data), (void *)(old_region->b_data),

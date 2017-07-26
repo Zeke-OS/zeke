@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Page table mapper.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -161,7 +161,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     if (!PTM_ALLOC(&block, size, balign)) {
         uintptr_t addr = PTM_BLOCK2ADDR(block);
 
-        KERROR_DBG("Alloc pt %u bytes @ %x\n", bsize, addr);
+        KERROR_DBG("Alloc pt %u bytes @ %x\n", bsize, (unsigned)addr);
 
         pt->pt_addr = addr;
         if (pt->pt_type == MMU_PTT_MASTER) {
