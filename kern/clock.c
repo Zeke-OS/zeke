@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief Time functions.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -128,7 +128,7 @@ void setrealtime(struct timespec * tsp)
 
 /* Syscall handlers ***********************************************************/
 
-static int sys_gettime(__user void * user_args)
+static intptr_t sys_gettime(__user void * user_args)
 {
     struct _time_gettime_args args;
     struct timespec ts;
@@ -163,7 +163,7 @@ static int sys_gettime(__user void * user_args)
     return 0;
 }
 
-static int sys_settime(__user void * user_args)
+static intptr_t sys_settime(__user void * user_args)
 {
     struct _time_settime_args args;
     struct timespec ts;

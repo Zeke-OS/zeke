@@ -1074,7 +1074,7 @@ IDLE_TASK(free_threads, 0);
 
 /* Scheduler syscalls *********************************************************/
 
-static int sys_sched_get_loadavg(__user void * user_args)
+static intptr_t sys_sched_get_loadavg(__user void * user_args)
 {
     uint32_t arr[3];
     int err;
@@ -1122,7 +1122,7 @@ int sched_priv_check_param(struct sched_param * param)
     return 0;
 }
 
-static int sys_thread_create(__user void * user_args)
+static intptr_t sys_thread_create(__user void * user_args)
 {
     struct _sched_pthread_create_args args;
     pthread_t tid;
@@ -1199,7 +1199,7 @@ pthread_t kthread_create(struct sched_param * param, size_t stack_size,
     return tid;
 }
 
-static int sys_thread_die(__user void * user_args)
+static intptr_t sys_thread_die(__user void * user_args)
 {
     thread_die((intptr_t)user_args);
 
@@ -1210,7 +1210,7 @@ static int sys_thread_die(__user void * user_args)
 /**
  * TODO Not completely thread safe.
  */
-static int sys_thread_detach(__user void * user_args)
+static intptr_t sys_thread_detach(__user void * user_args)
 {
     pthread_t thread_id;
     struct thread_info * thread;
@@ -1233,7 +1233,7 @@ static int sys_thread_detach(__user void * user_args)
     return 0;
 }
 
-static int sys_thread_join(__user void * user_args)
+static intptr_t sys_thread_join(__user void * user_args)
 {
     struct _sched_pthread_join_args args;
     intptr_t retval;
@@ -1256,7 +1256,7 @@ static int sys_thread_join(__user void * user_args)
     return 0;
 }
 
-static int sys_thread_sleep_ms(__user void * user_args)
+static intptr_t sys_thread_sleep_ms(__user void * user_args)
 {
     uint32_t val;
     int err;
@@ -1272,7 +1272,7 @@ static int sys_thread_sleep_ms(__user void * user_args)
     return 0; /* TODO Return value might be incorrect */
 }
 
-static int sys_thread_setpolicy(__user void * user_args)
+static intptr_t sys_thread_setpolicy(__user void * user_args)
 {
     struct _setpolicy_args args;
     struct thread_info * thread;
@@ -1299,7 +1299,7 @@ static int sys_thread_setpolicy(__user void * user_args)
     return 0;
 }
 
-static int sys_thread_getpolicy(__user void * user_args)
+static intptr_t sys_thread_getpolicy(__user void * user_args)
 {
     pthread_t tid = (pthread_t)user_args;
     int policy;
@@ -1313,7 +1313,7 @@ static int sys_thread_getpolicy(__user void * user_args)
     return policy;
 }
 
-static int sys_thread_setpriority(__user void * user_args)
+static intptr_t sys_thread_setpriority(__user void * user_args)
 {
     struct _set_priority_args args;
     struct thread_info * thread;
@@ -1345,7 +1345,7 @@ static int sys_thread_setpriority(__user void * user_args)
     return 0;
 }
 
-static int sys_thread_getpriority(__user void * user_args)
+static intptr_t sys_thread_getpriority(__user void * user_args)
 {
     int prio;
 

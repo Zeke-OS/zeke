@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic IPC syscalls.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include <proc.h>
 #include <kern_ipc.h>
 
-static int sys_pipe(__user void * user_args)
+static intptr_t sys_pipe(__user void * user_args)
 {
     struct _ipc_pipe_args args;
     int err;

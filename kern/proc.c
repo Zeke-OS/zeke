@@ -552,8 +552,8 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
         return -ESRCH;
     }
 
-    KERROR_DBG("%s: MOO, (%s) %x @ %x by %d\n",
-               __func__, abo_str, vaddr, abo->lr, abo->proc->pid);
+    KERROR_DBG("%s: MOO, (%s) %x @ %x by %d\n", __func__,
+               abo_str, (unsigned)vaddr, (unsigned)abo->lr, abo->proc->pid);
 
     mm = &abo->proc->mm;
 
@@ -571,7 +571,8 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 
         vm_get_uapstring(uap, region);
         KERROR_DBG("sect %d: vaddr: %x - %x paddr: %x uap: %s\n",
-                   i, reg_start, reg_end, region->b_mmu.paddr, uap);
+                   i, (unsigned)reg_start, (unsigned)reg_end,
+                   (unsigned)region->b_mmu.paddr, uap);
 
         if (!VM_ADDR_IS_IN_RANGE(vaddr, reg_start, reg_end))
             continue; /* if not in range then try next region. */
@@ -652,7 +653,7 @@ pid_t proc_update(void)
 
 /* Syscall handlers ***********************************************************/
 
-static int sys_proc_fork(__user void * user_args)
+static intptr_t sys_proc_fork(__user void * user_args)
 {
     pid_t pid = proc_fork();
     if (pid < 0) {
@@ -663,7 +664,7 @@ static int sys_proc_fork(__user void * user_args)
     }
 }
 
-static int sys_proc_wait(__user void * user_args)
+static intptr_t sys_proc_wait(__user void * user_args)
 {
     struct _proc_wait_args args;
     pid_t pid_child;
@@ -799,7 +800,7 @@ static int sys_proc_wait(__user void * user_args)
     return (uintptr_t)pid_child;
 }
 
-static int sys_proc_exit(__user void * user_args)
+static intptr_t sys_proc_exit(__user void * user_args)
 {
     const struct ksignal_param sigparm = {
         .si_code = SI_USER,
@@ -824,7 +825,7 @@ static int sys_proc_exit(__user void * user_args)
  * - getegid(), getgid()
  * - setgid(), setegid(), setregid()
  */
-static int sys_proc_getsetcred(__user void * user_args)
+static intptr_t sys_proc_getsetcred(__user void * user_args)
 {
     struct _proc_credctl_args pcred;
     uid_t ruid = curproc->cred.uid;
@@ -910,7 +911,7 @@ static int sys_proc_getsetcred(__user void * user_args)
     return retval;
 }
 
-static int sys_proc_getgroups(__user void * user_args)
+static intptr_t sys_proc_getgroups(__user void * user_args)
 {
     struct _proc_getgroups_args args;
     const size_t max = NGROUPS_MAX * sizeof(gid_t);
@@ -929,7 +930,7 @@ static int sys_proc_getgroups(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_setgroups(__user void * user_args)
+static intptr_t sys_proc_setgroups(__user void * user_args)
 {
     struct _proc_setgroups_args args;
     const size_t max = NGROUPS_MAX * sizeof(gid_t);
@@ -955,7 +956,7 @@ static int sys_proc_setgroups(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_getsid(__user void * user_args)
+static intptr_t sys_proc_getsid(__user void * user_args)
 {
     pid_t pid = (pid_t)user_args;
     pid_t sid = -1;
@@ -977,7 +978,7 @@ static int sys_proc_getsid(__user void * user_args)
     return sid;
 }
 
-static int sys_proc_setsid(__user void * user_args)
+static intptr_t sys_proc_setsid(__user void * user_args)
 {
     pid_t pid = curproc->pid;
     struct pgrp * pg;
@@ -1004,12 +1005,12 @@ static int sys_proc_setsid(__user void * user_args)
     return pid;
 }
 
-static int sys_proc_getpgrp(__user void * user_args)
+static intptr_t sys_proc_getpgrp(__user void * user_args)
 {
     return curproc->pgrp->pg_id;
 }
 
-static int sys_prog_setpgid(__user void * user_args)
+static intptr_t sys_prog_setpgid(__user void * user_args)
 {
     /* RFE May not need proclock */
     struct _proc_setpgid_args args;
@@ -1085,7 +1086,7 @@ fail:
     return retval;
 }
 
-static int sys_proc_getlogin(__user void * user_args)
+static intptr_t sys_proc_getlogin(__user void * user_args)
 {
     KASSERT(curproc->pgrp && curproc->pgrp->pg_session,
             "Session is valid");
@@ -1098,7 +1099,7 @@ static int sys_proc_getlogin(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_setlogin(__user void * user_args)
+static intptr_t sys_proc_setlogin(__user void * user_args)
 {
     int err;
 
@@ -1119,7 +1120,7 @@ static int sys_proc_setlogin(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_getpid(__user void * user_args)
+static intptr_t sys_proc_getpid(__user void * user_args)
 {
     if (copyout(&curproc->pid, user_args, sizeof(pid_t))) {
         set_errno(EFAULT);
@@ -1129,7 +1130,7 @@ static int sys_proc_getpid(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_getppid(__user void * user_args)
+static intptr_t sys_proc_getppid(__user void * user_args)
 {
     pid_t parent;
 
@@ -1146,7 +1147,7 @@ static int sys_proc_getppid(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_chdir(__user void * user_args)
+static intptr_t sys_proc_chdir(__user void * user_args)
 {
     struct _proc_chdir_args * args = 0;
     vnode_t * vn;
@@ -1191,7 +1192,7 @@ out:
     return retval;
 }
 
-static int sys_chroot(__user void * user_args)
+static intptr_t sys_chroot(__user void * user_args)
 {
     int err;
 
@@ -1207,7 +1208,7 @@ static int sys_chroot(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_setpolicy(__user void * user_args)
+static intptr_t sys_proc_setpolicy(__user void * user_args)
 {
     struct _setpolicy_args args;
     struct proc_info * p;
@@ -1244,7 +1245,7 @@ static int sys_proc_setpolicy(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_getpolicy(__user void * user_args)
+static intptr_t sys_proc_getpolicy(__user void * user_args)
 {
     pid_t pid = (pid_t)user_args;
     struct proc_info * p;
@@ -1266,7 +1267,7 @@ static int sys_proc_getpolicy(__user void * user_args)
     return policy;
 }
 
-static int sys_proc_setpriority(__user void * user_args)
+static intptr_t sys_proc_setpriority(__user void * user_args)
 {
     struct _set_priority_args args;
     struct proc_info * p;
@@ -1304,7 +1305,7 @@ static int sys_proc_setpriority(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_getpriority(__user void * user_args)
+static intptr_t sys_proc_getpriority(__user void * user_args)
 {
     pid_t pid = (pid_t)user_args;
     struct proc_info * p;
@@ -1326,7 +1327,7 @@ static int sys_proc_getpriority(__user void * user_args)
     return prio;
 }
 
-static int sys_proc_getrlim(__user void * user_args)
+static intptr_t sys_proc_getrlim(__user void * user_args)
 {
     struct _proc_rlim_args args;
 
@@ -1347,7 +1348,7 @@ static int sys_proc_getrlim(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_setrlim(__user void * user_args)
+static intptr_t sys_proc_setrlim(__user void * user_args)
 {
     struct _proc_rlim_args args;
     rlim_t current_rlim_max;
@@ -1392,7 +1393,7 @@ static int sys_proc_setrlim(__user void * user_args)
     return -1;
 }
 
-static int sys_proc_times(__user void * user_args)
+static intptr_t sys_proc_times(__user void * user_args)
 {
     if (copyout(&curproc->tms, user_args, sizeof(struct tms))) {
         set_errno(EFAULT);
@@ -1402,7 +1403,7 @@ static int sys_proc_times(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_getbreak(__user void * user_args)
+static intptr_t sys_proc_getbreak(__user void * user_args)
 {
     struct _proc_getbreak_args args;
     int err;

@@ -5,7 +5,7 @@
  *
  * @brief   Source file for thread Signal Management in kernel.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -506,7 +506,7 @@ static int push_stack_frame(int signum,
 
     if (usigret < configEXEC_BASE_LIMIT) {
         KERROR(KERROR_WARN, "usigret addr probably invalid (%x) for proc %i\n",
-               usigret, (int)curproc->pid);
+               (unsigned)usigret, (int)curproc->pid);
     }
 
     tsfp->pc = (uintptr_t)action->ks_action.sa_sigaction;
@@ -1291,7 +1291,7 @@ static int syshelper_signal_pgrp(pid_t * pids, int sig)
 /**
  * Send a signal to a process or a group of processes.
  */
-static int sys_signal_pkill(__user void * user_args)
+static intptr_t sys_signal_pkill(__user void * user_args)
 {
     struct _pkill_args args;
 
@@ -1436,7 +1436,7 @@ static int sys_signal_pkill(__user void * user_args)
 /**
  * Send a signal to a thread or threads.
  */
-static int sys_signal_tkill(__user void * user_args)
+static intptr_t sys_signal_tkill(__user void * user_args)
 {
     struct _tkill_args args;
     struct thread_info * thread;
@@ -1511,7 +1511,7 @@ out:
     return retval;
 }
 
-static int sys_signal_signal(__user void * user_args)
+static intptr_t sys_signal_signal(__user void * user_args)
 {
     struct _signal_signal_args args;
     struct ksigaction action;
@@ -1571,7 +1571,7 @@ static int sys_signal_signal(__user void * user_args)
     return 0;
 }
 
-static int sys_signal_action(__user void * user_args)
+static intptr_t sys_signal_action(__user void * user_args)
 {
     struct _signal_action_args args;
     struct signals * sigs;
@@ -1627,7 +1627,7 @@ static int sys_signal_action(__user void * user_args)
     return 0;
 }
 
-static int sys_signal_altstack(__user void * user_args)
+static intptr_t sys_signal_altstack(__user void * user_args)
 {
     /*
      * TODO Implement altstack syscall that can be used to set alternative
@@ -1640,7 +1640,7 @@ static int sys_signal_altstack(__user void * user_args)
 /**
  * Examine and change blocked signals of the thread or the current process.
  */
-static int sys_signal_sigmask(__user void * user_args)
+static intptr_t sys_signal_sigmask(__user void * user_args)
 {
     struct _signal_sigmask_args args;
     sigset_t set;
@@ -1691,7 +1691,7 @@ static int sys_signal_sigmask(__user void * user_args)
     return 0;
 }
 
-static int sys_signal_sigwait(__user void * user_args)
+static intptr_t sys_signal_sigwait(__user void * user_args)
 {
     struct _signal_sigwait_args args;
     sigset_t set;
@@ -1724,7 +1724,7 @@ static int sys_signal_sigwait(__user void * user_args)
     return 0;
 }
 
-static int sys_signal_sigwaitinfo(__user void * user_args)
+static intptr_t sys_signal_sigwaitinfo(__user void * user_args)
 {
     struct _signal_sigwaitinfo_args args;
     sigset_t set;
@@ -1766,7 +1766,7 @@ static int sys_signal_sigwaitinfo(__user void * user_args)
     return 0;
 }
 
-static int sys_signal_sigsleep(__user void * user_args)
+static intptr_t sys_signal_sigsleep(__user void * user_args)
 {
     struct _signal_sigsleep_args args;
     struct timespec timeout;
@@ -1786,14 +1786,14 @@ static int sys_signal_sigsleep(__user void * user_args)
     return ksignal_sigsleep(&timeout);
 }
 
-static int sys_signal_set_return(__user void * user_args)
+static intptr_t sys_signal_set_return(__user void * user_args)
 {
     curproc->usigret = (uintptr_t)user_args;
 
     return 0;
 }
 
-static int sys_signal_return(__user void * user_args)
+static intptr_t sys_signal_return(__user void * user_args)
 {
     /* FIXME HW dependent. */
     sw_stack_frame_t * sframe = &current_thread->sframe.s[SCHED_SFRAME_SVC];

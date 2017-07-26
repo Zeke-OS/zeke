@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process shared memory.
  * @section LICENSE
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,8 @@ int __kinit__ shmem_init(void)
         .sched_policy = SCHED_FIFO,
         .sched_priority = NZERO,
     };
-    sync_thread_tid = kthread_create(&param, 0, shmem_sync_thread, NULL);
+    sync_thread_tid = kthread_create("shmem", &param, 0,
+                                     shmem_sync_thread, NULL);
     if (sync_thread_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for shmem sync");
         return sync_thread_tid;
@@ -313,7 +314,7 @@ static void * shmem_sync_thread(void * arg)
     return NULL;
 }
 
-static int sys_mmap(__user void * user_args)
+static intptr_t sys_mmap(__user void * user_args)
 {
     struct _shmem_mmap_args args;
     struct buf * bp = NULL;
@@ -361,7 +362,7 @@ fail:
     return retval;
 }
 
-static int sys_munmap(__user void * user_args)
+static intptr_t sys_munmap(__user void * user_args)
 {
     struct _shmem_munmap_args args;
     struct buf * bp;

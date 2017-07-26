@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Control devices.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 #include <syscall.h>
 #include <sys/ioctl.h>
 
-static int sys_ioctl(__user void * user_args)
+static intptr_t sys_ioctl(__user void * user_args)
 {
     struct _ioctl_get_args args;
     void * ioargs = NULL;

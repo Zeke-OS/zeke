@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Realtime friendly Read-Copy-Update.
  * @section LICENSE
- * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -197,7 +197,8 @@ int __kinit__ rcu_init(void)
         .sched_priority = NICE_MAX,
     };
 
-    rcu_sync_thread_tid = kthread_create(&param, 0, rcu_sync_thread, NULL);
+    rcu_sync_thread_tid = kthread_create("rcu", &param, 0,
+                                         rcu_sync_thread, NULL);
     if (rcu_sync_thread_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for rcu sync\n");
         return rcu_sync_thread_tid;

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   User credentials.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2009 Robert N. M. Watson
  * Copyright (c) 2006 nCircle Network Security, Inc.
  * All rights reserved.
@@ -263,7 +263,7 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
  *          0 if status was zero or operation succeed;
  *          greater than zero status was one.
  */
-static int sys_priv_pcap(__user void * user_args)
+static intptr_t sys_priv_pcap(__user void * user_args)
 {
     struct _priv_pcap_args args;
     struct proc_info * proc;

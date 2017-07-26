@@ -104,17 +104,17 @@ out:
     return retval;
 }
 
-static int sys_read(__user void * user_args)
+static intptr_t sys_read(__user void * user_args)
 {
     return sys_readwrite(user_args, 0);
 }
 
-static int sys_write(__user void * user_args)
+static intptr_t sys_write(__user void * user_args)
 {
     return sys_readwrite(user_args, !0);
 }
 
-static int sys_lseek(__user void * user_args)
+static intptr_t sys_lseek(__user void * user_args)
 {
     struct _fs_lseek_args args;
     file_t * file;
@@ -162,7 +162,7 @@ out:
     return retval;
 }
 
-static int sys_open(__user void * user_args)
+static intptr_t sys_open(__user void * user_args)
 {
     struct _fs_open_args * args = NULL;
     vnode_autorele vnode_t * vn_file = NULL;
@@ -234,7 +234,7 @@ out:
     return retval;
 }
 
-static int sys_close(__user void * p)
+static intptr_t sys_close(__user void * p)
 {
     int err;
     int fildes = (int)p;
@@ -248,7 +248,7 @@ static int sys_close(__user void * p)
     return 0;
 }
 
-static int sys_close_all(__user void * p)
+static intptr_t sys_close_all(__user void * p)
 {
     int fildes = (int)p;
 
@@ -257,7 +257,7 @@ static int sys_close_all(__user void * p)
     return 0;
 }
 
-static int sys_getdents(__user void * user_args)
+static intptr_t sys_getdents(__user void * user_args)
 {
     struct _fs_getdents_args args;
     struct uio dents;
@@ -318,7 +318,7 @@ out:
     return count;
 }
 
-static int sys_fcntl(__user void * user_args)
+static intptr_t sys_fcntl(__user void * user_args)
 {
     struct _fs_fcntl_args args;
     file_t * file;
@@ -418,7 +418,7 @@ out:
     return retval;
 }
 
-static int sys_link(__user void * user_args)
+static intptr_t sys_link(__user void * user_args)
 {
     struct _fs_link_args * args;
     int err, retval = -1;
@@ -456,7 +456,7 @@ out:
     return retval;
 }
 
-static int sys_unlink(__user void * user_args)
+static intptr_t sys_unlink(__user void * user_args)
 {
     struct _fs_unlink_args * args;
     int err, retval = -1;
@@ -490,7 +490,7 @@ out:
 }
 
 /* TODO Support fd and at_flags */
-static int sys_mkdir(__user void * user_args)
+static intptr_t sys_mkdir(__user void * user_args)
 {
     struct _fs_mkdir_args * args = NULL;
     int err, retval = -1;
@@ -526,7 +526,7 @@ out:
     return retval;
 }
 
-static int sys_rmdir(__user void * user_args)
+static intptr_t sys_rmdir(__user void * user_args)
 {
     struct _fs_rmdir_args * args = 0;
     int err, retval = -1;
@@ -559,7 +559,7 @@ out:
     return retval;
 }
 
-static int sys_statfile(__user void * user_args)
+static intptr_t sys_statfile(__user void * user_args)
 {
     struct _fs_stat_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
@@ -656,7 +656,7 @@ out:
     return retval;
 }
 
-static int sys_statfs(__user void * user_args)
+static intptr_t sys_statfs(__user void * user_args)
 {
     struct _fs_statfs_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
@@ -702,7 +702,7 @@ out:
     return retval;
 }
 
-static int sys_getfsstat(__user void * user_args)
+static intptr_t sys_getfsstat(__user void * user_args)
 {
     struct _fs_getfsstat_args args;
     fs_t * fs;
@@ -745,7 +745,7 @@ static int sys_getfsstat(__user void * user_args)
     return (int)size;
 }
 
-static int sys_access(__user void * user_args)
+static intptr_t sys_access(__user void * user_args)
 {
     struct _fs_access_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
@@ -791,7 +791,7 @@ out:
     return retval;
 }
 
-static int sys_utimes(__user void * user_args)
+static intptr_t sys_utimes(__user void * user_args)
 {
     struct _fs_utimes_args args;
     int err;
@@ -810,7 +810,7 @@ static int sys_utimes(__user void * user_args)
  * Only fchmod() is implemented at the kernel level and rest must be implemented
  * in user space.
  */
-static int sys_chmod(__user void * user_args)
+static intptr_t sys_chmod(__user void * user_args)
 {
     struct _fs_chmod_args args;
     int err;
@@ -825,7 +825,7 @@ static int sys_chmod(__user void * user_args)
     return fs_chmod_curproc(args.fd, args.mode);
 }
 
-static int sys_chflags(__user void * user_args)
+static intptr_t sys_chflags(__user void * user_args)
 {
     struct _fs_chflags_args args;
     int err;
@@ -844,7 +844,7 @@ static int sys_chflags(__user void * user_args)
  * Only fchown() is implemented at the kernel level and rest must be implemented
  * in user space.
  */
-static int sys_chown(__user void * user_args)
+static intptr_t sys_chown(__user void * user_args)
 {
     struct _fs_chown_args args;
     int err;
@@ -865,7 +865,7 @@ static int sys_chown(__user void * user_args)
     return fs_chown_curproc(args.fd, args.owner, args.group);
 }
 
-static int sys_umask(__user void * user_args)
+static intptr_t sys_umask(__user void * user_args)
 {
     struct _fs_umask_args args;
 
@@ -882,7 +882,7 @@ static int sys_umask(__user void * user_args)
     return 0;
 }
 
-static int sys_mount(__user void * user_args)
+static intptr_t sys_mount(__user void * user_args)
 {
     struct _fs_mount_args * args = NULL;
     vnode_autorele vnode_t * mpt = NULL;
@@ -934,7 +934,7 @@ out:
     return retval;
 }
 
-static int sys_umount(__user void * user_args)
+static intptr_t sys_umount(__user void * user_args)
 {
     struct _fs_umount_args * args = NULL;
     vnode_t * mpt;
