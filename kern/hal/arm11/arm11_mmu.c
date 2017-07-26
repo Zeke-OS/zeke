@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU control functions for ARM11 ARMv6 instruction set.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -501,7 +501,7 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
         page_size = MMU_PGSIZE_SECTION;
         mask    = 0xfff00000;
         offset &= 0x000fffff;
-        p_pte   = (uint32_t *)pt->pt_addr; /* Page table base address */
+        p_pte   = (uintptr_t *)pt->pt_addr; /* Page table base address */
         p_pte  += vaddr >> 20; /* Set to the corresponding pte */
         pte     = *p_pte;
 
@@ -513,7 +513,7 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
         page_size = MMU_PGSIZE_COARSE;
         mask    = 0xfffff000;
         offset &= 0x00000fff;
-        p_pte   = (uint32_t *)pt->pt_addr;
+        p_pte   = (uintptr_t *)pt->pt_addr;
         p_pte  += (vaddr & 0x000ff000) >> 12;
         pte     = *p_pte;
 
