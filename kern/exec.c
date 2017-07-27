@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -303,7 +303,7 @@ static int get_loader(int fildes, struct exec_loadfn ** loader)
     return err;
 }
 
-static int sys_exec(__user void * user_args)
+static intptr_t sys_exec(__user void * user_args)
 {
     struct _exec_args args;
     char name[PROC_NAME_SIZE];
