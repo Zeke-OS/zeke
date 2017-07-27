@@ -33,10 +33,13 @@
 
 #define NR_IRQ 64
 
+/**
+ * IRQ Acknowledge Types.
+ */
 enum irq_ack {
-    IRQ_HANDLED = 0,
-    IRQ_NEEDS_HANDLING,
-    IRQ_WAKE_THREAD
+    IRQ_HANDLED = 0,    /*!< IRQ handled and no further processing is needed. */
+    IRQ_NEEDS_HANDLING, /*!< Call handler immediately. */
+    IRQ_WAKE_THREAD     /*!< Handle in an IRQ handler thread. */
 };
 
 /**
