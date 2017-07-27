@@ -338,8 +338,8 @@ int ramfs_umount(struct fs_superblock * fs_sb)
 int ramfs_statfs(struct fs_superblock * sb, struct statvfs * st)
 {
     ramfs_sb_t * rsb = get_rfsb_of_sb(sb);
-    const ino_t inodes_max = (ino_t)1 << (ino_t)(sizeof(size_t) * 8);
-    const ino_t inodes_free = inodes_max - atomic_read(&rsb->nr_inodes);
+    const fsfilcnt_t inodes_max = SIZE_MAX;
+    const fsfilcnt_t inodes_free = inodes_max - atomic_read(&rsb->nr_inodes);
 
     *st = (struct statvfs){
         .f_bsize = MMU_PGSIZE_COARSE,
