@@ -129,7 +129,8 @@ int __kinit__ irq_init(void)
         .sched_policy = SCHED_FIFO,
         .sched_priority = NICE_MIN,
     };
-    irq_handler_tid = kthread_create(&param, 0, irq_handler_thread, NULL);
+    irq_handler_tid = kthread_create("irq", &param, 0,
+                                     irq_handler_thread, NULL);
     if (irq_handler_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for IRQ handling");
         return irq_handler_tid;

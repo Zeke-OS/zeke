@@ -537,6 +537,8 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
 {
     pthread_t thread_id;
     struct thread_info * parent = (thread_mode == THREAD_MODE_PRIV) ? NULL : current_thread;
+    pid_t pid_owner = (parent) ? parent->pid_owner : 0;
+    struct proc_info * proc_owner;
     struct thread_info * tp;
     thread_cdtor_t ** thread_ctor_p;
 
@@ -554,6 +556,8 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
         return -EAGAIN;
     }
 
+    proc_owner = proc_ref(pid_owner);
+
     /* Init core specific stack frame for user space */
     tp->tls_uaddr = init_stack_frame(thread_def, &tp->sframe,
                                      (thread_mode == THREAD_MODE_PRIV));
@@ -570,10 +574,6 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     }
     init_sched_data(&tp->sched);
 
-    mtx_lock(&CURRENT_CPU->lock);
-    RB_INSERT(threadmap, &CURRENT_CPU->threadmap_head, tp);
-    mtx_unlock(&CURRENT_CPU->lock);
-
     if (thread_def->flags & PTHREAD_CREATE_DETACHED) {
         tp->flags |= SCHED_DETACH_FLAG;
     }
@@ -589,7 +589,16 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     tp->wait_tim = TMNOVAL;
 
     /* Update parent and child pointers. */
-    thread_set_inheritance(tp, parent, (parent) ? parent->pid_owner : 0);
+    thread_set_inheritance(tp, parent, pid_owner);
+
+    /* Set thread name. */
+    if (thread_def->name[0] != '\0') {
+        strlcpy(tp->name, thread_def->name, sizeof(tp->name));
+    } else if (likely(proc_owner)) {
+        strlcpy(tp->name, proc_owner->name, sizeof(tp->name));
+    } else {
+        strlcpy(tp->name, "thread", sizeof(tp->name));
+    }
 
     /* Select master page table used on startup. */
     if (unlikely(!parent) || thread_mode == THREAD_MODE_PRIV) {
@@ -599,22 +608,24 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
          */
         tp->curr_mpt = &mmu_pagetable_master;
     } else {
-        struct proc_info * proc;
-
-        proc = proc_ref(parent->pid_owner);
-        if (!proc) {
+        if (!proc_owner) {
             panic("Parent thread must have a owner process");
         }
 
-        tp->curr_mpt = &proc->mm.mpt;
-        proc_unref(proc);
+        tp->curr_mpt = &proc_owner->mm.mpt;
     }
+    proc_unref(proc_owner);
+    proc_owner = NULL;
 
     /* Call thread constructors */
     SET_FOREACH(thread_ctor_p, thread_ctors) {
         thread_cdtor_t * ctor = *thread_ctor_p;
         ctor(tp, NULL);
     }
+
+    mtx_lock(&CURRENT_CPU->lock);
+    RB_INSERT(threadmap, &CURRENT_CPU->threadmap_head, tp);
+    mtx_unlock(&CURRENT_CPU->lock);
 
     /* Put thread into readyq */
     if (thread_ready(tp->id)) {
@@ -1167,7 +1178,8 @@ fail:
     return -1;
 }
 
-pthread_t kthread_create(struct sched_param * param, size_t stack_size,
+pthread_t kthread_create(char * name, struct sched_param * param,
+                         size_t stack_size,
                          void * (*kthread_start)(void *), void * arg)
 {
     pthread_t tid;
@@ -1190,6 +1202,7 @@ pthread_t kthread_create(struct sched_param * param, size_t stack_size,
         .arg1       = (uintptr_t)arg,
         .del_thread = (void (*)(void *))(thread_die),
     };
+    strlcpy(tdef.name, name, sizeof(tdef.name));
 
     tid = thread_create(&tdef, THREAD_MODE_PRIV);
     if (tid < 0) {

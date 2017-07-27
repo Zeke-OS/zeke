@@ -213,6 +213,7 @@ struct _sched_tls_desc {
  */
 struct _sched_pthread_create_args {
     struct sched_param param;
+    char            name[16];   /*!< Thread name. */
     void          * stack_addr; /*!< Stack address */
     size_t          stack_size; /*!< Size of stack reserved for the thread. */
     unsigned        flags;      /*!< Thread creation flags */

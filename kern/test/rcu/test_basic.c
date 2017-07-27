@@ -66,7 +66,8 @@ static pthread_t create_rcu_reader_thread(void)
         .sched_priority = NZERO,
     };
 
-    pthread_t tid = kthread_create(&param, 0, rcu_reader_thread, NULL);
+    pthread_t tid = kthread_create("rcu_test", &param, 0,
+                                   rcu_reader_thread, NULL);
     if (tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread\n");
     }

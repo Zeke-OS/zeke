@@ -112,6 +112,7 @@ struct thread_info {
     pthread_t id;                   /*!< Thread id. */
     uint32_t flags;                 /*!< Status flags. */
     pid_t pid_owner;                /*!< Owner process of this thread. */
+    char name[16];                  /*!< Thread name. */
 
     /**
      * Scheduler data.
@@ -287,9 +288,10 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
 /**
  * Create a simple detached kernel thread.
  * @param stack_size    selects the allocated stack size; If the value is zero
- *                      then the default size is selected.
+ *                      then the default size is used.
  */
-pthread_t kthread_create(struct sched_param * param, size_t stack_size,
+pthread_t kthread_create(char * name, struct sched_param * param,
+                         size_t stack_size,
                          void * (*kthread_start)(void *), void * arg);
 
 /**

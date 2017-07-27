@@ -43,9 +43,11 @@ static char * test_thread_yield(void)
         .sched_priority = 0,
     };
 
-    (void)kthread_create(&param, 0, test_thread_yield_thread, (void *)1);
+    (void)kthread_create("yield_test1", &param, 0,
+                         test_thread_yield_thread, (void *)1);
     KERROR(KERROR_DEBUG, "thread 1 created\n");
-    (void)kthread_create(&param, 0, test_thread_yield_thread, (void *)2);
+    (void)kthread_create("yield_test2", &param, 0,
+                         test_thread_yield_thread, (void *)2);
     KERROR(KERROR_DEBUG, "thread 2 created\n");
     j = 1;
 
