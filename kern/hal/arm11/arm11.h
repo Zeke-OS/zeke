@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for ARMv6/ARM11
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -228,7 +228,7 @@ void core_set_tls_addr(__user struct _sched_tls_desc * tls);
  * begin.
  */
 #define cpu_wmb() do {                      \
-    const uint32_t tmp = 0;                 \
+    uint32_t tmp = 0;                       \
     __asm__ volatile (                      \
         "MCR p15, 0, %[rd], c7, c10, 4\n\t" \
         "MCR p15, 0, %[rd], c7, c10, 5"     \
