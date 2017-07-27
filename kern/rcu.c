@@ -197,7 +197,7 @@ int __kinit__ rcu_init(void)
         .sched_priority = NICE_MAX,
     };
 
-    rcu_sync_thread_tid = kthread_create("rcu", &param, 0,
+    rcu_sync_thread_tid = kthread_create(&param, 0,
                                          rcu_sync_thread, NULL);
     if (rcu_sync_thread_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for rcu sync\n");

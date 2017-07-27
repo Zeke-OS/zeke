@@ -74,7 +74,7 @@ int __kinit__ shmem_init(void)
         .sched_policy = SCHED_FIFO,
         .sched_priority = NZERO,
     };
-    sync_thread_tid = kthread_create("shmem", &param, 0,
+    sync_thread_tid = kthread_create(&param, 0,
                                      shmem_sync_thread, NULL);
     if (sync_thread_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for shmem sync");
