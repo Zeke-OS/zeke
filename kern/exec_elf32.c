@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   32bit ELF loading.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -172,12 +172,19 @@ static int verify_loadable_sections(struct elf_ctx * ctx)
             nr_newsections++;
 
         /* Check that no section is going to be mapped below the base limit. */
-        if (ctx->phdr[i].p_vaddr + ctx->rbase < configEXEC_BASE_LIMIT)
+        if (ctx->phdr[i].p_type != PT_GNU_STACK &&
+            ctx->phdr[i].p_vaddr + ctx->rbase < configEXEC_BASE_LIMIT) {
+            KERROR_DBG("Invalid section mapping: (base = %p) < %p\n",
+                       (void *)(ctx->phdr[i].p_vaddr + ctx->rbase),
+                       (void *)(configEXEC_BASE_LIMIT));
             return -ENOEXEC;
+        }
     }
 
-    if (nr_newsections > 2)
+    if (nr_newsections > 2) {
+        KERROR_DBG("too many sections\n");
         return -ENOEXEC;
+    }
 
     return 0;
 }
@@ -324,6 +331,13 @@ static int parse_pheaders(struct proc_info * proc, struct elf_ctx * ctx)
     size_t phnum = ctx->elfhdr.e_phnum;
     size_t i, nr_exec = 0;
 
+    /*
+     * TODO support PT_GNU_STACK header type
+     * https://wiki.gentoo.org/wiki/Hardened/GNU_stack_quickstart
+     *
+     * TODO Is support for EXIDX header needed?
+     */
+
     for (i = 0; i < phnum; i++) {
         struct elf32_phdr * phdr = &ctx->phdr[i];
         struct buf * sect;
@@ -338,7 +352,8 @@ static int parse_pheaders(struct proc_info * proc, struct elf_ctx * ctx)
                 return err;
 
             if (e_type == ET_EXEC && nr_exec < 2) {
-                const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
+                const int reg_nr = (nr_exec == 0) ? MM_CODE_REGION
+                                                  : MM_HEAP_REGION;
 
                 if (nr_exec == 0)
                     ctx->vaddr_base = phdr->p_vaddr + ctx->rbase;
@@ -347,6 +362,8 @@ static int parse_pheaders(struct proc_info * proc, struct elf_ctx * ctx)
                     KERROR(KERROR_ERR, "Failed to replace a region\n");
                     return err;
                 }
+
+                nr_exec++;
             } else {
                 err = vm_insert_region(proc, sect, VM_INSOP_MAP_REG);
                 if (err < 0) {
@@ -354,8 +371,6 @@ static int parse_pheaders(struct proc_info * proc, struct elf_ctx * ctx)
                     return -1;
                 }
             }
-
-            nr_exec++;
             break;
         case PT_NOTE:
             err = load_notes(ctx, i);
@@ -411,8 +426,9 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base,
     }
 
     if ((retval = verify_loadable_sections(&ctx)) ||
-        (retval = parse_pheaders(proc, &ctx)))
+        (retval = parse_pheaders(proc, &ctx))) {
         goto out;
+    }
 
     *stack_size = ctx.stack_size;
     retval = 0;
