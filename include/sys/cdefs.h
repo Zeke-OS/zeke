@@ -47,7 +47,10 @@
 /**
  * Address spaces.
  */
+#if 0
 # define __kernel   __attribute__((address_space(0)))
+#endif
+#define __kernel
 # define __user     __attribute__((address_space(1)))
 # define __iomem    __attribute__((address_space(2)))
 #else

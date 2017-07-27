@@ -1,6 +1,6 @@
 # Zeke - Build config, compilation utils paths
 #
-# Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+# Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,12 +24,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Compiler options and tools ###################################################
-CC         	    = clang
+CC         	    = clang-5.0
 CCFLAGS         = -MD -MP -std=c99 -include sys/cdefs.h \
 $(subst $\",,$(configCOMMON_CCFLAGS))
-OPT             = opt-3.4
+OPT             = opt-5.0
 OFLAGS          =#
-LLC             = llc-3.4
+LLC             = llc-5.0
 LLCFLAGS        =#
 
 CONFIG_DIR      = $(ROOT_DIR)/genconfig

@@ -1,6 +1,6 @@
 # Zeke - Kernel Makefile
 #
-# Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+# Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # Copyright (c) 2012, 2013 Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 # All rights reserved.
 #
@@ -45,11 +45,11 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-y) $($(var)-A
 
 # Compiler Options #############################################################
 #CC         = SET IN BUILDCONF.MK
-CCFLAGS    += -emit-llvm -ffreestanding -nostdlib -nostdinc \
+CCFLAGS    += -emit-llvm -ffreestanding -nostdlib \
 $(subst $\",,$(configKERNEL_CCFLAGS))
 CCFLAGS    += -include autoconf.h -DKERNEL_INTERNAL
 #OPT        = SET IN BUILDCONF.MK
-OFLAGS     += -std-compile-opts
+OFLAGS     +=#
 #LLC        = SET IN BUILDCONF.MK
 LLCFLAGS   += -mtriple=$(GNUARCH)
 ASFLAGS    +=#
