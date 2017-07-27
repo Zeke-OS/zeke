@@ -86,17 +86,17 @@
  */
 
 /* Peripheral Addresses */
-#define BCMIRQ_BASE                 0x2000b200
-#define BCMIRQ_BASIC_PEND           (BCMIRQ_BASE + 0x00)
-#define BCMIRQ_IRQ1_PEND            (BCMIRQ_BASE + 0x04)
-#define BCMIRQ_IRQ2_PEND            (BCMIRQ_BASE + 0x08)
-#define BCMIRQ_FIQ_CTRL             (BCMIRQ_BASE + 0x0C)
-#define BCMIRQ_ENABLE_IRQ1          (BCMIRQ_BASE + 0x10)
-#define BCMIRQ_ENABLE_IRQ2          (BCMIRQ_BASE + 0x14)
-#define BCMIRQ_ENABLE_BASIC         (BCMIRQ_BASE + 0x18)
-#define BCMIRQ_DISABLE_IRQ1         (BCMIRQ_BASE + 0x1C)
-#define BCMIRQ_DISABLE_IRQ2         (BCMIRQ_BASE + 0x20)
-#define BCMIRQ_DISABLE_BASIC        (BCMIRQ_BASE + 0x24)
+#define BCMIRQ_BASE                 0x2000b000
+#define BCMIRQ_BASIC_PEND           (BCMIRQ_BASE + 0x200)
+#define BCMIRQ_IRQ1_PEND            (BCMIRQ_BASE + 0x204)
+#define BCMIRQ_IRQ2_PEND            (BCMIRQ_BASE + 0x208)
+#define BCMIRQ_FIQ_CTRL             (BCMIRQ_BASE + 0x20C)
+#define BCMIRQ_ENABLE_IRQ1          (BCMIRQ_BASE + 0x210)
+#define BCMIRQ_ENABLE_IRQ2          (BCMIRQ_BASE + 0x214)
+#define BCMIRQ_ENABLE_BASIC         (BCMIRQ_BASE + 0x218)
+#define BCMIRQ_DISABLE_IRQ1         (BCMIRQ_BASE + 0x21C)
+#define BCMIRQ_DISABLE_IRQ2         (BCMIRQ_BASE + 0x220)
+#define BCMIRQ_DISABLE_BASIC        (BCMIRQ_BASE + 0x224)
 /* End of Peripheral Addresses */
 
 /* Pending basic interrupts */

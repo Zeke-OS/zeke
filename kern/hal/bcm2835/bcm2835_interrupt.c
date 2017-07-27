@@ -42,17 +42,28 @@ void irq_enable(int irq)
     istate_t s_entry;
 
     if (irq >= 0 && irq <= 7) {
+        KERROR (KERROR_DEBUG, "%d, 0\n", irq);
         mmio_start(&s_entry);
         mmio_write(BCMIRQ_ENABLE_BASIC, 1 << irq);
         mmio_end(&s_entry);
     } else if (irq >= 29 && irq <= 31) {
+        KERROR (KERROR_DEBUG, "%d, 1\n", irq);
         mmio_start(&s_entry);
         mmio_write(BCMIRQ_ENABLE_IRQ1, 1 << irq);
         mmio_end(&s_entry);
     } else if (irq >= 32 && irq <= 63) {
+        KERROR (KERROR_DEBUG, "%d, 2, %x\n", irq, 1 << (irq - 32));
         mmio_start(&s_entry);
         mmio_write(BCMIRQ_ENABLE_IRQ2, 1 << (irq - 32));
         mmio_end(&s_entry);
+
+        uint32_t en[3];
+    mmio_start(&s_entry);
+    en[0] = mmio_read(BCMIRQ_ENABLE_BASIC);
+    en[1] = mmio_read(BCMIRQ_ENABLE_IRQ1);
+    en[2] = mmio_read(BCMIRQ_ENABLE_IRQ2);
+    mmio_end(&s_entry);
+        KERROR (KERROR_DEBUG, "%x %x %x\n", en[0], en[1], en[2]);
     } else {
         KERROR(KERROR_ERR, "%s(): Invalid IRQ%d\n", __func__, irq);
     }
@@ -102,6 +113,7 @@ void arm_handle_sys_interrupt(void)
         int bit = ffs(pending[i]);
         if (bit != 0) {
             irq = 32 * i + bit - 1;
+            if (irq) KERROR (KERROR_DEBUG, "%d, %x, %x, %x\n", irq, pending[0], pending[1], pending[2]);
         }
     }
     if (irq != -1 && irq < NR_IRQ && irq_handlers[irq]) {

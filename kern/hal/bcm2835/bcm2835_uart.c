@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <hal/irq.h>
 #include <kinit.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_gpio.h"
@@ -74,6 +75,15 @@
 #define UART0_FR_BUSY_OFFSET    3
 #define UART0_FR_CTS_OFFSET     0
 
+#define BCM2835_INT_CTS 0x002
+#define BCM2835_INT_RX  0x010
+#define BCM2835_INT_TX  0x020
+#define BCM2835_INT_RT  0x040
+#define BCM2835_INT_FE  0x080
+#define BCM2835_INT_PE  0x100
+#define BCM2835_INT_BE  0x200
+#define BCM2835_INT_OE  0x400
+
 static void bcm2835_uart_setconf(struct termios * conf);
 static void set_baudrate(unsigned int baud_rate);
 static void set_lcrh(const struct termios * conf);
@@ -88,7 +98,6 @@ static struct uart_port port = {
     .peek = bcm2835_uart_peek
 };
 
-
 int bcm2835_uart_register(void)
 {
     SUBSYS_DEP(arm_interrupt_preinit);
@@ -99,6 +108,31 @@ int bcm2835_uart_register(void)
     return 0;
 }
 HW_PREINIT_ENTRY(bcm2835_uart_register);
+
+static uint32_t mis; /* TODO Remove */
+static enum irq_ack bcm2835_uart_irq_ack(int irq)
+{
+    istate_t s_entry;
+
+    KERROR (KERROR_DEBUG, "hello\n");
+    mmio_start(&s_entry);
+    mis = mmio_read(UART0_MIS);
+    mmio_write(UART0_ICR, mis);
+    mmio_end(&s_entry);
+
+    return IRQ_WAKE_THREAD;
+}
+
+static void bcm2845_uart_irq_handle(int irq)
+{
+    KERROR (KERROR_DEBUG, "%x\n", mis);
+}
+
+static struct irq_handler bcm2835_uart_irq_handler = {
+    .name = "BCM2835 UART",
+    .ack = bcm2835_uart_irq_ack,
+    .handle = bcm2845_uart_irq_handle,
+};
 
 static void bcm2835_uart_setconf(struct termios * conf)
 {
@@ -138,15 +172,12 @@ static void bcm2835_uart_setconf(struct termios * conf)
 #if 0
     /* Enable interrupts. */
     mmio_write(UART0_IMSC,
-               (1 << 1) |    /* CTS */
-               (1 << 4) |    /* RX */
-               (1 << 5) |    /* TX */
-               (1 << 6) |    /* Receive timeout */
-               (1 << 7) |    /* Framing error */
-               (1 << 8) |    /* Parity error */
-               (1 << 9) |    /* Break error */
-               (1 << 10)     /* Overrun error */
-    );
+               BCM2835_INT_RX |
+               BCM2835_INT_RT |
+               BCM2835_INT_FE |
+               BCM2835_INT_PE |
+               BCM2835_INT_BE |
+               BCM2835_INT_OE);
 #endif
 
     /* Enable UART0, receive & transfer part of the UART.*/
@@ -157,8 +188,10 @@ static void bcm2835_uart_setconf(struct termios * conf)
     );
 
     mmio_end(&s_entry);
-}
 
+    /* TODO Define for the irq num? */
+    //irq_register(57, &bcm2835_uart_irq_handler);
+}
 
 static void set_baudrate(unsigned int baud_rate)
 {
