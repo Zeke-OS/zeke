@@ -120,8 +120,9 @@ PROCFS_DBGFILE(irq,
                irq_handlers + NR_IRQ,
                read_irq_file, write_irq_file);
 
-static int __kinit__ irq_init(void)
+int __kinit__ irq_init(void)
 {
+    SUBSYS_DEP(sched_init);
     SUBSYS_INIT("irq");
 
     struct sched_param param = {
