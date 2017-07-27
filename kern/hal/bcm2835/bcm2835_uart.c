@@ -135,6 +135,7 @@ static void bcm2835_uart_setconf(struct termios * conf)
 
     mmio_start(&s_entry);
 
+#if 0
     /* Enable interrupts. */
     mmio_write(UART0_IMSC,
                (1 << 1) |    /* CTS */
@@ -146,6 +147,7 @@ static void bcm2835_uart_setconf(struct termios * conf)
                (1 << 9) |    /* Break error */
                (1 << 10)     /* Overrun error */
     );
+#endif
 
     /* Enable UART0, receive & transfer part of the UART.*/
     mmio_write(UART0_CR,
