@@ -552,8 +552,9 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
         return -ESRCH;
     }
 
-    KERROR_DBG("%s: MOO, (%s) %x @ %x by %d\n", __func__,
-               abo_str, (unsigned)vaddr, (unsigned)abo->lr, abo->proc->pid);
+    KERROR_DBG("%s: MOO, (%s) %x @ %x by %d:%d\n", __func__,
+               abo_str, (unsigned)vaddr, (unsigned)abo->lr,
+               abo->proc->pid, abo->thread->id);
 
     mm = &abo->proc->mm;
 
@@ -604,17 +605,20 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 
         /* Test for COW flag. */
         if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {
+            KERROR_DBG("Memory protection error\n");
             err = -EACCES; /* Memory protection error. */
             goto fail;
         }
 
         if (!region->vm_ops->rclone) {
+            KERROR_DBG("rclone() not supported\n");
             err = -ENOTSUP; /* rclone() not supported. */
             goto fail;
         }
 
         region = region->vm_ops->rclone(region);
         if (!region) {
+            KERROR_DBG("Can't clone region; COW failed\n");
             err = -ENOMEM; /* Can't clone region; COW failed. */
             goto fail;
         }
@@ -630,6 +634,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
         return err; /* COW done. */
     }
 
+    KERROR_DBG("No mapping found\n");
     err = -EFAULT;
 fail:
     mtx_unlock(&mm->regions_lock);
