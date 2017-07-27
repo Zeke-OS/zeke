@@ -77,7 +77,9 @@ void arm11_undef_handler(void)
 
     ksprintf(buf, sizeof(buf),
              "Thread %d: Undefined instruction @ %x, lr: %x\n",
-             current_thread->id, addr, lr);
+             current_thread->id,
+             (unsigned int)addr,
+             (unsigned int)lr);
 
     if (current_thread->id != 0 &&
         !thread_flags_is_set(current_thread, SCHED_INSYS_FLAG)) {
@@ -107,7 +109,7 @@ void arm11_undef_handler(void)
 /**
  * Unhandled exception
  */
-__attribute__ ((naked)) void bad_exception(void)
+__attribute__ ((interrupt)) void bad_exception(void)
 {
     panic("bad_exception");
 }
