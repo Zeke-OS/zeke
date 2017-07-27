@@ -632,9 +632,10 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     mtx_unlock(&mm->regions_lock);
 
     if (region) {
-        KERROR_DBG("%s: proc %d, mapped sect %d to %x (phys:%x)\n",
-                   __func__, proc->pid, region_nr, region->b_mmu.vaddr,
-                   region->b_mmu.paddr);
+        KERROR_DBG("%s: proc %d, mapped sect %d to %p (phys:%p)\n",
+                   __func__, proc->pid, region_nr,
+                   (void *)region->b_mmu.vaddr,
+                   (void *)region->b_mmu.paddr);
     } else {
         KERROR_DBG("%s: proc %d, Clear region %d\n", __func__,
                    proc->pid, region_nr);
