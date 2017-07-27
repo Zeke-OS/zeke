@@ -98,7 +98,7 @@ size_t mmu_sizeof_pt_img(const mmu_pagetable_t * pt)
 
     switch (pt->pt_type) {
     case MMU_PTT_MASTER:
-        return MMU_NR_SECTION_ENTR * MMU_PGSIZE_SECTION;
+        return (size_t)MMU_NR_SECTION_ENTR * MMU_PGSIZE_SECTION;
         break;
     case MMU_PTT_COARSE:
         return nr_tables * MMU_PGSIZE_SECTION;
