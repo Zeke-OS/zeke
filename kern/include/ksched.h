@@ -93,8 +93,17 @@ typedef void sched_task_t(void);
 
 /**
  * Type for thread constructor and destructor functions.
+ * @param td    is a pointer to the new thread control block.
  */
-typedef void thread_cdtor_t(struct thread_info * td, struct thread_info * old);
+typedef void thread_cdtor_t(struct thread_info * td);
+
+/**
+ * Type for thread fork handler functions.
+ * @param td    is a pointer to the new thread control block.
+ * @param old   is a pointer to the old thread control block.
+ */
+typedef void thread_fork_handler_t(struct thread_info * td,
+                                   struct thread_info * old);
 
 #define SCHED_PRE_SCHED_TASK(fun)       \
     DATA_SET(pre_sched_tasks, fun)

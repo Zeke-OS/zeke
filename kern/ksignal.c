@@ -245,8 +245,7 @@ void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
     sigs->s_owner_type = owner_type;
 }
 
-static void ksignal_thread_ctor(struct thread_info * new_thread,
-                                struct thread_info * old_thread)
+static void ksignal_thread_ctor(struct thread_info * new_thread)
 {
     ksignal_signals_ctor(&new_thread->sigs, SIGNALS_OWNER_THREAD);
 }
@@ -257,8 +256,7 @@ void ksignal_signals_dtor(struct signals * sigs)
     kobj_unref(&sigs->s_obj);
 }
 
-static void ksignal_thread_dtor(struct thread_info * new_thread,
-                                struct thread_info * old_thread)
+static void ksignal_thread_dtor(struct thread_info * new_thread)
 {
     ksignal_signals_dtor(&new_thread->sigs);
 }

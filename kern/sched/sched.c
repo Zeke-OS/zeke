@@ -150,7 +150,7 @@ SET_DECLARE(post_sched_tasks, sched_task_t);
  */
 SET_DECLARE(thread_ctors, thread_cdtor_t);
 SET_DECLARE(thread_dtors, thread_cdtor_t);
-SET_DECLARE(thread_fork_handlers, thread_cdtor_t);
+SET_DECLARE(thread_fork_handlers, thread_fork_handler_t);
 
 /**
  * Next thread id.
@@ -620,7 +620,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     /* Call thread constructors */
     SET_FOREACH(thread_ctor_p, thread_ctors) {
         thread_cdtor_t * ctor = *thread_ctor_p;
-        ctor(tp, NULL);
+        ctor(tp);
     }
 
     mtx_lock(&CURRENT_CPU->lock);
@@ -641,7 +641,7 @@ struct thread_info * thread_fork(pid_t new_pid)
     struct thread_info * const old_thread = current_thread;
     struct thread_info * new_thread;
     pthread_t new_id;
-    thread_cdtor_t ** fork_handler_p;
+    thread_fork_handler_t ** fork_handler_p;
 
     /* Get the next free thread_id. */
     new_id = atomic_inc(&next_thread_id);
@@ -676,7 +676,7 @@ struct thread_info * thread_fork(pid_t new_pid)
      * Run other fork handlers registered.
      */
     SET_FOREACH(fork_handler_p, thread_fork_handlers) {
-        thread_cdtor_t * task = *fork_handler_p;
+        thread_fork_handler_t * task = *fork_handler_p;
         task(new_thread, old_thread);
     }
 
@@ -1043,8 +1043,7 @@ void thread_remove(pthread_t thread_id)
      */
     SET_FOREACH(thread_dtor_p, thread_dtors) {
         thread_cdtor_t * dtor = *thread_dtor_p;
-        if (dtor)
-            dtor(thread, NULL);
+        dtor(thread);
     }
 
     mtx_lock(&CURRENT_CPU->lock);
@@ -1059,8 +1058,11 @@ void thread_remove(pthread_t thread_id)
     atomic_dec(&anr_threads);
 }
 
-static void dummycd(struct thread_info * new_thread,
-                    struct thread_info * old_thread)
+/*
+ * This exist here to make the set even if there is no functions registered,
+ * otherwise a compilation error would occur.
+ */
+static void dummycd(struct thread_info * new_thread)
 {
 }
 SCHED_THREAD_CTOR(dummycd);
