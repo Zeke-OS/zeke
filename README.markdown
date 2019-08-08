@@ -45,12 +45,6 @@ Key Features
     - Standard user application separation by using POSIX processes
     - System call based kernel services
 
-News
-----
-
-Scheduler system redesigned to provide easier API to implement new scheduling
-policies as well as to make future migration to MP easier.
-
 Port Status
 -----------
 
@@ -74,24 +68,24 @@ Compiling and Testing
 
 To successfully compile Zeke, you'll need the following packages/tools:
 
-- `make` >3.8
+- GNU `make` >3.8
 - `llvm` 3.3 or 3.4
 - `clang` 3.3 or 3.4
-- `binutils`
--- arm-none-eabi
--- mipsel-sde-elf
+- `binutils` 2.24
+ - `arm-none-eabi`
+ - `mipsel-sde-elf`
 - `bash`
 - `mkdosfs` and `mtools` for creating a rootfs image
 - `cloc` for source code stats
 - `ncurses-devel`
 
-doc-book target:
+**doc-book target**
 
 - LaTeX + various packages
 - latexmk
 - gnuplot
 
-Doxygen targets:
+**Doxygen targets**
 
 - Doxygen
 - man for viewing man pages
@@ -118,7 +112,8 @@ best for BCM2835/Raspberry Pi version of Zeke.
 ### Running Zeke on real ARM
 
 Zeke should boot just fine with, practically, any bootloader that is capable of
-loading a linux image. However Zeke only supports ATAGs for gathering device
-information so some older bootloader may work better. Though ATAGs are optional
-so basically any bootloader should work if you compile Zeke without configATAG.
+loading a linux image. However, Zeke only supports ATAGs for gathering device
+information so some older bootloader may work better. Alhough ATAGs are optional
+therefore practically any bootloader should work if you run the build with
+`configATAG` unset.
 
