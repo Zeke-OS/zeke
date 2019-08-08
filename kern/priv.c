@@ -137,12 +137,12 @@ void priv_cred_init(struct cred * cred)
         gid[i] = NOGROUP;
     }
 
-    /*
-     * Default grants.
-     * Some permissions are just needed for normal operation
-     * but sometimes we wan't to restrict these too.
-     */
     int privs[] = {
+        /*
+         * Default grants.
+         * Some permissions are just needed for normal operation
+         * but sometimes we wan't to restrict these too.
+         */
         PRIV_CLRCAP,
         PRIV_TTY_SETA,
         PRIV_VFS_READ,
@@ -151,22 +151,11 @@ void priv_cred_init(struct cred * cred)
         PRIV_VFS_LOOKUP,
         PRIV_VFS_CHROOT,
         PRIV_VFS_STAT,
-        0
-    };
-    int * priv;
-
-    for (priv = privs; *priv; priv++) {
-        priv_cred_eff_set(cred, *priv);
-    }
-}
-
-void priv_cred_init_suser(struct cred * cred)
-{
-    /*
-     * TODO Later on we can remove most of these privileges as we implement a
-     * file system based capabilities for binaries
-     */
-    int privs[] = {
+        /*
+         * Super user grants.
+         * Later on we can remove most of these privileges as we implement a
+         * file system based capabilities for binaries.
+         */
         /* Capabilities management */
         PRIV_SETEFF,
         PRIV_SETBND,
@@ -187,7 +176,8 @@ void priv_cred_init_suser(struct cred * cred)
         /* vfs */
         PRIV_VFS_ADMIN,
         PRIV_VFS_CHROOT,
-        PRIV_VFS_MOUNT
+        PRIV_VFS_MOUNT,
+        0
     };
     int * priv;
 

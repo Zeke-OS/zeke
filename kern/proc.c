@@ -158,8 +158,6 @@ static void init_kernel_proc(void)
     proc_session_setlogin(kernel_proc->pgrp->pg_session, "root");
 
     priv_cred_init(&kernel_proc->cred);
-    /* Grant initial capabilities somewhat resembling a Unix root user */
-    priv_cred_init_suser(&kernel_proc->cred);
 
     RB_INIT(&(kernel_proc->mm.ptlist_head));
 

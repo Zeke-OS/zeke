@@ -5,6 +5,7 @@
  *
  * @brief   Sysctl headers.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1989, 1993
  *        The Regents of the University of California.  All rights reserved.
@@ -622,14 +623,14 @@ int sysctl_move_oid(struct sysctl_oid * oid, struct sysctl_oid_list * parent);
 
 /*
  * In-kernel sysctl by name.
- * @aram cred if NULL a default set of credentials is used.
+ * @aram cred if NULL the kernel's credentials are used.
  */
 int kernel_sysctlbyname(struct cred * cred, char * name, void * old,
                         size_t * oldlenp, void * new, size_t newlen,
                         size_t * retval, int flags);
 /*
  * In-kernel sysctl.
- * @aram cred if NULL a default set of credentials is used.
+ * @aram cred if NULL the kernel's credentials are used.
  */
 int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
                   void * old, size_t * oldlenp, void * new, size_t newlen,

@@ -357,12 +357,6 @@ int priv_grp_is_member(const struct cred * cred, gid_t gid);
 void priv_cred_init(struct cred * cred);
 
 /**
- * Init with super user like capabilities.
- * This is needed for the init process to bootstrap the system.
- */
-void priv_cred_init_suser(struct cred * cred);
-
-/**
  * Check privileges.
  * @param proc is a pointer to a process.
  * @param priv is a PRIV.
