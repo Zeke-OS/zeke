@@ -111,10 +111,6 @@ static int priv_cred_bound_get(const struct cred * cred, int priv)
     return bitmap_status(cred->pcap_bndmap, priv, _PRIV_MLEN);
 }
 
-/**
- * This should be only called internally as no process should be allowed to
- * extend the bounding capabilities.
- */
 static int priv_cred_bound_set(struct cred * cred, int priv)
 {
     return bitmap_set(cred->pcap_bndmap, priv, _PRIV_MLEN);
@@ -182,7 +178,20 @@ void priv_cred_init(struct cred * cred)
     int * priv;
 
     for (priv = privs; *priv; priv++) {
-        priv_cred_eff_set(cred, *priv);
+        int v = *priv;
+
+        priv_cred_bound_set(cred, v);
+        priv_cred_eff_set(cred, v);
+    }
+}
+
+void priv_cred_init_inherit(struct cred * cred)
+{
+    /* Clear effective capabilities that are not set in the bounding set. */
+    for (size_t i = 0; i < _PRIV_MENT; i++) {
+        if (priv_cred_bound_get(cred, i) == 0) {
+            priv_cred_eff_clear(cred, i);
+        }
     }
 }
 
@@ -270,20 +279,6 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
             }
     default:
             return priv_check(fromcred, priv);
-    }
-
-    return 0;
-}
-
-int priv_cred_inherit(const struct cred * fromcred, struct cred * tocred)
-{
-    memcpy(tocred, fromcred, sizeof(struct cred));
-
-    /* Clear effective capabilities that are not set in the bounding set. */
-    for (size_t i = 0; i < _PRIV_MENT; i++) {
-        if (priv_cred_bound_get(tocred, i) == 0) {
-            priv_cred_eff_clear(tocred, i);
-        }
     }
 
     return 0;

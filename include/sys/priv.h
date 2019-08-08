@@ -357,6 +357,16 @@ int priv_grp_is_member(const struct cred * cred, gid_t gid);
 void priv_cred_init(struct cred * cred);
 
 /**
+ * Initialize inherited credentials.
+ * 1. UIDs and GIDs are inherited as is
+ * 2. Effective capabilities are inherited as is except for capabilities that
+ *    are no longer set in the bounding capabilities set
+ * 3. Bounding capabilities set is inherited as is
+ * @param cred is the destination credential.
+ */
+void priv_cred_init_inherit(struct cred * cred);
+
+/**
  * Check privileges.
  * @param proc is a pointer to a process.
  * @param priv is a PRIV.
@@ -377,18 +387,6 @@ int priv_check(const struct cred * cred, int priv);
  */
 int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
                     int priv);
-
-/**
- * Inherit credentials from fromcred to tocred.
- * 1. UIDs and GIDs are inherited as is
- * 2. Effective capabilities are inherited as is except for capabilities that
- *    are no longer set in the bounding capabilities set
- * 3. Bounding capabilities set is inherited as is
- * @param fromcred is the a source credential.
- * @param tocred is the destination credential.
- * @return Typically, 0 will be returned for success.
- */
-int priv_cred_inherit(const struct cred * fromcred, struct cred * tocred);
 
 /**
  * @}
