@@ -72,8 +72,8 @@ To successfully compile Zeke, you'll need the following packages/tools:
 - `llvm` 3.3 or 3.4
 - `clang` 3.3 or 3.4
 - `binutils` 2.24
- - `arm-none-eabi`
- - `mipsel-sde-elf`
+    - `arm-none-eabi`
+    - `mipsel-sde-elf`
 - `bash`
 - `mkdosfs` and `mtools` for creating a rootfs image
 - `cloc` for source code stats
