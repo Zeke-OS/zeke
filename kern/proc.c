@@ -5,6 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -157,6 +158,8 @@ static void init_kernel_proc(void)
     proc_session_setlogin(kernel_proc->pgrp->pg_session, "root");
 
     priv_cred_init(&kernel_proc->cred);
+    /* Grant initial capabilities somewhat resembling a Unix root user */
+    priv_cred_init_suser(&kernel_proc->cred);
 
     RB_INIT(&(kernel_proc->mm.ptlist_head));
 

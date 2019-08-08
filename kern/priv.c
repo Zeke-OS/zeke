@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   User credentials.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2009 Robert N. M. Watson
  * Copyright (c) 2006 nCircle Network Security, Inc.
@@ -32,13 +33,14 @@
  *******************************************************************************
  */
 
-#include <sys/types.h>
-#include <proc.h>
 #include <errno.h>
-#include <syscall.h>
-#include <sys/sysctl.h>
-#include <bitmap.h>
 #include <sys/priv.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#include <syscall.h>
+#include <bitmap.h>
+#include <kstring.h>
+#include <proc.h>
 
 #ifdef configSUSER
 #define SUSER_EN_DEFAULT 1
@@ -80,37 +82,48 @@ int priv_grp_is_member(const struct cred * cred, gid_t gid)
     return 0;
 }
 
-#ifdef configPROCCAP
-static int priv_cred_grant_get(const struct cred * cred, int priv)
+static int priv_cred_eff_get(const struct cred * cred, int priv)
 {
-    return bitmap_status(cred->pcap_grantmap, priv, _PRIV_MLEN);
+    return bitmap_status(cred->pcap_effmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_grant_set(struct cred * cred, int priv)
+static int priv_cred_eff_set(struct cred * cred, int priv)
 {
-    return bitmap_set(cred->pcap_grantmap, priv, _PRIV_MLEN);
+    int bound = bitmap_status(cred->pcap_bndmap, priv, _PRIV_MLEN);
+
+    if (bound < 0) {
+        /* An error was returned.*/
+        return bound;
+    } else if (bound == 0) {
+        return -EPERM;
+    }
+
+    return bitmap_set(cred->pcap_effmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_grant_clear(struct cred * cred, int priv)
+static int priv_cred_eff_clear(struct cred * cred, int priv)
 {
-    return bitmap_clear(cred->pcap_grantmap, priv, _PRIV_MLEN);
+    return bitmap_clear(cred->pcap_effmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_restr_get(const struct cred * cred, int priv)
+static int priv_cred_bound_get(const struct cred * cred, int priv)
 {
-    return bitmap_status(cred->pcap_restrmap, priv, _PRIV_MLEN);
+    return bitmap_status(cred->pcap_bndmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_restr_set(struct cred * cred, int priv)
+/**
+ * This should be only called internally as no process should be allowed to
+ * extend the bounding capabilities.
+ */
+static int priv_cred_bound_set(struct cred * cred, int priv)
 {
-    return bitmap_set(cred->pcap_restrmap, priv, _PRIV_MLEN);
+    return bitmap_set(cred->pcap_bndmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_restr_clear(struct cred * cred, int priv)
+static int priv_cred_bound_clear(struct cred * cred, int priv)
 {
-    return bitmap_clear(cred->pcap_restrmap, priv, _PRIV_MLEN);
+    return bitmap_clear(cred->pcap_bndmap, priv, _PRIV_MLEN);
 }
-#endif
 
 void priv_cred_init(struct cred * cred)
 {
@@ -129,8 +142,8 @@ void priv_cred_init(struct cred * cred)
      * Some permissions are just needed for normal operation
      * but sometimes we wan't to restrict these too.
      */
-#ifdef configPROCCAP
     int privs[] = {
+        PRIV_CLRCAP,
         PRIV_TTY_SETA,
         PRIV_VFS_READ,
         PRIV_VFS_WRITE,
@@ -143,9 +156,44 @@ void priv_cred_init(struct cred * cred)
     int * priv;
 
     for (priv = privs; *priv; priv++) {
-        priv_cred_grant_set(cred, *priv);
+        priv_cred_eff_set(cred, *priv);
     }
-#endif
+}
+
+void priv_cred_init_suser(struct cred * cred)
+{
+    /*
+     * TODO Later on we can remove most of these privileges as we implement a
+     * file system based capabilities for binaries
+     */
+    int privs[] = {
+        /* Capabilities management */
+        PRIV_SETEFF,
+        PRIV_SETBND,
+        /* Credential management */
+        PRIV_CRED_SETUID,
+        PRIV_CRED_SETEUID,
+        PRIV_CRED_SETSUID,
+        PRIV_CRED_SETGID,
+        PRIV_CRED_SETEGID,
+        PRIV_CRED_SETSGID,
+        PRIV_CRED_SETGROUPS,
+        /* Process caps */
+        PRIV_PROC_SETLOGIN,
+        /* IPC */
+        PRIV_SIGNAL_OTHER,
+        /* sysctl */
+        PRIV_SYSCTL_WRITE,
+        /* vfs */
+        PRIV_VFS_ADMIN,
+        PRIV_VFS_CHROOT,
+        PRIV_VFS_MOUNT
+    };
+    int * priv;
+
+    for (priv = privs; *priv; priv++) {
+        priv_cred_eff_set(cred, *priv);
+    }
 }
 
 /*
@@ -156,17 +204,8 @@ int priv_check(const struct cred * cred, int priv)
 {
     int error;
 
-#ifdef configPROCCAP
-    /* Check if capability is disabled. */
-    error = priv_cred_restr_get(cred, priv);
-    if (error) {
-        if (error != -EINVAL)
-            error = -EPERM;
-        goto out;
-    }
-#endif
-
     /*
+     * TODO REMOVE
      * Having determined if privilege is restricted by various policies,
      * now determine if privilege is granted.  At this point, any policy
      * may grant privilege.  For now, we allow short-circuit boolean
@@ -206,9 +245,8 @@ int priv_check(const struct cred * cred, int priv)
         goto out;
     }
 
-#ifdef configPROCCAP
     /* Check if we should grant privilege. */
-    error = priv_cred_grant_get(cred, priv);
+    error = priv_cred_eff_get(cred, priv);
     if (error < 0) {
         goto out;
     } else if (error > 0) {
@@ -216,7 +254,6 @@ int priv_check(const struct cred * cred, int priv)
         error = 0;
         goto out;
     }
-#endif
 
     /*
      * The default is deny, so if no policies have granted it, reject
@@ -230,19 +267,10 @@ out:
 int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
                     int priv)
 {
-#ifdef configPROCCAP
-    int error;
-
-    /* Check if capability is disabled. */
-    error = priv_cred_restr_get(fromcred, priv);
-    if (error) {
-        if (error != -EINVAL)
-            error = -EPERM;
-        return error;
-    }
-#endif
-
     switch (priv) {
+    /*
+     * RFE should we make this possible if PRIV_SIGNAL_OTHER is set in fromcred?
+     */
     case PRIV_SIGNAL_OTHER:
             if ((fromcred->euid != tocred->uid &&
                  fromcred->euid != tocred->suid) &&
@@ -257,7 +285,20 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
     return 0;
 }
 
-#ifdef configPROCCAP
+int priv_cred_inherit(const struct cred * fromcred, struct cred * tocred)
+{
+    memcpy(tocred, fromcred, sizeof(struct cred));
+
+    /* Clear effective capabilities that are not set in the bounding set. */
+    for (size_t i = 0; i < _PRIV_MENT; i++) {
+        if (priv_cred_bound_get(tocred, i) == 0) {
+            priv_cred_eff_clear(tocred, i);
+        }
+    }
+
+    return 0;
+}
+
 /**
  * @return -1 if failed;
  *          0 if status was zero or operation succeed;
@@ -269,12 +310,6 @@ static intptr_t sys_priv_pcap(__user void * user_args)
     struct proc_info * proc;
     struct cred * proccred;
     int err;
-
-    err = priv_check(&curproc->cred, PRIV_ALTPCAP);
-    if (err) {
-        set_errno(EPERM);
-        return -1;
-    }
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -290,39 +325,62 @@ static intptr_t sys_priv_pcap(__user void * user_args)
     proccred = &proc->cred;
 
     switch (args.mode) {
-    case PRIV_PCAP_MODE_GETR: /* Get restr */
-        err = priv_cred_restr_get(proccred, args.priv);
+    case PRIV_PCAP_MODE_GET_EFF: /* Get effective */
+        err = priv_cred_eff_get(proccred, args.priv);
         break;
-    case PRIV_PCAP_MODE_SETR: /* Set restr */
-        err = priv_cred_restr_set(proccred, args.priv);
+    case PRIV_PCAP_MODE_SET_EFF: /* Set effective */
+        err = priv_check(&curproc->cred, PRIV_SETEFF);
+        if (err) {
+            set_errno(EPERM);
+            return -1;
+        }
+
+        err = priv_cred_eff_set(proccred, args.priv);
         break;
-    case PRIV_PCAP_MODE_CLRR: /* Clear restr */
-        err = priv_cred_restr_clear(proccred, args.priv);
+    case PRIV_PCAP_MODE_CLR_EFF: /* Clear effective */
+        err = priv_check(&curproc->cred, PRIV_CLRCAP);
+        if (err) {
+            set_errno(EPERM);
+            return -1;
+        }
+
+        err = priv_cred_eff_clear(proccred, args.priv);
         break;
-    case PRIV_PCAP_MODE_GETG: /* Get grant */
-        err = priv_cred_grant_get(proccred, args.priv);
+    case PRIV_PCAP_MODE_GET_BND: /* Get bounding */
+        err = priv_cred_bound_get(proccred, args.priv);
         break;
-    case PRIV_PCAP_MODE_SETG: /* Set grant */
-        err = priv_cred_grant_set(proccred, args.priv);
+    case PRIV_PCAP_MODE_SET_BND: /* Set bounding */
+        err = priv_check(&curproc->cred, PRIV_SETBND);
+        if (err) {
+            set_errno(EPERM);
+            return -1;
+        }
+
+        err = priv_cred_bound_set(proccred, args.priv);
         break;
-    case PRIV_PCAP_MODE_CLRG: /* Clear grant */
-        priv_cred_grant_clear(proccred, args.priv);
+    case PRIV_PCAP_MODE_CLR_BND: /* Clear bounding */
+        err = priv_check(&curproc->cred, PRIV_CLRCAP);
+        if (err) {
+            set_errno(EPERM);
+            return -1;
+        }
+
+        priv_cred_bound_clear(proccred, args.priv);
         break;
     default:
-        set_errno(EINVAL);
+        err = -EINVAL;
+    }
+
+    if (err) {
+        set_errno(-err);
         err = -1;
     }
 
     proc_unref(proc);
     return err;
 }
-#endif
 
 static const syscall_handler_t priv_sysfnmap[] = {
-#ifdef configPROCCAP
     ARRDECL_SYSCALL_HNDL(SYSCALL_PRIV_PCAP, sys_priv_pcap),
-#else
-    ARRDECL_SYSCALL_HNDL(SYSCALL_PRIV_PCAP, NULL),
-#endif
 };
 SYSCALL_HANDLERDEF(priv_syscall, priv_sysfnmap)

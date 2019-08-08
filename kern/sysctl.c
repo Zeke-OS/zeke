@@ -5,6 +5,7 @@
  *
  * @brief   sysctl kernel code.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1982, 1986, 1989, 1993
  *        The Regents of the University of California.  All rights reserved.
@@ -1005,7 +1006,7 @@ int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
     struct sysctl_req req;
 
     if (!cred) {
-        priv_cred_init(&default_cred);
+        priv_cred_init_suser(&default_cred);
         cred = &default_cred;
     }
 

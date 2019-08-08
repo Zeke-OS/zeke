@@ -5,6 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -403,6 +404,8 @@ pid_t proc_fork(void)
 
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);
+
+    priv_cred_inherit(&old_proc->cred, &new_proc->cred);
 
     /* Insert the new process into the process array */
     procarr_insert(new_proc);

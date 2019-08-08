@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process credentials.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -39,23 +40,25 @@
 #include <sys/priv.h>
 #include <unistd.h>
 
-int priv_setpcap(pid_t pid, int grant, size_t priv, int value)
+int priv_setpcap(pid_t pid, int bounding, size_t priv, int value)
 {
     struct _priv_pcap_args args = {
         .pid = pid,
         .priv = priv
     };
 
-    if (!grant) {
-        if (value)
-            args.mode = PRIV_PCAP_MODE_SETR;
-        else
-            args.mode = PRIV_PCAP_MODE_CLRR;
+    if (bounding) {
+        if (value) {
+            args.mode = PRIV_PCAP_MODE_SET_BND;
+        } else {
+            args.mode = PRIV_PCAP_MODE_CLR_BND;
+        }
     } else {
-        if (value)
-            args.mode = PRIV_PCAP_MODE_SETG;
-        else
-            args.mode = PRIV_PCAP_MODE_CLRG;
+        if (value) {
+            args.mode = PRIV_PCAP_MODE_SET_EFF;
+        } else {
+            args.mode = PRIV_PCAP_MODE_CLR_EFF;
+        }
     }
 
     return syscall(SYSCALL_PRIV_PCAP, &args);

@@ -297,15 +297,6 @@ config configBOOT_SECURELEVEL
     int "Securelevel at boot"
     default 0
 
-config configPROCCAP
-    bool "Process Capabilities"
-    default n
-    ---help---
-    Currently a very lightweight implementation to restrict or grant access
-    to some kernel features per process basis. Selecting this feature adds
-    process capability maps that can be altered by a capable process and
-    are inherited by child processes.
-
 endmenu
 
 
