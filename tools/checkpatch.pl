@@ -546,7 +546,7 @@ sub ctx_statement_block {
 		# An else is really a conditional as long as its not else if
 		if ($level == 0 && $coff_set == 0 &&
 				(!defined($p) || $p =~ /(?:\s|\}|\+)/) &&
-				$remainder =~ /^(else)(?:\s|{)/ &&
+				$remainder =~ /^(else)(?:\s|\{)/ &&
 				$remainder !~ /^else\s+if\b/) {
 			$coff = $off + length($1) - 1;
 			$coff_set = 1;
@@ -629,8 +629,8 @@ sub statement_block_size {
 	my ($stmt) = @_;
 
 	$stmt =~ s/(^|\n)./$1/g;
-	$stmt =~ s/^\s*{//;
-	$stmt =~ s/}\s*$//;
+	$stmt =~ s/^\s*\{//;
+	$stmt =~ s/\}\s*$//;
 	$stmt =~ s/^\s*//;
 	$stmt =~ s/\s*$//;
 
@@ -983,7 +983,7 @@ sub annotate_values {
 			print "ASSIGN($1)\n" if ($dbg_values > 1);
 			$type = 'N';
 
-		} elsif ($cur =~/^(;|{|})/) {
+		} elsif ($cur =~/^(;|\{|\})/) {
 			print "END($1)\n" if ($dbg_values > 1);
 			$type = 'E';
 			$av_pend_colon = 'O';
@@ -1540,7 +1540,7 @@ sub process {
 			}
 
 			my $s = $stat;
-			$s =~ s/{.*$//s;
+			$s =~ s/\{.*$//s;
 
 			# Ignore goto labels.
 			if ($s =~ /$Ident:\*$/s) {
@@ -1635,11 +1635,11 @@ sub process {
 			#print "realcnt<$realcnt> ctx_cnt<$ctx_cnt>\n";
 			#print "pre<$pre_ctx>\nline<$line>\nctx<$ctx>\nnext<$lines[$ctx_ln - 1]>\n";
 
-			if ($ctx !~ /{\s*/ && defined($lines[$ctx_ln -1]) && $lines[$ctx_ln - 1] =~ /^\+\s*{/) {
+			if ($ctx !~ /\{\s*/ && defined($lines[$ctx_ln -1]) && $lines[$ctx_ln - 1] =~ /^\+\s*{/) {
 				ERROR("that open brace { should be on the previous line\n" .
 					"$here\n$ctx\n$rawlines[$ctx_ln - 1]\n");
 			}
-			if ($level == 0 && $pre_ctx !~ /}\s*while\s*\($/ &&
+			if ($level == 0 && $pre_ctx !~ /\}\s*while\s*\($/ &&
 			    $ctx =~ /\)\s*\;\s*$/ &&
 			    defined $lines[$ctx_ln - 1])
 			{
@@ -1674,7 +1674,7 @@ sub process {
 			my $continuation = 0;
 			my $check = 0;
 			$s =~ s/^.*\bdo\b//;
-			$s =~ s/^\s*{//;
+			$s =~ s/^\s*\{//;
 			if ($s =~ s/^\s*\\//) {
 				$continuation = 1;
 			}
@@ -1773,7 +1773,7 @@ sub process {
 		}
 
 # check for initialisation to aggregates open brace on the next line
-		if ($line =~ /^.\s*{/ &&
+		if ($line =~ /^.\s*\{/ &&
 		    $prevline =~ /(?:^|[^=])=\s*$/) {
 			ERROR("that open brace { should be on the previous line\n" . $hereprev);
 		}
@@ -1926,13 +1926,13 @@ sub process {
 
 # function brace can't be on same line, except for #defines of do while,
 # or if closed on same line
-		if (($line=~/$Type\s*$Ident\(.*\).*\s{/) and
-		    !($line=~/\#\s*define.*do\s{/) and !($line=~/}/)) {
+		if (($line=~/$Type\s*$Ident\(.*\).*\s\{/) and
+		    !($line=~/\#\s*define.*do\s\{/) and !($line=~/\}/)) {
 			ERROR("open brace '{' following function declarations go on the next line\n" . $herecurr);
 		}
 
 # open braces for enum, union and struct go on the same line.
-		if ($line =~ /^.\s*{/ &&
+		if ($line =~ /^.\s*\{/ &&
 		    $prevline =~ /^.\s*(?:typedef\s+)?(enum|union|struct)(?:\s+$Ident)?\s*$/) {
 			ERROR("open brace '{' following $1 go on the same line\n" . $hereprev);
 		}
@@ -1950,7 +1950,7 @@ sub process {
 			my ($where, $prefix) = ($-[1], $1);
 			if ($prefix !~ /$Type\s+$/ &&
 			    ($where != 0 || $prefix !~ /^.\s+$/) &&
-			    $prefix !~ /{\s+$/) {
+			    $prefix !~ /\{\s+$/) {
 				ERROR("space prohibited before open square bracket '['\n" . $herecurr);
 			}
 		}
@@ -2080,7 +2080,7 @@ sub process {
 				# , must have a space on the right.
                                 # not required when having a single },{ on one line
 				} elsif ($op eq ',') {
-					if ($ctx !~ /.x[WEC]/ && $cc !~ /^}/ &&
+					if ($ctx !~ /.x[WEC]/ && $cc !~ /^\}/ &&
                                             ($elements[$n] . $elements[$n + 2]) !~ " *}{") {
 						ERROR("space required after that '$op' $at\n" . $hereptr);
 					}
@@ -2201,8 +2201,8 @@ sub process {
 ## 		}
 
 #need space before brace following if, while, etc
-		if (($line =~ /\(.*\){/ && $line !~ /\($Type\){/) ||
-		    $line =~ /do{/) {
+		if (($line =~ /\(.*\)\{/ && $line !~ /\($Type\)\{/) ||
+		    $line =~ /do\{/) {
 			ERROR("space required before the open brace '{'\n" . $herecurr);
 		}
 
@@ -2299,8 +2299,8 @@ sub process {
 			substr($s, 0, length($c), '');
 			$s =~ s/\n.*//g;
 			$s =~ s/$;//g; 	# Remove any comments
-			if (length($c) && $s !~ /^\s*{?\s*\\*\s*$/ &&
-			    $c !~ /}\s*while\s*/)
+			if (length($c) && $s !~ /^\s*\{?\s*\\*\s*$/ &&
+			    $c !~ /\}\s*while\s*/)
 			{
 				# Find out how long the conditional actually is.
 				my @newlines = ($c =~ /\n/gs);
@@ -2362,7 +2362,7 @@ sub process {
 			ERROR("else should follow close brace '}'\n" . $hereprev);
 		}
 
-		if ($prevline=~/}\s*$/ and $line=~/^.\s*while\s*/ and
+		if ($prevline=~/\}\s*$/ and $line=~/^.\s*while\s*/ and
 						$previndent == $indent) {
 			my ($s, $c) = ctx_statement_block($linenr, $realcnt, 0);
 
@@ -2538,7 +2538,7 @@ sub process {
 
 					substr($block, 0, length($cond), '');
 
-					$seen++ if ($block =~ /^\s*{/);
+					$seen++ if ($block =~ /^\s*\{/);
 
                                         print "APW: cond<$cond> block<$block> allowed<$allowed>\n"
                                             if $dbg_adv_apw;
