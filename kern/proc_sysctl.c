@@ -5,6 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -155,8 +156,7 @@ static int proc_sysctl_pid(struct sysctl_oid * oidp, int * mib, int len,
         return -ESRCH;
     }
 
-    if (curproc->cred.euid != proc->cred.euid ||
-        priv_check(&curproc->cred, PRIV_PROC_STAT)) {
+    if (priv_check_cred(&curproc->cred, &proc->cred, PRIV_PROC_STAT)) {
         retval = -ESRCH;
         goto out;
     }

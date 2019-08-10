@@ -266,22 +266,31 @@ out:
 int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
                     int priv)
 {
-    switch (priv) {
-    /*
-     * RFE should we make this possible if PRIV_SIGNAL_OTHER is set in fromcred?
-     */
-    case PRIV_SIGNAL_OTHER:
-            if ((fromcred->euid != tocred->uid &&
-                 fromcred->euid != tocred->suid) &&
-                (fromcred->uid  != tocred->uid &&
-                 fromcred->uid  != tocred->suid)) {
-                return -EPERM;
-            }
-    default:
-            return priv_check(fromcred, priv);
+    int err;
+
+    err = priv_check(fromcred, priv);
+    if (err == 0) {
+        return 0;
+    } else if (err != -EPERM) {
+        return err;
     }
 
-    return 0;
+    switch (priv) {
+    case PRIV_SIGNAL_OTHER:
+        if (!((fromcred->euid != tocred->uid &&
+             fromcred->euid != tocred->suid) &&
+            (fromcred->uid  != tocred->uid &&
+             fromcred->uid  != tocred->suid))) {
+            return 0;
+        }
+        break;
+    default:
+        if (fromcred->euid == tocred->euid) {
+            return 0;
+        }
+    }
+
+    return err;
 }
 
 /**
