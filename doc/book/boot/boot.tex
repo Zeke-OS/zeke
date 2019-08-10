@@ -2,6 +2,8 @@
 \chapter{Bootloader}
 \chapter{Kernel Initialization}
 
+\section{Introduction}
+
 Kernel initialization order is defined as follows:
 \begin{itemize}
     \item \verb+hw_preinit+
@@ -50,3 +52,15 @@ used and postinit can be called after the scheduler is already running.
 
 \lstinputlisting[label=list:hwprepostinit,%
 caption=hwprepostinit.c]{boot/hwprepostinit.c}
+
+
+\chapter{Userland Initialization}
+
+\section{Introduction}
+
+\begin{itemize}
+    \item \verb+init+
+    \item \verb+sbin/rc.init+
+    \item \verb+getty+ and \verb+gettytab+
+    \item \verb+login+
+\end{itemize}
