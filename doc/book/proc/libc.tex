@@ -10,6 +10,12 @@ a macro called \verb+ELFNOTE_STACKSIZE+ can be used for indicating the minimum
 stack size needed by the main tread of an executable, see listing
 \ref{list:hugestack}.
 
+Another important Zeke specific note type is \verb+NT_CAPABILITIES+ that
+can be used to annotate the capabilities required to succesfully execute
+a given elf binary file. The capability notes can be created using the
+\verb+ELFNOTE_CAPABILITIES(...)+ macro. Each note can have 64
+capabilities and the total number of these notes is unlimited.
+
 \lstinputlisting[label=list:hugestack,%
 caption=hugestack.c]{../../usr/examples/hugestack.c}
 

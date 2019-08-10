@@ -20,8 +20,25 @@ be loaded, code region and heap region.
 The kernel reads process memory regions based on information provided by
 \verb+PT_LOAD+ sections in the \acs{elf} file.
 
-The kernel can read additional information needed for exec from note sections,
-currently supported note types are \verb+NT_VERSION+ and \verb+NT_STACKSIZE+.
+The kernel can read additional information needed for executing a binary
+from the elf notes. The non-standard notes are only parsed if \verb+Zeke+
+is defined as an owner of the note.
+
+\verb+NT_VERSION+
+
+\verb+NT_STACKSIZE+
+
 \verb+NT_STACKIZE+ note can be used to hint the kernel about the preferred
-minimum size for the main thread stack. The user space implementation is
-discussed in section \ref{sec:libc_elf}.
+minimum size for the main thread stack.
+
+\verb+NT_CAPABILITIES+
+
+\verb+NT_CAPABILITIES+ note is used to inform the kernel about capabilities
+required to execute a binary file. The elf loader attempts to set each
+capability as an effective capability, which may fail if the capability
+isn't in the bounding capabilities set. In case the file has
+\ver+O_EXEC_ALTPCAP+ oflag set then the loader will first add the capabilities
+found to the bounding capabilities set.
+
+The user space implementation of these note types is discussed in section
+\ref{sec:libc_elf}.
