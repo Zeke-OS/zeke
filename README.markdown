@@ -101,13 +101,37 @@ To successfully compile Zeke, you'll need the following packages/tools:
 
 Run `make help` for full list of targets and compilation flags.
 
+```bash
+$ KBUILD_DEFCONFIG=qemu_rpi_headless_testing.defconfig ./configure defconfig
+$ ./configure menuconfig
+$ make all -j4
+```
+
+`KBUILD_DEFCONFIG` can be set as any of the defconfig targest found under
+the `defconfigs` directory.
+
+Finally you can build the rootfs image by running:
+
+```bash
+$ make rootfs
+```
+
 ### Running Zeke in QEMU
 
 Qemu from rpi branch of `git@github.com:Torlus/qemu.git` repository seems to work
 best for BCM2835/Raspberry Pi version of Zeke.
 
-    ../src/configure --prefix=[PATH TO BIN] --target-list=arm-softmmu,arm-linux-user,armeb-linux-user --enable-sdl
-    make -j4 && sudo make install
+```bash
+$ ../src/configure --prefix=[PATH TO BIN] --target-list=arm-softmmu,arm-linux-user,armeb-linux-user --enable-sdl
+$ make -j4 && sudo make install
+```
+
+Once you have Qemu installed you can run Zeke in Qemu by using the following
+build target.
+
+```bash
+$ make qemu
+```
 
 ### Running Zeke on real ARM
 

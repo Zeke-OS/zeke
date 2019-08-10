@@ -13,11 +13,11 @@ The easiest way to run Zeke is by using the ready built
 [Docker image](https://hub.docker.com/r/olliv/zekedock/) and
 [dmk](https://github.com/Zeke-OS/dmk).
 
-```
-$ ./dmk
+```bash
+$ dmk
 you@abc:/build$ KBUILD_DEFCONFIG=qemu_rpi_headless_testing.defconfig ./configure defconfig
-you@abc:/build$ make all world -j5 && make rootfs
-you@abc:/build$ ~/qemu-zeke
+you@abc:/build$ make all -j5
+you@abc:/build$ make qemu
 ```
 
 After making the defconfig you can change the configuration knobs by running
