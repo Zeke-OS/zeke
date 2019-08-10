@@ -350,6 +350,13 @@ int securelevel_gt(int level);
 
 int priv_grp_is_member(const struct cred * cred, gid_t gid);
 
+int priv_cred_eff_get(const struct cred * cred, int priv);
+int priv_cred_eff_set(struct cred * cred, int priv);
+int priv_cred_eff_clear(struct cred * cred, int priv);
+int priv_cred_bound_get(const struct cred * cred, int priv);
+int priv_cred_bound_set(struct cred * cred, int priv);
+int priv_cred_bound_clear(struct cred * cred, int priv);
+
 /**
  * Initialize a cred struct.
  * @param cred is a pointer to an uninitialized cred struct.

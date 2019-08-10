@@ -82,12 +82,12 @@ int priv_grp_is_member(const struct cred * cred, gid_t gid)
     return 0;
 }
 
-static int priv_cred_eff_get(const struct cred * cred, int priv)
+int priv_cred_eff_get(const struct cred * cred, int priv)
 {
     return bitmap_status(cred->pcap_effmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_eff_set(struct cred * cred, int priv)
+int priv_cred_eff_set(struct cred * cred, int priv)
 {
     int bound = bitmap_status(cred->pcap_bndmap, priv, _PRIV_MLEN);
 
@@ -101,22 +101,22 @@ static int priv_cred_eff_set(struct cred * cred, int priv)
     return bitmap_set(cred->pcap_effmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_eff_clear(struct cred * cred, int priv)
+int priv_cred_eff_clear(struct cred * cred, int priv)
 {
     return bitmap_clear(cred->pcap_effmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_bound_get(const struct cred * cred, int priv)
+int priv_cred_bound_get(const struct cred * cred, int priv)
 {
     return bitmap_status(cred->pcap_bndmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_bound_set(struct cred * cred, int priv)
+int priv_cred_bound_set(struct cred * cred, int priv)
 {
     return bitmap_set(cred->pcap_bndmap, priv, _PRIV_MLEN);
 }
 
-static int priv_cred_bound_clear(struct cred * cred, int priv)
+int priv_cred_bound_clear(struct cred * cred, int priv)
 {
     return bitmap_clear(cred->pcap_bndmap, priv, _PRIV_MLEN);
 }

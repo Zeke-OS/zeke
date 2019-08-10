@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File control options.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -124,7 +125,7 @@ typedef int pid_t; /*!< Process ID. */
 #define O_RDWR          0x3000 /*!< Open for reading and writing. */
 #define O_SEARCH        0x8000 /*!< Open directory for search only. */
 #define O_EXEC          0x4000 /*!< Open for execute only. */
-#ifdef KERNEL_INTERNAL /* Internal flags */
+#ifdef KERNEL_INTERNAL /* Internal flags to the kernel */
 #define O_USERMASK      0x0ffff
 #define O_KFREEABLE     0x10000 /*!< Can be freed with kfree() by
                                  *   fs_fildes_ref(), if not set the file won't
@@ -132,6 +133,9 @@ typedef int pid_t; /*!< Process ID. */
                                  *   useful if the file descriptor is static or
                                  *   freed by other subsystem.
                                  */
+#define O_EXEC_ALTPCAP  0x20000  /*!< The executable file can set new process
+                                  *   bounding capabilities on exec().
+                                  */
 #endif
 
 #define AT_FDCWD            0x40000000 /*!< Use the current working directory to

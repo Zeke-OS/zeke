@@ -1,6 +1,7 @@
 /*
  * MIT/X Consortium License
  *
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2014 Dimitris Papastamos <sin@2f30.org>
  *
@@ -28,9 +29,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/elf_notes.h>
+#include <sys/priv.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+ELFNOTE_CAPABILITIES(
+    PRIV_TTY_SETA,
+    PRIV_VFS_READ,
+    PRIV_VFS_WRITE,
+    PRIV_VFS_LOOKUP,
+    PRIV_VFS_STAT,
+);
 
 static void poweroff(void);
 static void reap(void);

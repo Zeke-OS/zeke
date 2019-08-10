@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -552,6 +553,8 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
 {
     file_t * new_fildes;
+    int is_dir;
+    struct stat stat_buf;
     int retval;
 
     KERROR_DBG("%s(vnode %pV, oflags %x)\n", __func__, vnode, oflags);
@@ -559,6 +562,8 @@ int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
     if (!vnode)
         return -EINVAL;
     vref(vnode);
+
+    is_dir = S_ISDIR(vnode->vn_mode);
 
     if (priv_check(&curproc->cred, PRIV_VFS_ADMIN) == 0)
         goto perms_ok;
@@ -570,8 +575,13 @@ int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
 
 perms_ok:
     /* Check other oflags */
-    if ((oflags & O_DIRECTORY) && (!S_ISDIR(vnode->vn_mode))) {
+    if ((oflags & O_DIRECTORY) && !is_dir) {
         retval = -ENOTDIR;
+        goto out;
+    }
+
+    retval = vnode->vnode_ops->stat(vnode, &stat_buf);
+    if (retval) {
         goto out;
     }
 
@@ -600,6 +610,16 @@ perms_ok:
     }
     fs_fildes_set(curproc->files->fd[fd], vnode, oflags);
     new_fildes->oflags |= O_KFREEABLE;
+
+    /*
+     * Set O_EXEC_ALTPCAP to mark the file is allowed to alter the bounding
+     * capabilities set on exec().
+     * TODO UF_SYSTEM is FAT specific, perhaps in the future there should be an
+     * unified capabilities interface in the VFS stat().
+     */
+    if (!is_dir && stat_buf.st_flags & UF_SYSTEM) {
+        new_fildes->oflags |= O_EXEC_ALTPCAP;
+    }
 
     /*
      * File descriptor ready, make an event call to the fs.

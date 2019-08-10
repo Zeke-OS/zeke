@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright 2012 Konstantin Belousov <kib@FreeBSD.org>
  * Copyright 2000 David E. O'Brien, John D. Polstra.
@@ -45,6 +46,7 @@
 
 /**
  * Note integer.
+ * @param _type_ is one of the `NT_` types from `elf_common.h`
  */
 #define ELFNOTE_INT(_section_, _vendor_, _type_, _name_, _value_)   \
     static const struct {                                           \
@@ -60,6 +62,7 @@
 
 /**
  * Note string.
+ * @param _type_ is one of the `NT_` types from `elf_common.h`
  * @param _str_ is the string literal to be stored. The size must be
  *              a multiple of the word size.
  */
@@ -84,12 +87,31 @@
     static const struct {                                           \
         __ELF_NOTE_STRUCT_HEAD(ELFNOTE_VENDOR_ZEKE)                 \
         uint32_t desc;                                              \
-    } __ELF_NOTE_STRUCT_DEF(ELFNOTE_SECT_ZEKE_CONF, _name_) = {     \
+    } __ELF_NOTE_STRUCT_DEF(ELFNOTE_SECT_ZEKE_CONF, stacksize) = {  \
         .namesz = sizeof(ELFNOTE_VENDOR_ZEKE),                      \
         .descsz = sizeof(uint32_t),                                 \
         .type = NT_STACKSIZE,                                       \
         .name = ELFNOTE_VENDOR_ZEKE,                                \
         .desc = (_stack_size_)                                      \
+    }
+
+/**
+ * Note capabilities.
+ * Note specifying the capabilities requred to execute the elf binary.
+ * Maximum of 64 capabilities can be requested per note and an
+ * unlimited number of notes can be added.
+ */
+#define ELFNOTE_CAPABILITIES(...)                                   \
+    static const struct {                                           \
+        __ELF_NOTE_STRUCT_HEAD(ELFNOTE_VENDOR_ZEKE)                 \
+        int32_t desc[];                                             \
+    } __ELF_NOTE_STRUCT_DEF(ELFNOTE_SECT_ZEKE_CONF,                 \
+                            __CONCAT(caps_, __COUNTER__)) = {       \
+        .namesz = sizeof(ELFNOTE_VENDOR_ZEKE),                      \
+        .descsz = (sizeof((uint32_t[]){__VA_ARGS__})),              \
+        .type = NT_CAPABILITIES,                                    \
+        .name = ELFNOTE_VENDOR_ZEKE,                                \
+        .desc = {__VA_ARGS__}                                       \
     }
 
 #endif /* _SYS_ELF_NOTES_H_ */

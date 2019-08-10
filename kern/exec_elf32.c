@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   32bit ELF loading.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -35,6 +36,7 @@
 #include <machine/endian.h>
 #include <sys/elf32.h>
 #include <sys/elf_notes.h>
+#include <sys/priv.h>
 #include <buf.h>
 #include <exec.h>
 #include <fs/fs.h>
@@ -250,6 +252,7 @@ static void nt_version(struct elf_note * note, size_t align)
     char * value = vendor + note->n_namesz;
 
     KERROR_DBG("Vendor: %s, Value: %s\n", vendor, value);
+    /* TODO Do something with the nt_version note */
 }
 
 static size_t nt_stacksize(struct elf_note * note, size_t align)
@@ -265,8 +268,62 @@ static size_t nt_stacksize(struct elf_note * note, size_t align)
     return value;
 }
 
-static int load_notes(struct elf_ctx * ctx, size_t sect_index)
+/**
+ * Read a Zeke process capabilities request note
+ * @param altpcap Set if the file is allowed to set bounding capabilities.
+ */
+static size_t nt_capabilities(struct elf_note * note,
+                              size_t align,
+                              int altpcap,
+                              struct cred * cred)
 {
+    char * vendor = (char *)note + sizeof(struct elf_note);
+    const size_t nr_capabilities = note->n_descsz / sizeof(uint32_t);
+    uint32_t * value = (uint32_t *)(vendor + memalign_size(note->n_namesz,
+                                                           align));
+
+    if (strncmp(vendor, ELFNOTE_VENDOR_ZEKE, note->n_namesz))
+        return 0; /* Not ours */
+
+    for (size_t i = 0; i < nr_capabilities; i++) {
+        const int priv = (int)value[i];
+        int err;
+
+        if (priv >= _PRIV_MENT) {
+            KERROR_DBG("Invalid capability: %u\n", priv);
+            return -EINVAL;
+        }
+        KERROR_DBG("Add capability: %d\n", priv);
+
+        /* We can only set bounding capabilities if the file system allows it */
+        if (altpcap) {
+            err = priv_cred_bound_set(cred, priv);
+            if (err) {
+                KERROR_DBG("Could not set bound capability: %u\n", priv);
+                return err;
+            }
+        }
+
+        /*
+         * We can always attempt to set effective capabilities but it may fail
+         * if the process doesn't have the same capabilities in the bounding
+         * capabilities set.
+         */
+        err = priv_cred_eff_set(cred, priv);
+        if (err) {
+            KERROR_DBG("Could not set eff capability: %u\n", priv);
+            return err;
+        }
+    }
+
+    return nr_capabilities;
+}
+
+static int load_notes(struct proc_info * proc,
+                      struct elf_ctx * ctx,
+                      size_t sect_index)
+{
+    const int altpcap = !!(ctx->file->oflags & O_EXEC_ALTPCAP);
     struct elf32_phdr * phdr = &ctx->phdr[sect_index];
     const size_t align = phdr->p_align;
     size_t off = 0;
@@ -310,6 +367,12 @@ static int load_notes(struct elf_ctx * ctx, size_t sect_index)
         case NT_STACKSIZE: /* Preferred minimum stack size */
             ctx->stack_size = nt_stacksize(note, align);
             break;
+        case NT_CAPABILITIES:
+            /* TODO Only allow settings caps if VFS allows it */
+            retval = nt_capabilities(note, align, altpcap, &proc->cred);
+            if (retval < 0) {
+                goto out;
+            }
         default:
             break;
         }
@@ -373,7 +436,7 @@ static int parse_pheaders(struct proc_info * proc, struct elf_ctx * ctx)
             }
             break;
         case PT_NOTE:
-            err = load_notes(ctx, i);
+            err = load_notes(proc, ctx, i);
             if (err) {
                 KERROR(KERROR_ERR, "Failed to read notes\n");
                 return -1;
