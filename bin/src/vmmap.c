@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process vm stats.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -32,8 +33,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/sysctl.h>
 #include <sys/proc.h>
+#include <sys/sysctl.h>
 #include <sysexits.h>
 
 static size_t pid_vmmap(struct kinfo_vmentry ** vmmap, pid_t pid)
