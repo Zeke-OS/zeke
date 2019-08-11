@@ -121,6 +121,12 @@ qemu: rootfs
 stats: clean
 	cloc --exclude-dir=.git,doc,tools .
 
+cppcheck-kern:
+	cppcheck --rule-file=tools/cppcheck_zeke.cfg --force ./kern
+
+cppcheck-lib:
+	cppcheck --rule-file=tools/cppcheck_zeke.cfg --force ./lib
+
 # target: help - Display callable targets.
 help:
 	@./tools/help.sh
