@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Page table mapper.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -123,7 +124,7 @@ mtx_t ptmapper_lock = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
  * @param len   is the length of the block, either PTM_MASTER or PTM_COARSE.
  */
 #define PTM_FREE(block, len) \
-    bitmap_block_update(ptm_alloc_map, 0, block, len)
+    bitmap_block_update(ptm_alloc_map, 0, block, len, PTM_SIZEOF_MAP)
 
 int ptmapper_alloc(mmu_pagetable_t * pt)
 {

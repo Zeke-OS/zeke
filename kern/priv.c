@@ -56,6 +56,53 @@ static int securelevel = configBOOT_SECURELEVEL;
 SYSCTL_INT(_security, OID_AUTO, securelevel, CTLTYPE_INT|CTLFLAG_RW,
            &securelevel, 0, "Current secure level");
 
+/**
+ * Default capabilities of a process.
+ */
+static int default_privs[] = {
+    /*
+     * Default grants.
+     * Some permissions are just needed for normal operation
+     * but sometimes we wan't to restrict these too.
+     */
+    PRIV_CLRCAP,
+    PRIV_TTY_SETA,
+    PRIV_VFS_READ,
+    PRIV_VFS_WRITE,
+    PRIV_VFS_EXEC,
+    PRIV_VFS_LOOKUP,
+    PRIV_VFS_CHROOT,
+    PRIV_VFS_STAT,
+    /*
+     * Super user grants.
+     * Later on we can remove most of these privileges as we implement a
+     * file system based capabilities for binaries.
+     */
+    /* Capabilities management */
+    PRIV_SETEFF,
+    PRIV_SETBND,
+    /* Credential management */
+    PRIV_CRED_SETUID,
+    PRIV_CRED_SETEUID,
+    PRIV_CRED_SETSUID,
+    PRIV_CRED_SETGID,
+    PRIV_CRED_SETEGID,
+    PRIV_CRED_SETSGID,
+    PRIV_CRED_SETGROUPS,
+    /* Process caps */
+    PRIV_PROC_SETLOGIN,
+    /* IPC */
+    PRIV_SIGNAL_OTHER,
+    PRIV_SIGNAL_ACTION,
+    /* sysctl */
+    PRIV_SYSCTL_WRITE,
+    /* vfs */
+    PRIV_VFS_ADMIN,
+    PRIV_VFS_CHROOT,
+    PRIV_VFS_MOUNT,
+    0
+};
+
 int securelevel_ge(int level)
 {
     return (securelevel >= level ? -EPERM : 0);
@@ -121,10 +168,26 @@ int priv_cred_bound_clear(struct cred * cred, int priv)
     return bitmap_clear(cred->pcap_bndmap, priv, _PRIV_MLEN);
 }
 
+static void priv_cred_bound_reset(struct cred * cred)
+{
+    int * priv;
+    int err;
+
+    err = bitmap_block_update(cred->pcap_bndmap, 0, 0, _PRIV_MENT, _PRIV_MENT);
+    KASSERT(err = 0, "clear all bounding caps");
+
+    for (priv = default_privs; *priv; priv++) {
+        int v = *priv;
+
+        priv_cred_bound_set(cred, v);
+    }
+}
+
 void priv_cred_init(struct cred * cred)
 {
     size_t i = 0;
     gid_t * gid = cred->sup_gid;
+    int * priv;
 
     /*
      * Clear supplementary groups.
@@ -133,51 +196,11 @@ void priv_cred_init(struct cred * cred)
         gid[i] = NOGROUP;
     }
 
-    int privs[] = {
-        /*
-         * Default grants.
-         * Some permissions are just needed for normal operation
-         * but sometimes we wan't to restrict these too.
-         */
-        PRIV_CLRCAP,
-        PRIV_TTY_SETA,
-        PRIV_VFS_READ,
-        PRIV_VFS_WRITE,
-        PRIV_VFS_EXEC,
-        PRIV_VFS_LOOKUP,
-        PRIV_VFS_CHROOT,
-        PRIV_VFS_STAT,
-        /*
-         * Super user grants.
-         * Later on we can remove most of these privileges as we implement a
-         * file system based capabilities for binaries.
-         */
-        /* Capabilities management */
-        PRIV_SETEFF,
-        PRIV_SETBND,
-        /* Credential management */
-        PRIV_CRED_SETUID,
-        PRIV_CRED_SETEUID,
-        PRIV_CRED_SETSUID,
-        PRIV_CRED_SETGID,
-        PRIV_CRED_SETEGID,
-        PRIV_CRED_SETSGID,
-        PRIV_CRED_SETGROUPS,
-        /* Process caps */
-        PRIV_PROC_SETLOGIN,
-        /* IPC */
-        PRIV_SIGNAL_OTHER,
-        /* sysctl */
-        PRIV_SYSCTL_WRITE,
-        /* vfs */
-        PRIV_VFS_ADMIN,
-        PRIV_VFS_CHROOT,
-        PRIV_VFS_MOUNT,
-        0
-    };
-    int * priv;
+    /* First make syre the capability maps are clear. */
+    (void)bitmap_block_update(cred->pcap_effmap, 0, 0, _PRIV_MENT, _PRIV_MENT);
+    (void)bitmap_block_update(cred->pcap_bndmap, 0, 0, _PRIV_MENT, _PRIV_MENT);
 
-    for (priv = privs; *priv; priv++) {
+    for (priv = default_privs; *priv; priv++) {
         int v = *priv;
 
         priv_cred_bound_set(cred, v);
@@ -360,6 +383,10 @@ static intptr_t sys_priv_pcap(__user void * user_args)
         }
 
         priv_cred_bound_clear(proccred, args.priv);
+        break;
+    case PRIV_PCAP_MODE_RST_BND:
+        /* Reset bounding capabilities to the default */
+        priv_cred_bound_reset(&curproc->cred);
         break;
     default:
         err = -EINVAL;

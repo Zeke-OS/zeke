@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   bitmap allocation functions.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -112,12 +113,15 @@ int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t size)
     return 0;
 }
 
-void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start,
-                         size_t len)
+int bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start,
+                        size_t len, size_t size)
 {
     size_t i, j, n;
     bitmap_t  tmp;
     size_t k;
+
+    if (start + len > size * SIZEOF_BITMAP_T)
+        return -EINVAL;
 
     mark &= 1;
     k = BIT2WORDI(start);
@@ -132,10 +136,12 @@ void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start,
             bitmap[i] |= tmp;
             n++;
             if (++j >= len)
-                return;
+                return 0;
         }
         n = 0;
     } while (i++);
+
+    return 0;
 }
 
 int bitmap_block_alloc(size_t * start, size_t len, bitmap_t * bitmap,
@@ -145,7 +151,7 @@ int bitmap_block_alloc(size_t * start, size_t len, bitmap_t * bitmap,
 
     retval = bitmap_block_search(start, len, bitmap, size);
     if (retval == 0) {
-        bitmap_block_update(bitmap, 1, *start, len);
+        bitmap_block_update(bitmap, 1, *start, len, size);
     }
 
     return retval;
@@ -169,7 +175,7 @@ int bitmap_block_align_alloc(size_t * start, size_t len,
         begin = *start + (balign - (*start % balign));
     } while (*start % balign);
 
-    bitmap_block_update(bitmap, 1, *start, len);
+    bitmap_block_update(bitmap, 1, *start, len, size);
 
 out:
     return retval;

@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Bitmap allocation functions.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -125,9 +126,10 @@ int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t size);
  * @param mark      0 = clear; 1 = set;
  * @param start     is the starting bit position in bitmap.
  * @param len       is the length of the block being updated.
+ * @param size      is the size of bitmap in bytes.
  */
-void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start,
-                         size_t len);
+int bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start,
+                        size_t len, size_t size);
 
 /**
  * Set a contiguous block of zeroed bits to ones and return starting index.

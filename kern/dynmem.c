@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Dynmem management.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -181,6 +182,7 @@ static void mark_reserved_areas(void)
         uintptr_t end_addr;
         size_t bytes;
         size_t blkcount;
+        int err;
 
         if (area->caddr_start > DYNMEM_END)
             continue;
@@ -189,7 +191,9 @@ static void mark_reserved_areas(void)
                                                     area->caddr_end;
         bytes = (end_addr - area->caddr_start + 1);
         blkcount = bytes / DYNMEM_PAGE_SIZE;
-        bitmap_block_update(dynmemmap_bitmap, 1, pos, blkcount);
+        err = bitmap_block_update(dynmemmap_bitmap, 1, pos, blkcount,
+                                  SIZEOF_DYNMEMMAP_BITMAP);
+        KASSERT(err == 0, "vreg map update OOB");
         dynmem_free -= bytes;
         dynmem_reserved += bytes;
     }
@@ -291,6 +295,7 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t ctrl)
 {
     size_t pos;
     void * retval = NULL;
+    int err;
 
     if (size == 0)
         return NULL;
@@ -307,7 +312,9 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t ctrl)
     /* Update sysctl stats */
     dynmem_free -= size * DYNMEM_PAGE_SIZE;
 
-    bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
+    err = bitmap_block_update(dynmemmap_bitmap, 1, pos, size,
+                              SIZEOF_DYNMEMMAP_BITMAP);
+    KASSERT(err == 0, "dynmem map update OOB");
     retval = kmap_allocation(pos, size, ap, ctrl);
 
 out:
@@ -345,6 +352,7 @@ void dynmem_free_region(void * addr)
 {
     size_t i;
     struct dynmem_desc * dp;
+    int err;
 
     mtx_lock(&dynmem_region_lock);
 
@@ -374,7 +382,9 @@ void dynmem_free_region(void * addr)
 
     /* Mark the region as unused. */
     memset(dp, 0, dynmem_region.num_pages * sizeof(struct dynmem_desc));
-    bitmap_block_update(dynmemmap_bitmap, 1, i, dynmem_region.num_pages);
+    err = bitmap_block_update(dynmemmap_bitmap, 1, i, dynmem_region.num_pages,
+                              SIZEOF_DYNMEMMAP_BITMAP);
+    KASSERT(err == 0, "vreg map update OOB");
 
     /* Update sysctl stats */
     dynmem_free += dynmem_region.num_pages * DYNMEM_PAGE_SIZE;

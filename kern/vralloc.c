@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual Region Allocator.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -183,6 +184,7 @@ static struct vregion * get_iblocks(size_t * iblock, size_t pcount)
 {
     struct vregion * vreg_temp;
     struct vregion * vreg = NULL;
+    int err;
 
     mtx_lock(&vr_big_lock);
 
@@ -202,7 +204,8 @@ retry:
         goto retry;
     }
 
-    bitmap_block_update(vreg->map, 1, *iblock, pcount);
+    err = bitmap_block_update(vreg->map, 1, *iblock, pcount, vreg->size);
+    KASSERT(err == 0, "vreg map update OOB");
     vreg->count += pcount;
     vralloc_used += VREG_BYTESIZE(pcount);
 out:
@@ -220,6 +223,7 @@ static void vreg_free_callback(struct kobj * obj)
     struct vregion * vreg = (struct vregion *)(bp->allocator_data);
     const size_t bcount = VREG_PCOUNT(bp->b_bufsize);
     size_t iblock;
+    int err;
 
     mtx_lock(&vr_big_lock);
 
@@ -230,7 +234,8 @@ static void vreg_free_callback(struct kobj * obj)
     /* Get the iblock no. */
     iblock = VREG_ADDR2I(vreg, bp->b_data);
 
-    bitmap_block_update(vreg->map, 0, iblock, bcount);
+    err = bitmap_block_update(vreg->map, 0, iblock, bcount, vreg->size);
+    KASSERT(err == 0, "vreg map update OOB");
     vreg->count -= bcount;
 
     vralloc_used -= bp->b_bufsize; /* Update stats */
@@ -368,10 +373,14 @@ void allocbuf(struct buf * bp, size_t size)
         if (bitmap_block_search_s(sblock, &iblock, blockdiff, vreg->map,
                     vreg->size) == 0) {
             if (iblock == sblock + 1) {
-                bitmap_block_update(vreg->map, 1, sblock, blockdiff);
+                int err;
+                err = bitmap_block_update(vreg->map, 1, sblock, blockdiff,
+                                          vreg->size);
+                KASSERT(err == 0, "vreg map update OOB");
             } else { /* Must allocate a new region */
                 struct vregion * nvreg;
                 uintptr_t new_addr;
+                int err;
 
                 nvreg = get_iblocks(&iblock, pcount);
                 if (!nvreg) {
@@ -392,7 +401,9 @@ void allocbuf(struct buf * bp, size_t size)
                 bp->allocator_data = nvreg;
 
                 /* Free blocks from old vreg */
-                bitmap_block_update(vreg->map, 0, iblock, bcount);
+                err = bitmap_block_update(vreg->map, 0, iblock, bcount,
+                                          vreg->size);
+                KASSERT(err == 0, "vreg map update OOB");
             }
         }
     } else {
@@ -401,8 +412,10 @@ void allocbuf(struct buf * bp, size_t size)
        */
         const size_t sblock = VREG_ADDR2I(vreg, bp->b_data) + bcount +
                               blockdiff;
+        int err;
 
-        bitmap_block_update(vreg->map, 0, sblock, -blockdiff);
+        err = bitmap_block_update(vreg->map, 0, sblock, -blockdiff, vreg->size);
+        KASSERT(err == 0, "vreg map update OOB");
 #endif
     }
 

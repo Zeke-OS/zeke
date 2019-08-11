@@ -273,7 +273,8 @@ enum priv_pcap_mode {
     PRIV_PCAP_MODE_CLR_EFF = 2, /*!< Clear an effective cap. */
     PRIV_PCAP_MODE_GET_BND = 3, /*!< Get the status of a bounding cap. */
     PRIV_PCAP_MODE_SET_BND = 4, /*!< Set a bounding cap. */
-    PRIV_PCAP_MODE_CLR_BND = 5  /*!< Clear a bounding cap. */
+    PRIV_PCAP_MODE_CLR_BND = 5, /*!< Clear a bounding cap. */
+    PRIV_PCAP_MODE_RST_BND = 6, /*!< Reset the bounding caps to the default. */
 };
 
 /**
