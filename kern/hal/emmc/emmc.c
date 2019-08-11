@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   emmc driver.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -413,7 +414,7 @@ static uint32_t sd_get_clock_divider(uint32_t base_clock, uint32_t target_rate)
         /* Find the first bit set */
         int divisor = -1;
         for (int first_bit = 31; first_bit >= 0; first_bit--) {
-            uint32_t bit_test = (1 << first_bit);
+            uint32_t bit_test = (1u << first_bit);
             if (targetted_divisor & bit_test) {
                 divisor = first_bit;
                 targetted_divisor &= ~bit_test;
