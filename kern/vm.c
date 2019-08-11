@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -622,9 +623,14 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
         }
     }
 
-    if ((insop & VM_INSOP_MAP_REG) &&
-        (err = vm_mapproc_region(proc, region))) {
-        return err;
+    if (insop & VM_INSOP_MAP_REG) {
+        if (!region) {
+            panic("region is not set");
+        }
+
+        err = vm_mapproc_region(proc, region);
+        if (err)
+            return err;
     }
 
     mtx_lock(&mm->regions_lock);
