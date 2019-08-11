@@ -292,9 +292,7 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
     int err;
 
     err = priv_check(fromcred, priv);
-    if (err == 0) {
-        return 0;
-    } else if (err != -EPERM) {
+    if (err == 0 || err != -EPERM) {
         return err;
     }
 
@@ -313,7 +311,7 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
         }
     }
 
-    return err;
+    return -EPERM;
 }
 
 /**
@@ -324,41 +322,35 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
 static intptr_t sys_priv_pcap(__user void * user_args)
 {
     struct _priv_pcap_args args;
-    struct proc_info * proc;
     struct cred * proccred;
     int err;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
-        set_errno(EFAULT);
-        return -1;
+        err = -EFAULT;
+        goto out;
     }
 
-    proc = proc_ref(args.pid);
-    if (!proc) {
-        set_errno(ESRCH);
-        return -1;
-    }
-    proccred = &proc->cred;
+    proccred = &curproc->cred;
 
     switch (args.mode) {
     case PRIV_PCAP_MODE_GET_EFF: /* Get effective */
         err = priv_cred_eff_get(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_SET_EFF: /* Set effective */
-        err = priv_check(&curproc->cred, PRIV_SETEFF);
+        err = priv_check(proccred, PRIV_SETEFF);
         if (err) {
-            set_errno(EPERM);
-            return -1;
+            err = -EPERM;
+            break;
         }
 
         err = priv_cred_eff_set(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_CLR_EFF: /* Clear effective */
-        err = priv_check(&curproc->cred, PRIV_CLRCAP);
+        err = priv_check(proccred, PRIV_CLRCAP);
         if (err) {
-            set_errno(EPERM);
-            return -1;
+            err = -EPERM;
+            break;
         }
 
         err = priv_cred_eff_clear(proccred, args.priv);
@@ -367,37 +359,37 @@ static intptr_t sys_priv_pcap(__user void * user_args)
         err = priv_cred_bound_get(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_SET_BND: /* Set bounding */
-        err = priv_check(&curproc->cred, PRIV_SETBND);
+        err = priv_check(proccred, PRIV_SETBND);
         if (err) {
-            set_errno(EPERM);
-            return -1;
+            err = -EPERM;
+            break;
         }
 
         err = priv_cred_bound_set(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_CLR_BND: /* Clear bounding */
-        err = priv_check(&curproc->cred, PRIV_CLRCAP);
+        err = priv_check(proccred, PRIV_CLRCAP);
         if (err) {
-            set_errno(EPERM);
-            return -1;
+            err = -EPERM;
+            break;
         }
 
         priv_cred_bound_clear(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_RST_BND:
         /* Reset bounding capabilities to the default */
-        priv_cred_bound_reset(&curproc->cred);
+        priv_cred_bound_reset(proccred);
         break;
     default:
         err = -EINVAL;
     }
 
+out:
     if (err) {
         set_errno(-err);
         err = -1;
     }
 
-    proc_unref(proc);
     return err;
 }
 

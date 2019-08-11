@@ -65,9 +65,9 @@
 /*
  * Privileges associated with the security framework.
  */
-#define PRIV_CLRCAP          1  /* Privilege to clear process capabilities. */
-#define PRIV_SETEFF          2  /* Privilege to set effective capabilities. */
-#define PRIV_SETBND          3  /* Privilege to set bounding capabilities. */
+#define PRIV_CLRCAP          1  /* Can clear process capabilities. */
+#define PRIV_SETEFF          2  /* Can set effective capabilities. */
+#define PRIV_SETBND          3  /* Can set bounding capabilities. */
 
 #define PRIV_ACCT           10  /* Manage process accounting. */
 #define PRIV_MAXFILES       11  /* Exceed system open files limit. */
@@ -281,7 +281,6 @@ enum priv_pcap_mode {
  * Argument struct for SYSCALL_PRIV_PCAP
  */
 struct _priv_pcap_args {
-    pid_t pid;
     enum priv_pcap_mode mode;
     size_t priv;
 };
@@ -401,8 +400,9 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
  */
 
 #else
-int priv_setpcap(pid_t pid, int bounding, size_t priv, int value);
-int priv_getcap(pid_t pid, int bounding, size_t priv);
+int priv_setpcap(int bounding, size_t priv, int value);
+int priv_getcap(int bounding, size_t priv);
+int priv_rstpcap(void);
 #endif
 
 #endif /* !_SYS_PRIV_H_ */
