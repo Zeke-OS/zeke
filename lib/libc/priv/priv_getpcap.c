@@ -40,7 +40,7 @@
 #include <sys/priv.h>
 #include <unistd.h>
 
-int priv_getcap(int bounding, size_t priv)
+int priv_getpcap(int bounding, size_t priv)
 {
     struct _priv_pcap_args args = {
         .priv = priv

@@ -616,6 +616,8 @@ perms_ok:
      * capabilities set on exec().
      * TODO UF_SYSTEM is FAT specific, perhaps in the future there should be an
      * unified capabilities interface in the VFS stat().
+     * TODO How to prevent a regular user from exploiting this by mounting an
+     * sd? Do we need a uid=0 check for the superblock?
      */
     if (!is_dir && stat_buf.st_flags & UF_SYSTEM) {
         new_fildes->oflags |= O_EXEC_ALTPCAP;

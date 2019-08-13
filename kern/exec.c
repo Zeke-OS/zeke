@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -31,6 +32,7 @@
  */
 
 #include <errno.h>
+#include <sys/priv.h>
 #include <sys/sysctl.h>
 #include <syscall.h>
 #include <unistd.h>
@@ -140,6 +142,13 @@ int exec_file(struct exec_loadfn * loader, int fildes,
     /* Unload user regions before loading a new image. */
     (void)vm_unload_regions(curproc, MM_HEAP_REGION, -1);
 
+    /*
+     * Do what is necessary on exec here as the loader might need to alter the
+     * capabilities and it could be an unexpected result if whatever the loader
+     * does would be overriden.
+     */
+    priv_cred_init_exec(&curproc->cred);
+
     /* Load the image */
     err = loader->load(curproc, file, &vaddr, &stack_size);
     KERROR_DBG("Proc image loaded (err = %d)\n", err);
@@ -169,7 +178,7 @@ int exec_file(struct exec_loadfn * loader, int fildes,
     }
     vm_fixmemmap_proc(curproc);
 
-        KERROR_DBG("Memory mapping done (pid = %d)\n", curproc->pid);
+    KERROR_DBG("Memory mapping done (pid = %d)\n", curproc->pid);
 
     /* Close CLOEXEC files */
     fs_fildes_close_exec(curproc);
@@ -200,9 +209,9 @@ fail:
 
         /*
          * Mark the old main thread for deletion, it's up to user space to kill
-         * any children. If there however is any child threads those may or may
-         * not cause a segmentation fault depending on when the scheduler
-         * starts removing stuff. This decission was made because we want to
+         * any children. However, if there are any child threads those may or
+         * may not cause a segmentation fault depending on when the scheduler
+         * starts removing stuff. This decision was made because we want to
          * keep disable_interrupt() time as short as possible and POSIX seems
          * to be quite silent about this issue anyway.
          */

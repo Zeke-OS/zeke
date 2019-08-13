@@ -90,16 +90,10 @@ static int default_privs[] = {
     PRIV_CRED_SETSGID,
     PRIV_CRED_SETGROUPS,
     /* Process caps */
+    PRIV_PROC_FORK,
     PRIV_PROC_SETLOGIN,
     /* IPC */
-    PRIV_SIGNAL_OTHER,
     PRIV_SIGNAL_ACTION,
-    /* sysctl */
-    PRIV_SYSCTL_WRITE,
-    /* vfs */
-    PRIV_VFS_ADMIN,
-    PRIV_VFS_CHROOT,
-    PRIV_VFS_MOUNT,
     0
 };
 
@@ -173,8 +167,8 @@ static void priv_cred_bound_reset(struct cred * cred)
     int * priv;
     int err;
 
-    err = bitmap_block_update(cred->pcap_bndmap, 0, 0, _PRIV_MENT, _PRIV_MENT);
-    KASSERT(err = 0, "clear all bounding caps");
+    err = bitmap_block_update(cred->pcap_bndmap, 0, 0, _PRIV_MENT, _PRIV_MLEN);
+    KASSERT(err == 0, "clear all bounding caps");
 
     for (priv = default_privs; *priv; priv++) {
         int v = *priv;
@@ -197,8 +191,8 @@ void priv_cred_init(struct cred * cred)
     }
 
     /* First make syre the capability maps are clear. */
-    (void)bitmap_block_update(cred->pcap_effmap, 0, 0, _PRIV_MENT, _PRIV_MENT);
-    (void)bitmap_block_update(cred->pcap_bndmap, 0, 0, _PRIV_MENT, _PRIV_MENT);
+    (void)bitmap_block_update(cred->pcap_effmap, 0, 0, _PRIV_MENT, _PRIV_MLEN);
+    (void)bitmap_block_update(cred->pcap_bndmap, 0, 0, _PRIV_MENT, _PRIV_MLEN);
 
     for (priv = default_privs; *priv; priv++) {
         int v = *priv;
@@ -208,13 +202,21 @@ void priv_cred_init(struct cred * cred)
     }
 }
 
-void priv_cred_init_inherit(struct cred * cred)
+void priv_cred_init_fork(struct cred * cred)
 {
     /* Clear effective capabilities that are not set in the bounding set. */
     for (size_t i = 0; i < _PRIV_MENT; i++) {
         if (priv_cred_bound_get(cred, i) == 0) {
             priv_cred_eff_clear(cred, i);
         }
+    }
+}
+
+void priv_cred_init_exec(struct cred * cred)
+{
+    if (priv_cred_eff_get(cred, PRIV_EXEC_B2E)) {
+        /* Copy the bounding set to the effective set. */
+        memcpy(cred->pcap_effmap, cred->pcap_bndmap, _PRIV_MSIZE);
     }
 }
 
@@ -378,6 +380,12 @@ static intptr_t sys_priv_pcap(__user void * user_args)
         break;
     case PRIV_PCAP_MODE_RST_BND:
         /* Reset bounding capabilities to the default */
+        err = priv_check(proccred, PRIV_SETBND);
+        if (err) {
+            err = -EPERM;
+            break;
+        }
+
         priv_cred_bound_reset(proccred);
         break;
     default:
@@ -393,7 +401,42 @@ out:
     return err;
 }
 
+/**
+ * @return -1 if failed;
+ *          0 if status was zero or operation succeed;
+ *          greater than zero status was one.
+ */
+static intptr_t sys_priv_pcap_getall(__user void * user_args)
+{
+    struct _priv_pcap_getall_args args;
+    struct cred * proccred = &curproc->cred;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if (args.effective) {
+        err = copyout(proccred->pcap_effmap,
+                      (__user void *)args.effective, _PRIV_MSIZE);
+    }
+    if (err == 0 && args.bounding) {
+        err = copyout(proccred->pcap_bndmap,
+                      (__user void *)args.bounding, _PRIV_MSIZE);
+    }
+
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
+}
+
 static const syscall_handler_t priv_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PRIV_PCAP, sys_priv_pcap),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PRIV_PCAP_GETALL, sys_priv_pcap_getall),
 };
 SYSCALL_HANDLERDEF(priv_syscall, priv_sysfnmap)

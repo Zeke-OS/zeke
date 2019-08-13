@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for syscalls.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -163,6 +164,7 @@
 #define SYSCALL_TIME_GETTIME        SYSCALL_MMTOTYPE(SYSCALL_GROUP_TIME, 0x00)
 #define SYSCALL_TIME_SETTIME        SYSCALL_MMTOTYPE(SYSCALL_GROUP_TIME, 0x01)
 #define SYSCALL_PRIV_PCAP           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PRIV, 0x00)
+#define SYSCALL_PRIV_PCAP_GETALL    SYSCALL_MMTOTYPE(SYSCALL_GROUP_PRIV, 0x01)
 
 /* Kernel scope */
 #ifdef KERNEL_INTERNAL

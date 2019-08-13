@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1980, 1983, 1987, 1988
                  The Regents of the University of California.
@@ -26,12 +27,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/elf_notes.h>
 #include <sys/param.h>
+#include <sys/priv.h>
 #include <sys/stat.h>
 #include <sysexits.h>
 #include <termios.h>
 #include <unistd.h>
 #include <zeke.h>
+
+ELFNOTE_CAPABILITIES(
+    PRIV_CLRCAP,
+    PRIV_SETBND,
+    PRIV_EXEC_B2E,
+    PRIV_CRED_SETUID,
+    PRIV_CRED_SETEUID,
+    PRIV_CRED_SETSUID,
+    PRIV_CRED_SETGID,
+    PRIV_CRED_SETEGID,
+    PRIV_CRED_SETSGID,
+    PRIV_CRED_SETGROUPS,
+    PRIV_PROC_SETLOGIN,
+    PRIV_SIGNAL_ACTION,
+    PRIV_TTY_SETA,
+    PRIV_VFS_READ,
+    PRIV_VFS_WRITE,
+    PRIV_VFS_EXEC,
+    PRIV_VFS_LOOKUP,
+    PRIV_VFS_STAT,
+    PRIV_SIGNAL_OTHER,
+    PRIV_SIGNAL_ACTION,
+);
 
 #define TIMEOUT 300
 
@@ -387,6 +413,24 @@ int main(int argc, char * argv[])
         fprintf(stderr, "%s: setlogin(): %s\n", argv0, strerror(errno));
 
     setuid(pwd->pw_uid);
+
+    /*
+     * Partially emulate a traditional root user but with very limited power
+     * over other users.
+     */
+    priv_rstpcap();
+    if (pwd->pw_uid == 0) {
+        priv_setpcap(1, PRIV_SIGNAL_OTHER, 1);
+        priv_setpcap(1, PRIV_SIGNAL_OTHER, 1);
+        priv_setpcap(1, PRIV_REBOOT, 1);
+        priv_setpcap(1, PRIV_PROC_STAT, 1);
+        priv_setpcap(1, PRIV_SYSCTL_DEBUG, 1);
+        priv_setpcap(1, PRIV_SYSCTL_WRITE, 1);
+        priv_setpcap(1, PRIV_VFS_ADMIN, 1);
+        priv_setpcap(1, PRIV_VFS_STAT, 1);
+        priv_setpcap(1, PRIV_VFS_MOUNT, 1);
+    }
+
     execlp(pwd->pw_shell, parse_shellname(pwd->pw_shell), NULL);
     fprintf(stderr, "%s: no shell: %s\n", argv0, strerror(errno));
 

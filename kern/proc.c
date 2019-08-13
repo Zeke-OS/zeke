@@ -661,6 +661,14 @@ pid_t proc_update(void)
 
 static intptr_t sys_proc_fork(__user void * user_args)
 {
+    int err;
+
+    err = priv_check(&curproc->cred, PRIV_PROC_FORK);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
     pid_t pid = proc_fork();
     if (pid < 0) {
         set_errno(-pid);

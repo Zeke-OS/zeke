@@ -68,6 +68,7 @@
 #define PRIV_CLRCAP          1  /* Can clear process capabilities. */
 #define PRIV_SETEFF          2  /* Can set effective capabilities. */
 #define PRIV_SETBND          3  /* Can set bounding capabilities. */
+#define PRIV_EXEC_B2E        4  /* Copy bnd set to eff set on exec. */
 
 #define PRIV_ACCT           10  /* Manage process accounting. */
 #define PRIV_MAXFILES       11  /* Exceed system open files limit. */
@@ -112,10 +113,11 @@
 /*
  * Process-related privileges.
  */
-#define PRIV_PROC_LIMIT     60  /* Exceed user process limit. */
-#define PRIV_PROC_SETLOGIN  61  /* Can call setlogin. */
-#define PRIV_PROC_SETRLIMIT 62  /* Can raise resources limits. */
-#define PRIV_PROC_STAT      63  /* Can get status info of any process. */
+#define PRIV_PROC_FORK      60  /* Can fork() */
+#define PRIV_PROC_LIMIT     61  /* Exceed user process limit. */
+#define PRIV_PROC_SETLOGIN  62  /* Can call setlogin. */
+#define PRIV_PROC_SETRLIMIT 63  /* Can raise resources limits. */
+#define PRIV_PROC_STAT      64  /* Can get status info of any process. */
 
 /*
  * Scheduling privileges.
@@ -248,7 +250,10 @@
  * Priv bitmap size.
  */
 #define _PRIV_MENT 256
-#define _PRIV_MLEN E2BITMAP_SIZE(_PRIV_MENT)
+/* Can't use E2BITMAP_SIZE here because this is exposed to the userland. */
+#define _PRIV_MLEN (_PRIV_MENT / (4 * 8))
+/* Size in bytes */
+#define _PRIV_MSIZE (_PRIV_MLEN * 4)
 
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 /**
@@ -283,6 +288,14 @@ enum priv_pcap_mode {
 struct _priv_pcap_args {
     enum priv_pcap_mode mode;
     size_t priv;
+};
+
+/**
+ * Argument struct for SYSCALL_PRIV_PCAP_GETALL
+ */
+struct _priv_pcap_getall_args {
+    uint32_t * effective;
+    uint32_t * bounding;
 };
 #endif
 
@@ -364,14 +377,19 @@ int priv_cred_bound_clear(struct cred * cred, int priv);
 void priv_cred_init(struct cred * cred);
 
 /**
- * Initialize inherited credentials.
+ * Initialize credentials inherited on fork.
  * 1. UIDs and GIDs are inherited as is
  * 2. Effective capabilities are inherited as is except for capabilities that
  *    are no longer set in the bounding capabilities set
  * 3. Bounding capabilities set is inherited as is
  * @param cred is the destination credential.
  */
-void priv_cred_init_inherit(struct cred * cred);
+void priv_cred_init_fork(struct cred * cred);
+
+/**
+ * Init credentials after exec.
+ */
+void priv_cred_init_exec(struct cred * cred);
 
 /**
  * Check privileges.
@@ -401,8 +419,9 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
 
 #else
 int priv_setpcap(int bounding, size_t priv, int value);
-int priv_getcap(int bounding, size_t priv);
+int priv_getpcap(int bounding, size_t priv);
 int priv_rstpcap(void);
+int priv_getpcaps(uint32_t * effective, uint32_t * bounding);
 #endif
 
 #endif /* !_SYS_PRIV_H_ */

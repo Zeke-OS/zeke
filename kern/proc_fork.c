@@ -405,7 +405,7 @@ pid_t proc_fork(void)
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);
 
-    priv_cred_init_inherit(&new_proc->cred);
+    priv_cred_init_fork(&new_proc->cred);
 
     /* Insert the new process into the process array */
     procarr_insert(new_proc);

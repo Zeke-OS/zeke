@@ -67,5 +67,6 @@ for dir in $MANIFEST; do
 done
 
 # Give a permission to gain capabilities
+mattrib +s 'D:/bin/login'
 mattrib +s 'D:/sbin/getty'
 mattrib +s 'D:/sbin/sinit'
