@@ -96,10 +96,11 @@
     }
 
 /**
- * Note capabilities.
- * Note specifying the capabilities requred to execute the elf binary.
+ * Note process capabilities.
+ * Note specifying the capabilities required to execute the elf binary
+ * but which can be gained on exec() if altpcap is set for the file.
  * Maximum of 64 capabilities can be requested per note and an
- * unlimited number of notes can be added.
+ * unlimited number of notes of this can be created.
  */
 #define ELFNOTE_CAPABILITIES(...)                                   \
     static const struct {                                           \
@@ -110,6 +111,27 @@
         .namesz = sizeof(ELFNOTE_VENDOR_ZEKE),                      \
         .descsz = (sizeof((uint32_t[]){__VA_ARGS__})),              \
         .type = NT_CAPABILITIES,                                    \
+        .name = ELFNOTE_VENDOR_ZEKE,                                \
+        .desc = {__VA_ARGS__}                                       \
+    }
+
+/**
+ * Note process non-gainable capabilities.
+ * Note specifying the capabilities required to execute the elf binary.
+ * These capabilities must exist in the bounding set and will be
+ * promoted to the effective set.
+ * Maximum of 64 capabilities can be requested per note and an
+ * unlimited number of notes of this can be created.
+ */
+#define ELFNOTE_CAPABILITIES_REQ(...)                               \
+    static const struct {                                           \
+        __ELF_NOTE_STRUCT_HEAD(ELFNOTE_VENDOR_ZEKE)                 \
+        int32_t desc[];                                             \
+    } __ELF_NOTE_STRUCT_DEF(ELFNOTE_SECT_ZEKE_CONF,                 \
+                            __CONCAT(caps_req_, __COUNTER__)) = {   \
+        .namesz = sizeof(ELFNOTE_VENDOR_ZEKE),                      \
+        .descsz = (sizeof((uint32_t[]){__VA_ARGS__})),              \
+        .type = NT_CAPABILITIES_REQ,                                \
         .name = ELFNOTE_VENDOR_ZEKE,                                \
         .desc = {__VA_ARGS__}                                       \
     }

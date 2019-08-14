@@ -38,7 +38,14 @@ required to execute a binary file. The elf loader attempts to set each
 capability as an effective capability, which may fail if the capability
 isn't in the bounding capabilities set. In case the file has
 \ver+O_EXEC_ALTPCAP+ oflag set then the loader will first add the capabilities
-found to the bounding capabilities set.
+found in these notes to the bounding capabilities set, i.e. the executable
+can gain the bounding capabilities.
+
+\verb+NT_CAPABILITIES_REQ+
+
+\verb+NT_CAPABILITIES__REQ+ note functions similar to  \verb+NT_CAPABILITIES+
+but it doesn't allow new bounding capabilities to be gained even when the
+binary file is opened with \ver+O_EXEC_ALTPCAP+.
 
 The user space implementation of these note types is discussed in section
 \ref{sec:libc_elf}.

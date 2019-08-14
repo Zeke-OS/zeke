@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    exec_elf32.c
  * @author  Olli Vanhoja
- * @brief   32bit ELF loading.
+ * @brief   32bit ELF loader.
  * @section LICENSE
  * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
@@ -295,8 +295,12 @@ static size_t nt_capabilities(struct elf_note * note,
         }
         KERROR_DBG("Add capability: %d\n", priv);
 
-        /* We can only set bounding capabilities if the file system allows it */
-        if (altpcap) {
+        /*
+         * We can only set bounding capabilities if the file system allows it
+         * and if the note type is NT_CAPABILITIES. NT_CAPABILITIES_REQ doesn't
+         * allow setting the bounding set.
+         */
+        if (altpcap && note->n_type == NT_CAPABILITIES) {
             err = priv_cred_bound_set(cred, priv);
             if (err) {
                 KERROR_DBG("Could not set bound capability: %u\n", priv);
@@ -368,6 +372,7 @@ static int load_notes(struct proc_info * proc,
             ctx->stack_size = nt_stacksize(note, align);
             break;
         case NT_CAPABILITIES:
+        case NT_CAPABILITIES_REQ:
             /* TODO Only allow settings caps if VFS allows it */
             retval = nt_capabilities(note, align, altpcap, &proc->cred);
             if (retval < 0) {

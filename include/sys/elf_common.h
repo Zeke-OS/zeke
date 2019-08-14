@@ -578,12 +578,13 @@ typedef struct elf_prpsinfo {
 #define NT_ARM_TLS              0x401   /* ARM TLS register */
 
 /* Values for n_type.  Used in object files. */
-#define NT_VERSION      1   /* Version string. */
-#define NT_ARCH         2   /* Architecture string. */
+#define NT_VERSION          1   /* Version string. */
+#define NT_ARCH             2   /* Architecture string. */
 
 /* Values for n_type.  Used by Zeke */
-#define NT_STACKSIZE    3
-#define NT_CAPABILITIES 4
+#define NT_STACKSIZE        3   /* Requested stack size. */
+#define NT_CAPABILITIES     4   /* Required gainable capabilties. */
+#define NT_CAPABILITIES_REQ 5   /* Required non-gainable capabilties. */
 
 /* Symbol Binding - ELFNN_ST_BIND - st_info */
 #define STB_LOCAL       0   /* Local symbol */
