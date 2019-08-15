@@ -82,7 +82,9 @@ static int proc_sysctl_pids(struct sysctl_oid * oidp, struct sysctl_req * req)
     proc_get_pids(pids);
     PROC_UNLOCK();
 
-    retval = sysctl_handle_opaque(oidp, pids, configMAXPROC + 1, req);
+    retval = sysctl_handle_opaque(oidp, pids,
+                                  (configMAXPROC + 1) * sizeof(pid_t),
+                                  req);
     proc_release_pids_buffer(pids);
 
     return retval;

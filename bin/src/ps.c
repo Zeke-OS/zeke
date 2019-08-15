@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ps.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -66,8 +67,9 @@ static pid_t * get_pids(void)
 
     if (sysctl(mib_maxproc, num_elem(mib_maxproc), &pids_size, &size, 0, 0))
         return NULL;
+    pids_size *= sizeof(pid_t);
 
-    pids = calloc(pids_size + 1, sizeof(pid_t));
+    pids = calloc(pids_size + sizeof(pid_t), 1);
     if (!pids)
         return NULL;
 
