@@ -146,7 +146,7 @@ static int proc_sysctl_nfds(struct sysctl_oid * oidp,
                             struct proc_info * proc,
                             struct sysctl_req * req)
 {
-    files_t * files = curproc->files;
+    files_t * files = proc->files;
     int nfds = 0;
 
     for (int i = 0; i < files->count; i++) {
@@ -175,7 +175,7 @@ static int proc_sysctl_pid(struct sysctl_oid * oidp, int * mib, int len,
         return -ESRCH;
     }
 
-    if (priv_check_cred(&curproc->cred, &proc->cred, PRIV_PROC_STAT)) {
+    if (priv_check_cred(req->cred, &proc->cred, PRIV_PROC_STAT)) {
         retval = -ESRCH;
         goto out;
     }
