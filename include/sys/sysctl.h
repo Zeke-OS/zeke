@@ -459,7 +459,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
  * kernel features.
  */
 #define FEATURE(name, desc)                                                     \
-        SYSCTL_INT(_kern_features, OID_AUTO, name, CTLFLAG_RD | CTLFLAG_CAPRD,  \
+        SYSCTL_INT(_kern_features, OID_AUTO, name, CTLFLAG_RD,                  \
             NULL, 1, desc)
 
 #endif /* KERNEL_INTERNAL */
