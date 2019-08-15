@@ -282,7 +282,7 @@ menu "Security"
 
 config configSUSER
     bool "Enable super user privileges"
-    default y
+    default n
     ---help---
     Processes with uid 0 have privilege by default. This knob sets default value
     of suser_enabled sysctl variable to one.

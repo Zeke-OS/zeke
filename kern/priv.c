@@ -77,26 +77,7 @@ static int default_privs[] = {
     PRIV_VFS_LOOKUP,
     PRIV_VFS_CHROOT,
     PRIV_VFS_STAT,
-    /*
-     * Super user grants.
-     * Later on we can remove most of these privileges as we implement a
-     * file system based capabilities for binaries.
-     */
-    /* Capabilities management */
-    PRIV_SETEFF,
-    PRIV_SETBND,
-    /* Credential management */
-    PRIV_CRED_SETUID,
-    PRIV_CRED_SETEUID,
-    PRIV_CRED_SETSUID,
-    PRIV_CRED_SETGID,
-    PRIV_CRED_SETEGID,
-    PRIV_CRED_SETSGID,
-    PRIV_CRED_SETGROUPS,
-    /* Process caps */
     PRIV_PROC_FORK,
-    PRIV_PROC_SETLOGIN,
-    /* IPC */
     PRIV_SIGNAL_ACTION,
     0
 };
