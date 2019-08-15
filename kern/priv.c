@@ -56,6 +56,10 @@ static int securelevel = configBOOT_SECURELEVEL;
 SYSCTL_INT(_security, OID_AUTO, securelevel, CTLTYPE_INT|CTLFLAG_RW,
            &securelevel, 0, "Current secure level");
 
+const char * priv_cap_name[_PRIV_MENT] = {
+    PRIV_FOREACH_CAP(PRIV_GENERATE_CAP_STRING_ARRAY)
+};
+
 /**
  * Default capabilities of a process.
  */
