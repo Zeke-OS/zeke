@@ -34,11 +34,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <sys/_syscred.h>
 #include <syscall.h>
-#include <errno.h>
 #include <sys/priv.h>
-#include <unistd.h>
 
 int priv_getpcaps(uint32_t * effective, uint32_t * bounding)
 {

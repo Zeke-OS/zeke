@@ -34,11 +34,8 @@
 #define __SYSCALL_DEFS__
 #include <stddef.h>
 #include <sys/types.h>
-#include <sys/_syscred.h>
 #include <syscall.h>
-#include <errno.h>
 #include <sys/priv.h>
-#include <unistd.h>
 
 int priv_setpcap(int bounding, size_t priv, int value)
 {
