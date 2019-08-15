@@ -227,19 +227,22 @@ int sysctltstmib(int * left, int * right, int len);
  * so that we can use the interface from the kernel or from user-space.
  */
 struct sysctl_req {
-    const struct cred * cred;   /* used for access checking */
-    void * oldptr;
-    size_t oldlen;
-    size_t oldidx;
+    const struct cred * cred; /*!< used for access checking */
+    void * oldptr;  /*!< pointer to user supplied buffer */
+    size_t oldlen;  /*!< user buffer length (also returned) */
+    size_t oldidx;  /*!< total data iteratively copied out */
     int (*oldfunc)(struct sysctl_req *, const void *, size_t);
-    void * newptr;
-    size_t newlen;
-    size_t newidx;
+    void * newptr;  /*!< buffer containing new value */
+    size_t newlen;  /*!< length of the new value */
+    size_t newidx;  /*!< total data iteratively copied in */
     int (*newfunc)(struct sysctl_req *, void *, size_t);
     size_t validlen;
     int flags;
 };
 
+/*
+ * Sysctl flags.
+ */
 #define SYSCTL_REQFLAG_KERNEL 0x01 /*!< Kernel request. */
 
 SLIST_HEAD(sysctl_oid_list, sysctl_oid);

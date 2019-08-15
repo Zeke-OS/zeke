@@ -452,7 +452,7 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
             if (req->oldidx)
                 error = req->oldfunc(req, ".", 1);
             if (!error)
-                error = req->oldfunc(req, buf, strlenn(buf, CTL_MAXSTRNAME));
+                error = req->oldfunc(req, buf, strlenn(buf, sizeof(buf)));
             if (error)
                 goto out;
             namelen--;
@@ -994,7 +994,7 @@ int kernel_sysctl_write(int * name, unsigned int namelen,
                         const void * new, size_t newlen)
 {
     return kernel_sysctl(NULL, name, namelen, NULL, NULL, (void *)new, newlen,
-                         NULL, SYSCTL_REQFLAG_KERNEL);
+                         NULL, 0);
 }
 
 int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
@@ -1015,7 +1015,7 @@ int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
     memset(&req, 0, sizeof(req));
 
     req.cred = cred;
-    req.flags = flags;
+    req.flags = flags | SYSCTL_REQFLAG_KERNEL;
 
     if (oldlenp) {
         req.oldlen = *oldlenp;
@@ -1039,6 +1039,9 @@ int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
         return error;
 
     if (retval) {
+        /*
+         * If more than expected was copied then we only report the valid size.
+         */
         if (req.oldptr && req.oldidx > req.validlen)
             *retval = req.validlen;
         else
@@ -1161,10 +1164,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     /* Is this sysctl writable by only privileged users? */
     if (req->newptr && !(req->flags & SYSCTL_REQFLAG_KERNEL) &&
         !(oid->oid_kind & CTLFLAG_ANYBODY)) {
-        int priv;
-
-        priv = PRIV_SYSCTL_WRITE;
-        error = priv_check(req->cred, priv);
+        error = priv_check(req->cred, PRIV_SYSCTL_WRITE);
         if (error)
             return error;
     }
@@ -1252,6 +1252,9 @@ static int userland_sysctl(const struct proc_info * proc, int * name,
         return error;
 
     if (retval) {
+        /*
+         * If more than expected was copied then we only report the valid size.
+         */
         if (req.oldptr && req.oldidx > req.validlen)
             *retval = req.validlen;
         else
