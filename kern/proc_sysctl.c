@@ -88,7 +88,7 @@ static int proc_sysctl_pids(struct sysctl_oid * oidp, struct sysctl_req * req)
     return retval;
 }
 
-static int sysctl_proc_vmmap(struct sysctl_oid * oidp,
+static int proc_sysctl_vmmap(struct sysctl_oid * oidp,
                              struct proc_info * proc,
                              struct sysctl_req * req)
 {
@@ -139,6 +139,25 @@ out:
     return retval;
 }
 
+/**
+ * Count the number of open files
+ */
+static int proc_sysctl_nfds(struct sysctl_oid * oidp,
+                            struct proc_info * proc,
+                            struct sysctl_req * req)
+{
+    files_t * files = curproc->files;
+    int nfds = 0;
+
+    for (int i = 0; i < files->count; i++) {
+        if (files->fd[i]) {
+            nfds++;
+        }
+    }
+
+    return sysctl_handle_int(oidp, NULL, nfds, req);
+}
+
 static int proc_sysctl_pid(struct sysctl_oid * oidp, int * mib, int len,
                            struct sysctl_req * req)
 {
@@ -174,13 +193,14 @@ static int proc_sysctl_pid(struct sysctl_oid * oidp, int * mib, int len,
     }
     break;
     case KERN_PROC_VMMAP:
-        retval = sysctl_proc_vmmap(oidp, proc, req);
+        retval = proc_sysctl_vmmap(oidp, proc, req);
         break;
     case KERN_PROC_FILEDESC:
         /* TODO Implementation */
-    case KERN_PROC_NFDS:
-        /* TODO Implementation */
         retval = -EINVAL;
+        break;
+    case KERN_PROC_NFDS:
+        retval = proc_sysctl_nfds(oidp, proc, req);
         break;
     case KERN_PROC_GROUPS:
         retval = sysctl_handle_opaque(oidp, &proc->cred.sup_gid,
@@ -192,7 +212,10 @@ static int proc_sysctl_pid(struct sysctl_oid * oidp, int * mib, int len,
     case KERN_PROC_ARGS:
         /* TODO Implementation */
     case KERN_PROC_RLIMIT:
-        /* TODO Implementation */
+        retval = sysctl_handle_opaque(oidp, &proc->rlim,
+                                      sizeof(proc->rlim),
+                                      req);
+        break;
     case KERN_PROC_SIGTRAMP:
         /* TODO Implementation */
     case KERN_PROC_CWD:
@@ -276,5 +299,5 @@ static int proc_sysctl(SYSCTL_HANDLER_ARGS)
 
     return 0;
 }
-SYSCTL_NODE(_kern, KERN_PROC, proc, CTLFLAG_RW, proc_sysctl,
+SYSCTL_NODE(_kern, KERN_PROC, proc, CTLFLAG_RD, proc_sysctl,
             "High kernel, proc, limits &c");
