@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   System init for Zero Kernel.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -30,6 +31,8 @@
  *******************************************************************************
  */
 
+#include <sys/types.h>
+#include <sys/priv.h>
 #include <sys/sysctl.h>
 #include <sys/types.h>
 #include <buf.h>
@@ -221,6 +224,25 @@ static void map_vmstack2proc(struct proc_info * proc, struct buf * vmstack)
     vm_map_region(vmstack, vpt);
 }
 
+static void init_creds(struct cred * cred)
+{
+    int privs[] = {
+        PRIV_VFS_UNMOUNT,
+        PRIV_VFS_MOUNT,
+        PRIV_VFS_MOUNT_PERM,
+        PRIV_VFS_MOUNT_SUIDDIR,
+        0
+    };
+    int * priv;
+
+    for (priv = privs; *priv; priv++) {
+        int v = *priv;
+
+        priv_cred_bound_set(cred, v);
+        priv_cred_eff_set(cred, v);
+    }
+}
+
 /**
  * Create init process.
  */
@@ -294,6 +316,9 @@ int __kinit__ kinit(void)
     if (!init_proc || (init_proc->state == PROC_STATE_INITIAL)) {
         panic("Failed to get proc struct or invalid struct");
     }
+
+    /* Init creds required by uinit */
+    init_creds(&init_proc->cred);
 
     init_thread->pid_owner = pid;
     init_thread->curr_mpt = &init_proc->mm.mpt;
