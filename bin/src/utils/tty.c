@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    ps.c
+ * @file    tty.c
  * @author  Olli Vanhoja
- * @brief   ps.
+ * @brief   TTY id to string.
  * @section LICENSE
  * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
@@ -31,83 +31,87 @@
  *******************************************************************************
  */
 
+#include <dirent.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/proc.h>
-#include <sys/sysctl.h>
+#include <string.h>
+#include <sys/param.h>
+#include <sys/stat.h>
 #include <sys/types.h>
-#include <sysexits.h>
-#include <time.h>
 #include <unistd.h>
-#include "utils.h"
 
-static pid_t * get_pids(void)
+#define DEV_PATH    "/dev"
+
+struct ttydev {
+    dev_t dev;
+    char name[16];
+};
+
+static struct ttydev ttydev[10];
+
+void init_ttydev_arr(void)
 {
-    int mib_maxproc[] = { CTL_KERN, KERN_MAXPROC };
-    int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PID };
-    size_t size = sizeof(size_t), pids_size;
-    pid_t * pids;
+    static char pathbuf[PATH_MAX];
+    DIR * dirp;
+    struct dirent * d;
+    size_t i = 0;
 
-    if (sysctl(mib_maxproc, num_elem(mib_maxproc), &pids_size, &size, 0, 0))
-        return NULL;
-    pids_size *= sizeof(pid_t);
-
-    pids = calloc(pids_size + sizeof(pid_t), 1);
-    if (!pids)
-        return NULL;
-
-    if (sysctl(mib, num_elem(mib), pids, &pids_size, 0, 0))
-        return NULL;
-
-    return pids;
-}
-
-static int pid2pstat(struct kinfo_proc * ps, pid_t pid)
-{
-    int mib[5];
-    size_t size = sizeof(*ps);
-
-    mib[0] = CTL_KERN;
-    mib[1] = KERN_PROC;
-    mib[2] = KERN_PROC_PID;
-    mib[3] = pid;
-    mib[4] = KERN_PROC_PSTAT;
-
-    return sysctl(mib, num_elem(mib), ps, &size, 0, 0);
-}
-
-int main(int argc, char * argv[], char * envp[])
-{
-    pid_t pid;
-    pid_t * pids;
-    pid_t * pid_iter;
-    long clk_tck;
-
-    clk_tck = sysconf(_SC_CLK_TCK);
-    init_ttydev_arr();
-
-    pids = get_pids();
-    if (!pids) {
-        perror("Failed to get PIDs");
-        return EX_OSERR;
+    dirp = opendir(DEV_PATH);
+    if (!dirp) {
+        perror("Getting TTY list failed");
+        return;
     }
 
-    printf("  PID TTY          TIME CMD\n");
-    pid_iter = pids;
-    while ((pid = *pid_iter++) != 0) {
-        struct kinfo_proc ps;
-        clock_t sutime;
+    while ((d = readdir(dirp))) {
+        int fildes, istty;
+        struct stat statbuf;
 
-        if (pid2pstat(&ps, pid) == -1)
+        if (d->d_name[0] == '.' || !(d->d_type & DT_CHR))
             continue;
-        sutime = (ps.utime + ps.stime) / clk_tck;
-        printf("%5d %-6s   %02u:%02u:%02u %s\n",
-               ps.pid,
-               devttytostr(ps.ctty),
-               sutime / 3600, (sutime % 3600) / 60, sutime % 60,
-               ps.name);
+
+        snprintf(pathbuf, sizeof(pathbuf), DEV_PATH "/%s", d->d_name);
+
+        fildes = open(pathbuf, O_RDONLY | O_NOCTTY);
+        if (fildes == -1) {
+            perror(pathbuf);
+            continue;
+        }
+
+        istty = isatty(fildes);
+        if (fstat(fildes, &statbuf)) {
+            perror(pathbuf);
+            continue;
+        }
+
+        close(fildes);
+
+        if (!istty)
+            continue;
+
+        if (i >= num_elem(ttydev)) {
+            fprintf(stderr, "Out of slots for TTYs");
+            goto out;
+        }
+        ttydev[i].dev = statbuf.st_rdev;
+        strlcpy(ttydev[i].name, d->d_name, sizeof(ttydev[0].name));
+        i++;
     }
 
-    free(pids);
-    return 0;
+out:
+    closedir(dirp);
+}
+
+char * devttytostr(dev_t tty)
+{
+    if (DEV_MAJOR(tty) == 0)
+        goto out;
+
+    for (size_t i = 0; i < num_elem(ttydev); i++) {
+        if (ttydev[i].dev == tty) {
+            return ttydev[i].name;
+        }
+    }
+
+out:
+    return "?";
 }

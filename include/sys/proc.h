@@ -52,8 +52,8 @@ struct kinfo_proc {
     gid_t rgid;
     gid_t egid;
     gid_t sgid;
-    clock_t utime;
-    clock_t stime;
+    clock_t utime; /*!< Amount of time scheduled in user mode. */
+    clock_t stime; /*!< Amount of time scheduled in kernel mode. */
     void * brk_start; /*!< Break start address. (end of heap data) */
     void * brk_stop; /*!< Break stop address. (end of heap region) */
 };
