@@ -99,10 +99,11 @@ int main(int argc, char * argv[], char * envp[])
         return EX_USAGE;
     }
 
-    clk_tck = sysconf(_SC_CLK_TCK);
-
     if (pid2pstat(&ps, pid) == -1)
         return EX_OSERR;
+
+    clk_tck = sysconf(_SC_CLK_TCK);
+    init_ttydev_arr();
 
     printf("Process\n");
     printf("  PID  PGRP   SID TTY      CMD\n"
