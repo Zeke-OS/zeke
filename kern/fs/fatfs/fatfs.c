@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File System wrapper for FatFs.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -742,7 +743,7 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     vnode_autorele vnode_t * vnode = NULL;
     struct fatfs_inode * in;
     FATFS * fs;
-    int err;
+    int retval;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
@@ -751,11 +752,14 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     if (!in_fpath)
         return -ENOMEM;
 
-    if (fatfs_lookup(dir, name, &vnode))
-        return -ENOTDIR;
+    if (fatfs_lookup(dir, name, &vnode)) {
+        retval = -ENOTDIR;
+        goto out;
+    }
 
     if (atomic_read(&get_inode_of_vnode(vnode)->open_count) != 0) {
-        return -EBUSY;
+        retval = -EBUSY;
+        goto out;
     }
 
     in = get_inode_of_vnode(vnode);
@@ -764,14 +768,17 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     } else {
         fs = in->fp.fs;
     }
-    err = fresult2errno(f_unlink(fs, in->in_fpath));
-    if (err)
-        return err;
+    retval = fresult2errno(f_unlink(fs, in->in_fpath));
+    if (retval)
+        goto out;
 
     vnode->vn_len = -1; /* Mark deleted by setting len to a negative value. */
     vrele_nunlink(vnode);
 
-    return 0;
+    retval = 0;
+out:
+    kfree(in_fpath);
+    return retval;
 }
 
 int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
