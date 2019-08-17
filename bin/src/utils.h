@@ -37,6 +37,7 @@
 #define UTILS_H
 
 #include <stddef.h>
+#include <sys/types.h>
 
 struct optarr {
     const int opt;
