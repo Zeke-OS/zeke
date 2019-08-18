@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   df.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -48,8 +49,8 @@
 
 char * argv0;
 struct {
-    int k : 1;
-    int P : 1;
+    unsigned int k : 1;
+    unsigned int P : 1;
 } flags;
 
 struct format_str {

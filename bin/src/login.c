@@ -63,10 +63,10 @@ ELFNOTE_CAPABILITIES(
 
 char * argv0;
 struct flags {
-    int f           : 1;
-    int p           : 1;
-    int ask         : 1;
-    int passwd_nreq : 1;
+    unsigned int f              : 1;
+    unsigned int p              : 1;
+    unsigned int ask            : 1;
+    unsigned int passwd_nreq    : 1;
 } flags;
 
 static char hostname[HOST_NAME_MAX];

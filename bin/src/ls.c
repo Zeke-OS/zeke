@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ls.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -43,8 +44,8 @@
 
 char * argv0;
 struct {
-    int l : 1;
-    int a : 1;
+    unsigned int l : 1;
+    unsigned int a : 1;
 } flags;
 
 static void usage(void)
