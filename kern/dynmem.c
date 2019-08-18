@@ -167,7 +167,7 @@ static int addr_is_valid(const void * addr, int test)
         return 0; /* Not allocated */
     }
 
-    return (1 == 1);
+    return !!1;
 }
 
 static void mark_reserved_areas(void)
