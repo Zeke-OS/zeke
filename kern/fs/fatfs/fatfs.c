@@ -738,28 +738,20 @@ int fatfs_create(vnode_t * dir, const char * name, mode_t mode,
 
 int fatfs_unlink(vnode_t * dir, const char * name)
 {
-    struct fatfs_inode * indir = get_inode_of_vnode(dir);
-    kmalloc_autofree char * in_fpath = NULL;
     vnode_autorele vnode_t * vnode = NULL;
     struct fatfs_inode * in;
     FATFS * fs;
-    int retval;
+    int err;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
 
-    in_fpath = format_fpath(indir, name);
-    if (!in_fpath)
-        return -ENOMEM;
-
     if (fatfs_lookup(dir, name, &vnode)) {
-        retval = -ENOTDIR;
-        goto out;
+        return -ENOTDIR;
     }
 
     if (atomic_read(&get_inode_of_vnode(vnode)->open_count) != 0) {
-        retval = -EBUSY;
-        goto out;
+        return -EBUSY;
     }
 
     in = get_inode_of_vnode(vnode);
@@ -768,17 +760,14 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     } else {
         fs = in->fp.fs;
     }
-    retval = fresult2errno(f_unlink(fs, in->in_fpath));
-    if (retval)
-        goto out;
+    err = fresult2errno(f_unlink(fs, in->in_fpath));
+    if (err)
+        return err;
 
     vnode->vn_len = -1; /* Mark deleted by setting len to a negative value. */
     vrele_nunlink(vnode);
 
-    retval = 0;
-out:
-    kfree(in_fpath);
-    return retval;
+    return 0;
 }
 
 int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
