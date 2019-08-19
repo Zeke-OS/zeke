@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel scheduler, the generic part of thread scheduling.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -1064,6 +1065,7 @@ void thread_remove(pthread_t thread_id)
  */
 static void dummycd(struct thread_info * new_thread)
 {
+    /* Intentionally unimplemented */
 }
 SCHED_THREAD_CTOR(dummycd);
 SCHED_THREAD_DTOR(dummycd);

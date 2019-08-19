@@ -5,10 +5,12 @@
 
 static void setup(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static void teardown(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static char * test_imaxabs(void)

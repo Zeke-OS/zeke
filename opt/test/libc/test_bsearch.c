@@ -7,10 +7,12 @@ static char const abcde[] = "abcde";
 
 static void setup(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static void teardown(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static int compare(const void * left, const void * right)

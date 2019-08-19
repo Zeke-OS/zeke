@@ -16,6 +16,7 @@ static void setup(void)
 
 static void teardown(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static char * test_atomic_read(void)

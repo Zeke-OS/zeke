@@ -5,10 +5,12 @@
 
 static void setup()
 {
+    /* Intentionally unimplemented... */
 }
 
 static void teardown()
 {
+    /* Intentionally unimplemented... */
 }
 
 

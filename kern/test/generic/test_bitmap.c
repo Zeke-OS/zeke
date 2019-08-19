@@ -16,10 +16,12 @@ static void rnd_allocs(int n);
 
 static void setup(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static void teardown(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static char * test_search(void)

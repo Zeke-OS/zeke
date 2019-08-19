@@ -7,10 +7,12 @@
 
 static void setup(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static void teardown(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 char * test_atomax(void)

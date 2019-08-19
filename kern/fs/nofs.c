@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system, nofs.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -127,10 +128,12 @@ int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode)
 
 void fs_enotsup_event_fd_created(struct proc_info * p, file_t * file)
 {
+    /* No need to implement */
 }
 
 void fs_enotsup_event_fd_closed(struct proc_info * p, file_t * file)
 {
+    /* No need to implement */
 }
 
 int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,

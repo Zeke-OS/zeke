@@ -6,10 +6,12 @@ static int integer = 1;
 
 static void setup(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static void teardown(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static char * test_add_rem_oid(void)

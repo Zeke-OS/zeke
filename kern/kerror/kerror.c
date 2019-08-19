@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel error logging.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -158,6 +159,7 @@ static ssize_t kerror_fdwrite(file_t * file, struct uio * uio, size_t count)
 
 static void nolog_puts(const char * str)
 {
+    /* Just discard all input */
 }
 
 static const struct kerror_klogger klogger_nolog = {

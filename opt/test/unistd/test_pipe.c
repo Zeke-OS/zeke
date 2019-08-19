@@ -10,6 +10,7 @@ static int fd[2];
 
 static void setup(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static void teardown(void)

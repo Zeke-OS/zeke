@@ -16,6 +16,7 @@ static void setup(void)
 
 static void teardown(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static void * thread(void * arg)

@@ -7,6 +7,7 @@ const char * testfile = "test.fil";
 
 static void setup(void)
 {
+    /* Intentionally unimplemented... */
 }
 
 static void teardown(void)
