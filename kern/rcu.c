@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Realtime friendly Read-Copy-Update.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -67,7 +68,9 @@ static pthread_t rcu_sync_thread_tid;
 
 struct rcu_lock_ctx rcu_read_lock(void)
 {
-    int old, new, selector;
+    int old;
+    int new;
+    int selector;
 
     do {
         old = atomic_read(&rcu_ctrl);
@@ -80,7 +83,8 @@ struct rcu_lock_ctx rcu_read_lock(void)
 
 void rcu_read_unlock(struct rcu_lock_ctx * restrict ctx)
 {
-    int old, new;
+    int old;
+    int new;
 
     do {
         old = atomic_read(&rcu_ctrl);
@@ -131,7 +135,9 @@ void rcu_synchronize(void)
 {
     static mtx_t rcu_sync_lock = MTX_INITIALIZER(MTX_TYPE_TICKET,
                                                  MTX_OPT_DEFAULT);
-    int old, old_clock, new;
+    int old;
+    int old_clock;
+    int new;
 
     /*
      * Callers of this function will get thru this in call order since

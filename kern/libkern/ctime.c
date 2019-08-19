@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1987 Regents of the University of California.
  * This file may be freely redistributed provided that this
@@ -37,8 +38,10 @@ static const int year_lengths_sec[2] = {
 void offtime(struct tm * restrict tm, const time_t * restrict clock,
              long offset)
 {
-    long days, rem;
-    int y, yleap;
+    long days;
+    long rem;
+    int y;
+    int yleap;
     const int * ip;
 
     days = *clock / SECS_PER_DAY;

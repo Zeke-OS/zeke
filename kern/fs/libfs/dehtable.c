@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -95,7 +96,8 @@ typedef struct chain_info {
 static size_t hash_fname(const char * str, uint32_t k[2])
 {
     size_t len = strlenn(str, NAME_MAX + 1);
-    int mask, chunks = NBITS(DEHTABLE_SIZE);
+    int mask;
+    int chunks = NBITS(DEHTABLE_SIZE);
     uint32_t hash, retval = 0;
 
     hash = halfsiphash32(str, len, k);
@@ -173,7 +175,9 @@ static chain_info_t find_last_node(dh_dirent_t * chain)
 static int rm_node(dh_dirent_t ** chain, const char * name)
 {
     const chain_info_t chinfo = find_last_node(*chain);
-    size_t old_offset = 0, new_offset = 0, prev_noffset = 0;
+    size_t old_offset = 0;
+    size_t new_offset = 0;
+    size_t prev_noffset = 0;
     dh_dirent_t * new_chain;
     int match = 0;
 

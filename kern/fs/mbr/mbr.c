@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MBR driver.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -184,7 +185,8 @@ int mbr_register(int fd, int * part_count)
     struct dev_info * parent;
     uint8_t * block_0 = NULL;
     uint32_t block_size_adjust;
-    int parts = 0, retval = 0;
+    int parts = 0;
+    int retval = 0;
 
     KERROR_DBG("%s(fd: %d, part_count: %p)\n", __func__, fd, part_count);
 

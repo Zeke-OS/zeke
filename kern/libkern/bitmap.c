@@ -116,9 +116,11 @@ int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t size)
 int bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start,
                         size_t len, size_t size)
 {
-    size_t i, j, n;
-    bitmap_t  tmp;
+    size_t i;
+    size_t j;
     size_t k;
+    size_t n;
+    bitmap_t  tmp;
 
     if (start + len > size * SIZEOF_BITMAP_T)
         return -EINVAL;

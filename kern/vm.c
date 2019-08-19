@@ -559,7 +559,8 @@ static int vm_insert_region_ref(struct vm_mm_struct * mm, struct buf * region)
 
 int vm_insert_region(struct proc_info * proc, struct buf * region, int insop)
 {
-    int slot, err;
+    int slot;
+    int err;
 
     KASSERT(region, "Region must be set");
 
@@ -703,7 +704,8 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
 int vm_unload_regions(struct proc_info * proc, int start, int end)
 {
     struct vm_mm_struct * const mm = &proc->mm;
-    int locked, retval;
+    int locked;
+    int retval;
 
     mtx_lock(&mm->regions_lock);
     locked = 1;
@@ -802,7 +804,8 @@ int kernacc(__kernel const void * addr, int len, int rw)
     struct dynmem_ap ap;
 
     KMEM_FOREACH(regp) {
-        size_t reg_start, reg_size;
+        size_t reg_start;
+        size_t reg_size;
 
         reg_start = mmu_region_kernel.vaddr;
         /* This is the only case where mmu_sizeof_region() is ok */

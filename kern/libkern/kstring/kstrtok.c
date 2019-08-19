@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   String tokenizer.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
@@ -38,7 +39,8 @@
 char * kstrtok(char * s, const char * delim, char ** lasts)
 {
     const char * spanp;
-    int c, sc;
+    int c;
+    int sc;
     char * tok;
 
     /* s may be NULL */

@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic queue for fs implementations.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -175,7 +176,9 @@ ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
                        int flags)
 {
     struct fs_queue_packet * p;
-    size_t offset, bytes, left = count;
+    size_t offset;
+    size_t bytes;
+    size_t left = count;
     ssize_t wr = 0;
 
     if (count == 0)
@@ -250,7 +253,9 @@ ssize_t fs_queue_read(struct fs_queue * fsq, uint8_t * buf, size_t count,
                       int flags)
 {
     ssize_t rd = 0;
-    size_t offset, bytes = 0, left = count;
+    size_t offset;
+    size_t bytes = 0;
+    size_t left = count;
 
     /*
      * Freeze last_wr_packet because we might be reading it next,

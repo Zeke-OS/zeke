@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Parse path and file name from a complete path.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -41,7 +42,8 @@ int parsenames(const char * pathname, char ** path, char ** name)
 {
     char * path_act;
     char * fname;
-    size_t i, j;
+    size_t i;
+    size_t j;
     int retval;
 
     KASSERT(pathname != NULL, "pathname should be set\n");

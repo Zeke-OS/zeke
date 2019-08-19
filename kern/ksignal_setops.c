@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1989, 1993
  *  The Regents of the University of California.  All rights reserved.
@@ -99,7 +100,8 @@ int sigisemptyset(const sigset_t * set)
 
 int sigffs(sigset_t * set)
 {
-    size_t i, j;
+    size_t i;
+    size_t j;
 
     for (i = 0; i < _SIG_WORDS; i++) {
         for (j = 0; j < sizeof(set->__bits[0]); j++)

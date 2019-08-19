@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Control devices.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -44,7 +45,8 @@ static intptr_t sys_ioctl(__user void * user_args)
     struct _ioctl_get_args args;
     void * ioargs = NULL;
     file_t * file;
-    int err, retval;
+    int err;
+    int retval;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {

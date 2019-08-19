@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1982, 1986, 1991, 1993
  *  The Regents of the University of California.  All rights reserved.
@@ -114,7 +115,8 @@ static const int primes[] = {
  */
 void * phashinit(size_t elements, size_t * nentries)
 {
-    size_t hashsize, i;
+    size_t hashsize;
+    size_t i;
     struct generic * hashtbl;
 
     for (i = 1, hashsize = primes[1]; hashsize <= elements;) {

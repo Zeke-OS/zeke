@@ -5,6 +5,7 @@
  *
  * @brief   Source file for thread Signal Management in kernel.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -552,7 +553,9 @@ static void ksignal_post_scheduling(void)
 
     /* Get next pending signal. */
     KSIGNAL_PENDQUEUE_FOREACH(ksiginfo, sigs) {
-        int blocked, swait, nxt_state;
+        int blocked;
+        int swait;
+        int nxt_state;
 
         signum = ksiginfo->siginfo.si_signo;
         blocked = ksignal_isblocked(sigs, signum);
@@ -894,7 +897,8 @@ out:
 int ksignal_sigtimedwait(siginfo_t * retval, const sigset_t * restrict set,
                          const struct timespec * restrict timeout)
 {
-    int timer_id, err;
+    int timer_id;
+    int err;
     siginfo_t sigret = { .si_signo = -1 };
 
     timer_id = thread_alarm(timeout->tv_sec * 1000 +
@@ -1000,7 +1004,8 @@ int ksignal_sigsmask(struct signals * sigs, int how,
 {
     sigset_t tmpset;
     sigset_t * cursigset;
-    int err, retval = 0;
+    int err;
+    int retval = 0;
 
     if ((err = kobj_ref(&sigs->s_obj)) || ksig_lock(&sigs->s_lock)) {
         if (!err)
@@ -1440,7 +1445,8 @@ static intptr_t sys_signal_tkill(__user void * user_args)
     struct thread_info * thread;
     struct proc_info * proc;
     struct signals * sigs;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {

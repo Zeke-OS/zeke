@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system utils.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -156,7 +157,8 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
 
 void fs_vnode_cleanup(vnode_t * vnode)
 {
-    struct buf * var, * nxt;
+    struct buf * var;
+    struct buf * nxt;
 
     KASSERT(vnode != NULL, "vnode can't be null.");
 

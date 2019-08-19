@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ramfs - a temporary file system stored in RAM.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -262,7 +263,8 @@ int ramfs_mount(fs_t * fs, const char * source, uint32_t mode,
                 const char * parm, int parm_len, struct fs_superblock ** sb)
 {
     ramfs_sb_t * ramfs_sb;
-    int err, retval;
+    int err;
+    int retval;
 
 #ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "%s()\n", __func__);

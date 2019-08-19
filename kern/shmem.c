@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process shared memory.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -367,7 +368,8 @@ static intptr_t sys_munmap(__user void * user_args)
     struct _shmem_munmap_args args;
     struct buf * bp;
     int regnr;
-    int err, retval;
+    int err;
+    int retval;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {

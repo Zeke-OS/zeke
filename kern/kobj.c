@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic kernel object interface.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -68,7 +69,8 @@ int kobj_refcnt(struct kobj * p)
 
 int kobj_ref(struct kobj * p)
 {
-    int prev, retval = -EIDRM;
+    int prev;
+    int retval = -EIDRM;
 
     if (kobj_fast_lock(p))
         return retval;

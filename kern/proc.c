@@ -298,7 +298,8 @@ void proc_release_pids_buffer(pid_t * buf)
 
 void proc_get_pids(pid_t * pids)
 {
-    size_t i, j = 0;
+    size_t i;
+    size_t j = 0;
 
     PROC_KASSERT_LOCK();
 
@@ -461,7 +462,8 @@ const char * proc_state2str(enum proc_state state)
 
 dev_t get_ctty(struct proc_info * proc)
 {
-    int err, fd = proc->pgrp->pg_session->s_ctty_fd;
+    int err;
+    int fd = proc->pgrp->pg_session->s_ctty_fd;
     struct stat stat_buf;
     file_t * file;
     vnode_t * vnode;
@@ -1165,7 +1167,8 @@ static intptr_t sys_proc_chdir(__user void * user_args)
 {
     struct _proc_chdir_args * args = 0;
     vnode_t * vn;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
     err = copyinstruct(user_args, (void **)(&args),
             sizeof(struct _proc_chdir_args),

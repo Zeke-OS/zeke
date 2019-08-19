@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Pseudo terminal driver.
  * @section LICENSE
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -194,7 +195,8 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
  */
 static void creat_pty(file_t * file, struct tty * tty)
 {
-    int pty_id, err;
+    int pty_id;
+    int err;
     dev_t slave_dev_id;
     struct tty * slave_tty;
     struct pty_device * ptydev;
