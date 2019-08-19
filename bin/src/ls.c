@@ -71,7 +71,6 @@ int main(int argc, char * argv[], char * envp[])
         case 'a':
             flags.a = 1;
             break;
-        case '?':
         default:
             usage();
         }

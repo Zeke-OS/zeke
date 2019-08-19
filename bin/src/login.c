@@ -359,7 +359,6 @@ int main(int argc, char * argv[])
         case 'p':
             flags.p = 1;
             break;
-        case '?':
         default:
             usage();
         }

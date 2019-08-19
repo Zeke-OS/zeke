@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1988, 1993, 1994
  *  The Regents of the University of California.  All rights reserved.
@@ -51,7 +52,6 @@ int main(int argc, char ** argv)
             environ = cleanenv;
             cleanenv[0] = NULL;
             break;
-        case '?':
         default:
             usage();
         }

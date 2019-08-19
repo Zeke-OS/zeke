@@ -114,7 +114,6 @@ int main(int argc, char * argv[], char * envp[])
         case 'P':
             flags.P = 1;
             break;
-        case '?':
         default:
             usage();
         }
