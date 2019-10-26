@@ -15,6 +15,10 @@ a tiny single-user CMSIS-like embedded operating system.
 
 https://zeke.now.sh
 
+**Sonarcloud**
+
+https://sonarcloud.io/dashboard?id=Zeke-OS_zeke
+
 Key Features
 ------------
 - Kernel
