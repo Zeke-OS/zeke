@@ -6,7 +6,7 @@ Introduction to System Calls
 
 System calls are the main method of communication between the kernel and
 user space applications. The word syscall is usually used as a shorthand
-for system call in the context of Zeke and this book.
+for system call in the context of Zeke and in general.
 
 ### System call flow
 
@@ -62,9 +62,6 @@ Adding new syscalls and handlers
   - Create a new syscall group handler
 
 ## Libc: System calls
-
-This chapter discusses only those system calls that does not fit to any
-other part of this book.
 
 ### sysctl
 

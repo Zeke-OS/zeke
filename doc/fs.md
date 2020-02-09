@@ -6,25 +6,19 @@ File System Abstraction
 
 ### General principles
 
-In this part of the documentation terms
-<span data-acronym-label="vnode" data-acronym-form="singular+abbrv">vnode</span>
-and
-<span data-acronym-label="inode" data-acronym-form="singular+abbrv">inode</span>
-are sometimes used interchangeably. Historically inode was a way to
-index files in the Unix file system and like. While Zeke continues to
-use this terminology it adds a concept of a vnode that is used as an
-abstraction level between actual the file systems and the
-<span data-acronym-label="vfs" data-acronym-form="singular+full">vfs</span>.
-This is implemented mostly the same way as in most of modern Unices
-today.
+In this part of the documentation terms vnode and inode might be sometimes
+used interchangeably. Historically inode was a way to index files in the
+Unix file system and like. While Zeke continues to use this terminology it
+adds a concept of a vnode that is used as an abstraction level between
+actual the file systems and the VFS.  This is implemented mostly the same
+way as in most of modern Unices today.
 
-Another important term often used in the context of Zeke’s
-<span data-acronym-label="vfs" data-acronym-form="singular+abbrv">vfs</span>
-is the superblock, it’s roughly an abstraction of an accessor to the
-meta data or allocation table(s) of a physical (or virtual) file system.
-For example for FAT this means that every volume has a superblock in
-Zeke and the superblock can be used to access the file allocation table
-and other label data of that volume.
+Another important term often used in the context of Zeke’s VFS is the
+superblock, it’s roughly an abstraction of an accessor to the meta data
+or allocation table(s) of a physical (or virtual) file system. For example
+for FAT this means that every volume has a superblock in Zeke and the
+superblock can be used to access the file allocation table and other
+label data of that volume.
 
 In Zeke vnodes are always used as the primary access method to the files
 in a file system, inodes are only accessed internally within the file
@@ -38,25 +32,22 @@ number is guaranteed to be unique within a single file system,
 superblock + vnode, but same vnode might be in use within another file
 system and the number can be also reused.
 
-To help understanding how
-<span data-acronym-label="vfs" data-acronym-form="singular+abbrv">vfs</span>
-works in Zeke, it can be simplistically described as an object storage
-where file objects are first searched, found and the associated (open)
-with a process. When a file is opened the process owns a pointer to the
-file descriptor that contains some state information and pointer to the
-actual file vnode. The vnode of the file is itself an object that knows
-where contents of the file is stored (physical file system, superblock
-pointer) and who knows how to manipulate the data (pointer to the vnode
-operations struct). In fact vnode number itself is pretty much redundant
-and legacy information for Zeke that is only provided for compatibility
-reasons, the actual access method is always by a pointer reference to an
-object.
+To help understanding how VFS works in Zeke, it can be simplistically
+described as an object storage where file objects are first searched,
+found and the associated (open) with a process. When a file is opened
+the process owns a pointer to the file descriptor that contains some
+state information and pointer to the actual file vnode. The vnode of
+the file is itself an object that knows where contents of the file is
+stored (physical file system, superblock pointer) and who knows how to
+manipulate the data (pointer to the vnode operations struct). In fact
+vnode number itself is pretty much redundant and legacy information for
+Zeke that is only provided for compatibility reasons, the actual access
+method is always by a pointer reference to an object.
 
 ### Kernel interface
 
 The kernel interface to the actual file system drivers and file system
-superblocks is built around virtual function structs defined in
-<span data-acronym-label="vfs" data-acronym-form="singular+abbrv">vfs</span>
+superblocks is built around virtual function structs defined in the VFS
 header file `fs.h` and some user space header files defining unified
 data types.
 
@@ -71,10 +62,8 @@ When superblock is mounted a superblock struct pointer is returned. This
 pointer servers as the main interface to the newly mounted file system.
 Superblock is defined as in listing [\[list:fs\_sb\]](#list:fs_sb). By
 using superblock function calls it’s possible to get direct references
-to vnodes and
-<span data-acronym-label="vnode" data-acronym-form="singular+abbrv">vnode</span>
-operations e.g. for modifying file contents or adding new hard links to
-a directory node.
+to vnodes and vnode operations e.g. for modifying file contents or
+adding new hard links to a directory node.
 
 **fs struct definition.**
 
@@ -130,24 +119,17 @@ fatfs
 
 ### Overall description
 
-Fatfs driver is an implementation of
-<span data-acronym-label="fat" data-acronym-form="singular+full">fat</span>
-file system in
-    Zeke.
+Fatfs driver is an implementation of the FAT file system in Zeke.
 
 **Main features**
 
-  - <span data-acronym-label="fat" data-acronym-form="singular+abbrv">fat</span>12/16/32,
-  - Supports multiple ANSI/OEM code pages including DBCS,
-  - <span data-acronym-label="lfn" data-acronym-form="singular+full">lfn</span>
-    support in ANSI/OEM or Unicode.
+- FAT12/16/32,
+- Supports multiple ANSI/OEM code pages including DBCS,
+- LFN support in ANSI/OEM or Unicode.
 
-Note that Microsoft Corporation holds a patent for
-<span data-acronym-label="lfn" data-acronym-form="singular+short">lfn</span>
-and commercial use might be prohibitten or it may require a license form
-the company. Therefore it’s also possible to disable
-<span data-acronym-label="lfn" data-acronym-form="singular+abbrv">lfn</span>
-support in Zeke if required.
+Note that Microsoft Corporation holds a patent for LFN and commercial use might
+be prohibitten or it may require a license form the company. Therefore it’s also
+possible to disable LFN support in Zeke if required.
 
 procfs
 ------
@@ -159,34 +141,27 @@ ramfs
 
 ### Overall description
 
-The purpose of the
-<span data-acronym-label="ramfs" data-acronym-form="singular+abbrv">ramfs</span>
-is to provide a storage in RAM for temporary files. This is important in
-user scope where there might be no other writable storage medium
-available on some embedded platform. In addition to storage for
-temporary files in user scope ramfs could be useful to store kernel
-files as well, e.g. init can be unpacked from kernel to ramfs and then
-executed.
+The purpose of the ramfs is to provide a storage in RAM for temporary files.
+This is important in user scope where there might be no other writable storage
+medium available on some embedded platform. In addition to storage for
+temporary files in user scope ramfs could be useful to store kernel files as
+well, e.g. init can be unpacked from kernel to ramfs and then executed.
 
-In the future ramfs code might be also useful for
-<span data-acronym-label="vfs" data-acronym-form="singular+abbrv">vfs</span>
-caching, so that changes to a slow medium could be stored in ramfs-like
-structure and synced later.
+In the future ramfs code might be also useful for VFS caching, so that
+changes to a slow medium could be stored in ramfs-like structure and synced
+later.
 
-Ramfs should implement the same
-<span data-acronym-label="vfs" data-acronym-form="singular+abbrv">vfs</span>
-interface as any other regular file system for Zeke. This ensures that
-the same POSIX compliant file descriptor interface\[1\] can be used for
-files stored to ramfs as well as to any other file system.
+Ramfs should implement the same VFS interface as any other regular file
+system for Zeke. This ensures that the same POSIX compliant file
+descriptor interface\[1\] can be used for files stored to ramfs as well
+as to any other file system.
 
 ### Structure of ramfs
 
-Data in Ramfs is organized by inodes,
-<span data-acronym-label="inode" data-acronym-form="singular+abbrv">inode</span>
-can contain either a file or directory entries, which means that an
-inode can be either files or directories. Maximum size of a mounted
-ramfs is limited by size of `size_t` type. Maximum size of a file is
-limited by size of `off_t` type. Figure
+Data in Ramfs is organized by inodes, an inode can contain either a file
+or directory entries, which means that an inode can be either a file or
+directory. Maximum size of a mounted ramfs is limited by size of `size_t`
+type. Maximum size of a file is limited by size of `off_t` type. Figure
 [\[figure:inodes\]](#figure:inodes) shows a high level representation of
 how inodes are organized and linked in ramfs to form directory tree with
 files and directories.
@@ -242,8 +217,7 @@ matter of array indexing.
 #### Lookup vnode by filename
 
 File lookup on ramfs level is implemented only on single directory vnode
-level and sub-directory lookup must be then implemented on
-<span data-acronym-label="vfs" data-acronym-form="singular+abbrv">vfs</span>
+level and sub-directory lookup must be then implemented on VFS
 level i.e. lookup function for a vnode can only lookup for entries in
 the current directory vnode. A file lookup is made by calling
 `vnode->vnode_ops->lookup()`.

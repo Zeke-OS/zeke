@@ -1,7 +1,0 @@
-\chapter{Pipes}
-
-Zeke supports unidirectional \ac{POSIX} pipe \ac{ipc}. The implementation
-inherits nofs and it utilizes \verb+queue_r+ to provide lockess data transfer
-between a producer and a consumer. However, the current implementation
-doesn't guarantee the atomicity the requirement set by \ac{POSIX}. POSIX
-requires a transaction under \verb+PIPE_BUF+ bytes to be atomic.

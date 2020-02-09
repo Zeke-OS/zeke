@@ -81,9 +81,7 @@ get rid of otherwise hard to solve race conditions.
 
 When a process calls `exec` syscall the current main thread is replaced
 by a newly created main thread that’s pointing to the new process image,
-ie.
-<span data-acronym-label="PC" data-acronym-form="singular+abbrv">PC</span>
-is set to the entry point of the new image. Before `exec` transfers
+ie. PC is set to the entry point of the new image. Before `exec` transfers
 control to the new program the kernel will run resource cleanups and
 inherit properties as mandated by the
 <span data-acronym-label="POSIX" data-acronym-form="singular+abbrv">POSIX</span>
@@ -134,27 +132,21 @@ Executable File Formats
 ### Introduction to executables in Zeke
 
 The kernel has a support for implementing loader functions for any new
-executable format but currently only 32bit
-<span data-acronym-label="elf" data-acronym-form="singular+full">elf</span>
-support exist. Loading of a new process image is invoked by calling exec
-syscall call that calls `load_image()` function in `kern/exec.c` file.
-Process image loaders are advertised by using `EXEC_LOADER` macro.
+executable format but currently only 32bit elf support exist. Loading of a new
+process image is invoked by calling exec syscall call that calls `load_image()`
+function in `kern/exec.c` file.  Process image loaders are advertised by using
+`EXEC_LOADER` macro.
 
 ### ELF32
 
-The
-<span data-acronym-label="elf" data-acronym-form="singular+abbrv">elf</span>
-loader in Zeke can be used to load statically linked executables as well
-as anything linked dynamically. Currently only two loadable sections can
-be loaded, code region and heap
-region.
+The elf loader in Zeke can be used to load statically linked executables as well
+as anything linked dynamically. Currently only two loadable sections can be
+loaded, code region and heap region.
 
 #### Suported elf sections
 
 The kernel reads process memory regions based on information provided by
-`PT_LOAD` sections in the
-<span data-acronym-label="elf" data-acronym-form="singular+abbrv">elf</span>
-file.
+`PT_LOAD` sections in the elf file.
 
 The kernel can read additional information needed for executing a binary
 from the elf notes. The non-standard notes are only parsed if `Zeke` is
@@ -191,8 +183,7 @@ Libc: Process and Thread Management
 
 ### ELF support
 
-Zeke libc supports adding simple note sections to
-<span data-acronym-label="elf" data-acronym-form="singular+abbrv">elf</span>
+Zeke libc supports adding simple note sections to elf
 files by using macros provided by `sys/elf_notes.h` header file. As
 discussed previously in chapter [](#chap:exec), some additional
 information about the runtime environment requirements can be passed via
