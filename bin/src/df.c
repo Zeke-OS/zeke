@@ -47,16 +47,18 @@
 #define __SYSCALL_DEFS__
 #include <unistd.h>
 
+struct format_str {
+    const char header[80];
+    const char entry[80];
+};
+
 char * argv0;
 struct {
     unsigned int k : 1;
     unsigned int P : 1;
 } flags;
 
-struct format_str {
-    const char header[80];
-    const char entry[80];
-} format_str[] = {
+struct format_str format_str[] = {
     { /* Default */
         .header = "%-14s %10s %10s %10s %8s %10s %10s %6s %s\n",
         .entry = "%-14s %10d %10d %10d %7d%% %10d %10d %5d%% %s\n",
@@ -77,15 +79,12 @@ static void usage(void)
 char cwd_buf[PATH_MAX];
 static void print_df(const struct statvfs * restrict st)
 {
-    char * cwd;
     const unsigned k = (flags.k ? 1024 : 512);
-    int blocks, used, avail, capacity;
-
-    blocks = (st->f_blocks * st->f_frsize) / k;
-    used = (st->f_blocks - st->f_bfree) * st->f_frsize / k;
-    avail = st->f_bfree * st->f_frsize / k;
-    capacity = 100 * (st->f_blocks - st->f_bfree) / st->f_blocks;
-    cwd = getcwd(cwd_buf, sizeof(cwd_buf));
+    const int blocks = (st->f_blocks * st->f_frsize) / k;
+    const int used = (st->f_blocks - st->f_bfree) * st->f_frsize / k;
+    const int avail = st->f_bfree * st->f_frsize / k;
+    const int capacity = 100 * (st->f_blocks - st->f_bfree) / st->f_blocks;
+    char * cwd = getcwd(cwd_buf, sizeof(cwd_buf));
 
     if (flags.P) {
         printf(format_str[1].entry,
