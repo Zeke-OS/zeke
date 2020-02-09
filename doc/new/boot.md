@@ -44,6 +44,8 @@ function can return a negative errno code to indicate an error, but
 `-EAGAIN` is reserved to indicate that the initializer was already
 executed.
 
+**kmod.c**
+
 ```c
 int __kinit__ mod_init(void)
 {
@@ -67,6 +69,8 @@ file and using the notation as shown in
 [\[list:hwprepostinit\]](#list:hwprepostinit). These should be rarely
 needed and used since preinit doesn’t allow many kernel features to be
 used and postinit can be called after the scheduler is already running.
+
+**hwprepostinit.c**
 
 ```c
 int mod_preinit(void)

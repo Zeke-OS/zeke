@@ -76,6 +76,8 @@ to vnodes and
 operations e.g. for modifying file contents or adding new hard links to
 a directory node.
 
+**fs struct definition.**
+
 ```c
 /**
  * File system.
@@ -89,6 +91,8 @@ typedef struct fs {
     struct superblock_lnode * sbl_head; /*!< List of all mounts. */
 } fs_t;
 ```
+
+**superblock struct definition.**
 
 ```c
 /**
@@ -273,6 +277,7 @@ equation [\[eqn:dpointer\]](#eqn:dpointer), where data is the data block
 pointer array. Length of data pointer by the pointer is calculated as
 shown in equation [\[eqn:dlen\]](#eqn:dlen).
 
+```
 \[\begin{aligned}
   \textrm{block} &=& \textrm{data} \left[ \frac{\textrm{offset} -
     (\textrm{offset} \& (\textrm{blksize} - 1))}{\textrm{blksize}}
@@ -280,6 +285,7 @@ shown in equation [\[eqn:dlen\]](#eqn:dlen).
   \textrm{p}     &=& \textrm{block} \left[ \textrm{offset} \& (\textrm{blksize} - 1)
     \right] \label{eqn:dpointer} \\
   \textrm{len}  &=& \textrm{blocksize} - (\textrm{offset} \& (\textrm{blksize} - 1)) \label{eqn:dlen}\end{aligned}\]
+```
 
 #### Create a vnode
 
@@ -358,16 +364,16 @@ in fact may make some of the result unreliable.
 
 **ramfs write/read performance**
 
-| **Operation**             |      |    |
-| :------------------------ | ---: | :- |
-| **Single write (100 MB)** |      |    |
-| new file                  |   21 | 62 |
-| existing file             | 1694 | 92 |
-| read                      | 1098 | 90 |
-| **Sequential writes**     |      |    |
-| new file                  |    9 | 06 |
-| existing file             |  335 | 80 |
-| read                      |  426 | 22 |
+| **Operation**             | Transfer speed (MB/s) |
+| :------------------------ | --------------------: |
+| **Single write (100 MB)** |                       |
+| new file                  |   21.62               |
+| existing file             | 1694.92               |
+| read                      | 1098.90               |
+| **Sequential writes**     |                       |
+| new file                  |    9.06               |
+| existing file             |  335.80               |
+| read                      |  426.22               |
 
 Write and read performance testing is somewhat biased by the underlying
 kernel even though we have our own memory allocator in place. Actually
