@@ -1,0 +1,16 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    size="8,5"
+
+    node [shape = point ]; qi
+    node [shape = doublecircle]; DEAD;
+    node [shape = circle];
+
+    qi -> INIT
+    INIT -> READY
+    READY -> EXEC
+    EXEC -> BLOCKED [ label = "wait" ];
+    BLOCKED -> READY [ label = "release" ];
+    EXEC -> READY
+    EXEC -> DEAD [ label = "terminate" ];
+}

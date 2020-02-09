@@ -5,15 +5,14 @@ Processes and Threads
 ---------------------
 
 The process and thread management in Zeke is based on an idea that a
-process is a container for threads owned by the process and it manages
-the memory space and resources used by its threads. Naturally this means
-that a process must always own at least one thread, that is the main
-thread and all other threads are children of the main thread. While a
-process is an unit or a context of resource allocation, a thread is an
-object describing the execution state, in other words a unit of
-execution, of an user space application. Any process not having a main
-thread is immediately removed from the system because there is nothing
-to execute.
+process is a container for threads owned by the process and the
+process manages the memory space and resources used by its threads.
+Naturally this means that a process must always own at least one thread,
+that is the main thread and all other threads are children of the main thread.
+While a process is an unit or a context of resource allocation, a thread is an
+object describing the execution state, in other words a unit of execution, of
+an user space application. Any process not having a main thread is immediately
+removed from the system because there is nothing to execute.
 
 Since a process is a container containing the main thread, and other
 threads, there is no global execution state for a process, like in some
@@ -26,8 +25,9 @@ mostlikely in `READY` state for most of the time.
 
 #### The thread management concept
 
-![Thread tree
-example.<span label="figure:thtree"></span>](gfx/proc-classdiag)
+![Thread tree example](pics/proc-classdiag.svg)
+
+<span label="figure:thtree">**Thread tree example.**</span>
 
 The following notation is used:
 
@@ -66,8 +66,9 @@ Killing of `child_2` causes `child_2_1` to be killed first.
 
 ### A process
 
-![Process
-states.<span label="figure:procstates"></span>](gfx/proc-states)
+![Process states](pics/proc-states.svg)
+
+<span label="figure:procstates">**Process states.**</span>
 
 Figure [\[figure:procstates\]](#figure:procstates) shows every possible
 state transition of a process in Zeke.
@@ -104,8 +105,9 @@ different set of scheduling policies that are then only executable on
 that particular CPU, see figure
 [\[figure:objscheds\]](#figure:objscheds).
 
-![Thread states in the
-scheduler.<span label="figure:threadstates"></span>](gfx/thread-states)
+![Thread states in the scheduler](pics/thread-states.svg)
+
+<span label="figure:threadstates">**Thread states in the scheduler.**</span>
 
 ![Scheduler CPU objects for two processor cores and per scheduler object
 scheduling policy objects in priority
@@ -132,7 +134,7 @@ as anything linked dynamically. Currently only two loadable sections can
 be loaded, code region and heap
 region.
 
-#### Suported <span data-acronym-label="elf" data-acronym-form="singular+abbrv">elf</span> sections
+#### Suported elf sections
 
 The kernel reads process memory regions based on information provided by
 `PT_LOAD` sections in the
@@ -167,13 +169,12 @@ it doesn’t allow new bounding capabilities to be gained even when the
 binary file is opened with +O_EXEC_ALTPCAP+.
 
 The user space implementation of these note types is discussed in
-section
-[1](#sec:libc_elf).
+section [1](#sec:libc_elf).
 
 Libc: Process and Thread Management
 -----------------------------------
 
-### <span data-acronym-label="elf" data-acronym-form="singular+abbrv">elf</span> support
+### ELF support
 
 Zeke libc supports adding simple note sections to
 <span data-acronym-label="elf" data-acronym-form="singular+abbrv">elf</span>
@@ -299,5 +300,7 @@ TODO
 
 #### Mutex
 
-\epigraph{Tis in my memory lock'd,\newline
-          And you yourself shall keep the key of it.}{\textit{Hamlet}, 1, ii}
+> Tis in my memory lock'd,\newline
+> And you yourself shall keep the key of it.
+
+*Hamlet*, 1, ii
