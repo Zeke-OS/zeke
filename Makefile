@@ -49,18 +49,12 @@ all: kernel.img world
 	clean-all clean clean-doc clean-tools clean-man
 
 # target_doc: doc - Compile all documentation.
-doc: doc-book doc-man
+doc: doc-man
 
 # target_doc: doc-man - Generate man pages.
 doc-man: clean-man
 	doxygen Doxyfile.libc
 	doxygen Doxyfile.kern
-
-# target_doc: doc-book - Compile Zeke book.
-doc-book:
-	$(MAKE) -C doc/book all
-# End of Doc
-
 
 # target_comp: tools - Build tools.
 tools: tools/exec_qemu
@@ -157,10 +151,6 @@ clean:
 # target_clean: clean-tools - Clean all tools.
 clean-tools:
 	$(RM) tools/exec_qemu
-
-# target_clean: clean-doc - Clean documenation targets.
-clean-doc:
-	$(MAKE) -C doc/book clean
 
 # target_clean: clean-man - Clean man pages.
 clean-man:
