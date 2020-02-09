@@ -5,6 +5,7 @@
  *
  * @brief   Source file for thread Signal Management in kernel.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
@@ -1179,7 +1180,11 @@ int ksignal_syscall_exit(int retval)
 
         KASSERT(sframe != NULL, "Must have exitting sframe");
 
-        /* Set return value for the syscall. */
+        /*
+         * Set return value for the syscall.
+         * FIXME The error returned by copyin() and copyin() should be either
+         *       ignored explicitly by using (void) or handled.
+         */
         copyin((__user sw_stack_frame_t *)sframe->r9, &caller, sizeof(caller));
         caller.r0 = retval;
         copyout(&caller, (__user sw_stack_frame_t *)sframe->r9, sizeof(caller));

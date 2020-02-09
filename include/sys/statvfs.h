@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File system information.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -95,6 +96,8 @@ int statvfs(const char * restrict path, struct statvfs * restrict buf);
  * @param buf       is a pointer to the buffer; NULL if peeking the required buffer size.
  * @param bufsize   is the buffer size; 0 if peeking the required buffer size.
  * @param flags     No flags specified.
+ * @returns Returns the size of stats written in bytes if successful;
+ *          Otherwise returns -1 and sets errno.
  */
 int getfsstat(struct statvfs * buf, long bufsize, int flags);
 __END_DECLS

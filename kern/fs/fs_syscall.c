@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system syscalls.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -158,7 +159,7 @@ out:
     /* Decrement refcount for the file pointed by fd */
     fs_fildes_ref(curproc->files, args.fd, -1);
 
-    copyout(&args, user_args, sizeof(args));
+    (void)copyout(&args, user_args, sizeof(args));
     return retval;
 }
 
@@ -650,7 +651,8 @@ static intptr_t sys_statfile(__user void * user_args)
 out:
     if (filref)
         fs_fildes_ref(curproc->files, args->fd, -1);
-    copyout(&stat_buf, (__user struct stat *)args->buf, sizeof(struct stat));
+    (void)copyout(&stat_buf, (__user struct stat *)args->buf,
+                  sizeof(struct stat));
     freecpystruct(args);
 
     return retval;
@@ -679,12 +681,6 @@ static intptr_t sys_statfs(__user void * user_args)
         goto out;
     }
 
-    if (!useracc((__user void *)args->buf, sizeof(struct statvfs),
-                 VM_PROT_WRITE)) {
-        set_errno(EFAULT);
-        goto out;
-    }
-
     err = fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
     if (err) {
         set_errno(-err);
@@ -694,7 +690,11 @@ static intptr_t sys_statfs(__user void * user_args)
     memset(&st, 0, sizeof(st));
     sb = vnode->sb;
     sb->statfs(sb, &st);
-    copyout(&st, (__user void *)args->buf, sizeof(struct statvfs));
+    err = copyout(&st, (__user void *)args->buf, sizeof(struct statvfs));
+    if (err) {
+        set_errno(EFAULT);
+        goto out;
+    }
 
     retval = 0;
 out:
@@ -727,6 +727,7 @@ static intptr_t sys_getfsstat(__user void * user_args)
         struct fs_superblock * sb = NULL;
         while ((sb = fs_iterate_superblocks(fs, sb))) {
             if (args.bufsize != 0) {
+                int err;
                 struct statvfs st;
 
                 if (args.bufsize <= size) {
@@ -735,8 +736,12 @@ static intptr_t sys_getfsstat(__user void * user_args)
                 }
 
                 sb->statfs(sb, &st);
-                copyout(&st, (__user void *)((uintptr_t)args.buf + size),
-                        sizeof(struct statvfs));
+                err = copyout(&st, (__user void *)((uintptr_t)args.buf + size),
+                              sizeof(struct statvfs));
+                if (err) {
+                    set_errno(EFAULT);
+                    return -1;
+                }
             }
             size += sizeof(struct statvfs);
         }
@@ -877,7 +882,7 @@ static intptr_t sys_umask(__user void * user_args)
     copyin(user_args, &args, sizeof(args));
     args.oldumask = curproc->files->umask;
     curproc->files->umask = args.newumask;
-    copyout(&args, user_args, sizeof(args));
+    (void)copyout(&args, user_args, sizeof(args));
 
     return 0;
 }

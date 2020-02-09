@@ -526,8 +526,8 @@ static void thread_init_tls(struct thread_info * new_thread,
     /*
      * Set thread local variables.
      */
-    copyout_proc(proc, &new_thread->id, &new_thread->tls_uaddr->thread_id,
-                 sizeof(pthread_t));
+    (void)copyout_proc(proc, &new_thread->id, &new_thread->tls_uaddr->thread_id,
+                       sizeof(pthread_t));
     proc_unref(proc);
 }
 SCHED_THREAD_CTOR(thread_init_tls);

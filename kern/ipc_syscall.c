@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic IPC syscalls.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -53,7 +54,7 @@ static intptr_t sys_pipe(__user void * user_args)
         return -1;
     }
 
-    copyout(&args, user_args, sizeof(args));
+    (void)copyout(&args, user_args, sizeof(args));
 
     return 0;
 }

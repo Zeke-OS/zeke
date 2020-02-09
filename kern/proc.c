@@ -5,6 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -796,7 +797,7 @@ static intptr_t sys_proc_wait(__user void * user_args)
         /*
          * Leave the proc around, available for later waits.
          */
-        copyout(&args, user_args, sizeof(args));
+        (void)copyout(&args, user_args, sizeof(args));
         return (uintptr_t)pid_child;
     }
 
@@ -808,7 +809,7 @@ static intptr_t sys_proc_wait(__user void * user_args)
     curproc->tms.tms_cstime += child->tms.tms_stime;
 
 
-    copyout(&args, user_args, sizeof(args));
+    (void)copyout(&args, user_args, sizeof(args));
 
     /* Remove the wait'd process */
     proc_remove(child);
@@ -911,6 +912,10 @@ static intptr_t sys_proc_getsetcred(__user void * user_args)
             retval = -1;
     }
 
+    /*
+     * FIXME Should the following copyout fail if we have EPERM here, if not
+     * then there should be a comment why not.
+     */
     if (retval)
         set_errno(EPERM);
 
@@ -922,7 +927,10 @@ static intptr_t sys_proc_getsetcred(__user void * user_args)
     pcred.egid = curproc->cred.egid;
     pcred.sgid = curproc->cred.sgid;
 
-    copyout(&pcred, user_args, sizeof(pcred));
+    if (copyout(&pcred, user_args, sizeof(pcred))) {
+        set_errno(EFAULT);
+        retval = -1;
+    }
 
     return retval;
 }
@@ -1348,8 +1356,7 @@ static intptr_t sys_proc_getrlim(__user void * user_args)
 {
     struct _proc_rlim_args args;
 
-    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE) ||
-            copyin(user_args, &args, sizeof(args))) {
+    if (copyin(user_args, &args, sizeof(args))) {
         set_errno(EFAULT);
         return -1;
     }
@@ -1360,7 +1367,10 @@ static intptr_t sys_proc_getrlim(__user void * user_args)
     }
 
     memcpy(&args.rlimit, &curproc->rlim[args.resource], sizeof(struct rlimit));
-    copyout(&args, user_args, sizeof(args));
+    if (copyout(&args, user_args, sizeof(args))) {
+        set_errno(EFAULT);
+        return -1;
+    }
 
     return 0;
 }
