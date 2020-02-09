@@ -38,6 +38,16 @@ Zeke includes a partially BSD compatible C standard library.
 ![Zeke: a Portable Operating
 System.<span label="figure:zeke"></span>](pics/zeke.svg)
 
+TODO Tell about the doc strucuture
+
+There is a `coding_standards.markdown` file that you should read before
+contributing. That document describes the guidelines for development and
+contribution as well as gives some information about calling conventions and
+initialization of kernel subsystems.
+
+This directory also contains some auto generated as well as
+manually written man pages under `man` and `sman` directories.
+
 List of Abbreviations and Meanings
 ----------------------------------
 
