@@ -213,6 +213,8 @@ The `NT_CAPABILITIES_REQ` note type is similar to `NT_CAPABILITIES` but
 it doesn’t allow gaining new bounding capabilities. This note can be
 created using `ELFNOTE_CAPABILITIES_REQ(...)` macro.
 
+**hugestack.c**
+
 ```c
 #include <stdio.h>
 #include <sys/elf_notes.h>
@@ -248,6 +250,8 @@ forking once and creating a new session for the child process by calling
 `setsid()`. The parent process may exit immediately after forking.
 Listing [\[list:daemon\]](#list:daemon) shows an example of a daemon
 creation procedure.
+
+**daemon.c**
 
 ```c
 #include <stdio.h>
