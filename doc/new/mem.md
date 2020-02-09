@@ -347,7 +347,16 @@ used to pass allocated memory for external users.
 
 <span id="figure:vralloc_blocks" label="figure:vralloc_blocks">**vregion blocks allocated from dynmem.**</span>
 
-![vralloc and buffer interface<span label="figure:vrregbufapi"></span>](gfx/vralloc-buffer)
+
+```
++--------------+----------------+                  +------+---------+
+| struct buf b | ...            |  allocator_data  |      | + paddr |
+|              | allocator_data |----------------->| vreg | + count |
++-------------------------------+                  +      | + map[] |
+                                                   +------+---------+
+```
+
+<span label="figure:vrregbufapi">**vralloc and buffer interface**</span>
 
 **vralloc and buffer interface.**
 
