@@ -109,9 +109,24 @@ that particular CPU, see figure
 
 <span label="figure:threadstates">**Thread states in the scheduler.**</span>
 
-![Scheduler CPU objects for two processor cores and per scheduler object
-scheduling policy objects in priority
-order.<span label="figure:objscheds"></span>](proc/objscheds)
+```
+          +----------+
++----------+  CPU1   |
+|   CPU0   |+------+ |
+| +------+ || FIFO | |
+| | FIFO | |+------+ |
+| +------+ |+------+ |
+| +------+ ||  RR  | |
+| |  RR  | |+------+ |
+| +------+ |+------+ |
+| +------+ || OTTH1| |
+| | OTH1 | |+------+ |
+| +------+ |---------+
++----------+
+```
+
+<span label="figure:objscheds">**Scheduler CPU objects for two processor cores
+and per scheduler object scheduling policy objects in priority order.**</span>
 
 Executable File Formats
 -----------------------
