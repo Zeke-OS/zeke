@@ -54,7 +54,7 @@ Figure [\[figure:sigstack\]](#figure:sigstack) shows how entry to a user
 space signal handler constructs necessary data on top of the user stack
 and alters the thread stack frame.
 
-![Signal stack](pics/signal_stack.png)
+![Signal stack](pics/signal_stack.svg)
 
 **<span label="figure:sigstack">A signal stack and the new thread stack frame.**</span>
 
