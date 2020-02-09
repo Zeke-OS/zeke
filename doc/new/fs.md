@@ -340,13 +340,11 @@ link count of the directory entry hash table it doesn’t mean lookups are
 slow. Even with 20000 links average lookup takes only \(45\:\mu s\) and
 it’s very rare to have that many directory entries in one directory.
 
-![Directory entry hash table link
-performance.](plots/dh_link)
+![Directory entry hash table link performance.](plots/dh_link.png)
 
 <span id="figure:dhlink_perf" label="figure:dhlink_perf">\[figure:dhlink\_perf\]</span>
 
-![Directory entry hash table lookup
-performance.](plots/dh_lookup)
+![Directory entry hash table lookup performance.](plots/dh_lookup.png)
 
 <span id="figure:dhlookup_perf" label="figure:dhlookup_perf">\[figure:dhlookup\_perf\]</span>
 
