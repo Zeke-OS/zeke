@@ -204,13 +204,13 @@ allocation. Figure [\[figure:dir\]](#figure:dir) represents a directory
 inode containing some directory entries.
 
 ![Mounted ramfs with some
-inodes.<span label="figure:inodes"></span>](pics/inodes)
+inodes.<span label="figure:inodes"></span>](pics/inodes.svg)
 
 ![Structure of a file stored in
-ramfs.<span label="figure:file"></span>](pics/file)
+ramfs.<span label="figure:file"></span>](pics/file.svg)
 
 ![Directory containing some directory entries in
-ramfs.<span label="figure:dir"></span>](pics/dir)
+ramfs.<span label="figure:dir"></span>](pics/dir.svg)
 
 ### Time complexity and performance analysis
 
@@ -447,7 +447,7 @@ driver has to allocate a new `uart_port` structure and pass it to
 the port.
 
 ![Communication between subsystems when a user process is writing to a
-UART.<span label="figure:fsuart"></span>](pics/uart)
+UART.<span label="figure:fsuart"></span>](pics/uart.svg)
 
 Footnotes
 ---------
