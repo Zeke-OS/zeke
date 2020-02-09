@@ -319,7 +319,7 @@ TODO
 
 #### Mutex
 
-> Tis in my memory lock'd,\newline
+> Tis in my memory lock'd,<br/>
 > And you yourself shall keep the key of it.
 
 *Hamlet*, 1, ii
