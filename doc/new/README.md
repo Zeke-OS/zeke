@@ -36,7 +36,7 @@ selection is already almost fully locked at compilation time.
 Zeke includes a partially BSD compatible C standard library.
 
 ![Zeke: a Portable Operating
-System.<span label="figure:zeke"></span>](pics/zeke)
+System.<span label="figure:zeke"></span>](pics/zeke.svg)
 
 List of Abbreviations and Meanings
 ----------------------------------
