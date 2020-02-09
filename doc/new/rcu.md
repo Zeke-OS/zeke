@@ -1,28 +1,20 @@
 RCU - Read Copy Update
 ======================
 
-<span data-acronym-label="rcu" data-acronym-form="singular+full">rcu</span>
-is a low overhead synchronization method mainly used for synchronization
-between multiple readers and rarely occuring writers.
-<span data-acronym-label="rcu" data-acronym-form="singular+abbrv">rcu</span>
-can be considered to be a lightweight versioning system for data
-structures that allows readers to access the old version of the data as
-long as they hold a reference to the old data, while new readers will
-get a pointer to the new version.
+RCU is a low overhead synchronization method mainly used for synchronization
+between multiple readers and rarely occuring writers.  RCU can be considered
+to be a lightweight versioning system for data structures that allows readers
+to access the old version of the data as long as they hold a reference to the
+old data, while new readers will get a pointer to the new version.
 
-The
-<span data-acronym-label="rcu" data-acronym-form="singular+abbrv">rcu</span>
-implementation supports only single writer and multiple readers by
+The RCU implementation supports only single writer and multiple readers by
 itself but the user may use other synchronization methods to allow
-multiple writers. Unlike traditional implementations the
-<span data-acronym-label="rcu" data-acronym-form="singular+abbrv">rcu</span>
-implentation in Zeke allows interrupts and sleeping on both sides.
-Instead of relying on time-based grace periods the
-<span data-acronym-label="rcu" data-acronym-form="singular+abbrv">rcu</span>
-state is changed only when necessary due to a write synchronization. The
-implementation also supports timer based reclamation of resources
-similar to the traditional callback API. In practice the algorithm is
-based on atomically accessed clock variable and two counters.
+multiple writers. Unlike traditional implementations the RCU implentation in
+Zeke allows interrupts and sleeping on both sides.  Instead of relying on
+time-based grace periods the RCU state is changed only when necessary due to
+a write synchronization. The implementation also supports timer based
+reclamation of resources similar to the traditional callback API. In practice
+the algorithm is based on atomically accessed clock variable and two counters.
 
 Before going any further with describing the implementation, let’s
 define the terminology and function names used in this chapter
@@ -43,13 +35,9 @@ define the terminology and function names used in this chapter
 
   - `rcu_synchronize()` block until all current readers are ready.
 
-The global control variables for
-<span data-acronym-label="rcu" data-acronym-form="singular+abbrv">rcu</span>
-are defined as follows
+The global control variables for RCU are defined as follows
 
-  - `clk` is a one bit clock selecting the
-    <span data-acronym-label="rcu" data-acronym-form="singular+abbrv">rcu</span>
-    state,
+  - `clk` is a one bit clock selecting the RCU state,
 
   - `ctr0` is a counter for readers accepted in the first state,
 
@@ -58,8 +46,7 @@ are defined as follows
   - `rcu_reclaim_list[2]` contains a list of callbacks per state to old
     the versions of the resources.
 
-In the following description we assume that the
-<span data-acronym-label="rcu" data-acronym-form="singular+abbrv">rcu</span>
+In the following description we assume that the RCU
 is in the same state as initially but it has already ran an undefined
 number of iterations, therefore \(\mathtt{clk} = 0\).
 
@@ -79,8 +66,7 @@ and to free the old data. In general the latter is preferred if the
 writer is allowed to block.
 
 `rcu_synchronize()` is the only mechanism that will advance the global
-<span data-acronym-label="rcu" data-acronym-form="singular+abbrv">rcu</span>
-clock variable. The function works in two stages and access to the
+RCU clock variable. The function works in two stages and access to the
 function is syncronized by a spinlock. In the first stage it waits until
 there is no more readers on the second counter (`ctr1`), and changes the
 clock state. The second stage waits until there is no more readers on
