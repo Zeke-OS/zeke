@@ -62,5 +62,6 @@ handling flow when a signal is received in a middle of a system call and
 the system call is interrupted to immediately run the user space signal
 hanlder.
 
-![Interruption of a system call when a signal is
-caught.<span label="figure:syscallint"></span>](gfx/syscallint)
+![Interruption of a system call when a signal is caught<span label="figure:syscallint"></span>](pics/syscallint)
+
+**Interruption of a system call when a signal is caught**

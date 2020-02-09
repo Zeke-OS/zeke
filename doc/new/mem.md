@@ -260,6 +260,8 @@ TODO Make an ASCII art of the following
 \end{figure}
 ```
 
+**Kmalloc blocks.**
+
 <span id="figure:kmalloc_blocks" label="figure:kmalloc_blocks">\[figure:kmalloc\_blocks\]</span>
 
 Descriptor structs are used to store the size of the data block,
@@ -313,7 +315,7 @@ over committing realloc function. This is however completely untested
 and intuitively derived method but it seems to perform sufficiently well
 for hypothetical memory allocations.
 
-![New realloc method<span label="figure:realloc"></span>](pics/realloc)
+![New realloc method<span label="figure:realloc"></span>](pics/realloc.png)
 
 **New realloc method.**
 
