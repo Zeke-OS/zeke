@@ -131,6 +131,8 @@ Note that Microsoft Corporation holds a patent for LFN and commercial use might
 be prohibitten or it may require a license form the company. Therefore it’s also
 possible to disable LFN support in Zeke if required.
 
+The complete documentation is available [here](fatfs/README.md).
+
 procfs
 ------
 
