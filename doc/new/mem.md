@@ -87,48 +87,46 @@ management are shown in figure [\[figure:vmsubsys\]](#figure:vmsubsys).
 
 **The memory map of Zeke running on BCM2835.**
 
-| Address               |   | Description                |
-| :-------------------- | :-: | :------------------------- |
-| **Interrupt Vectors** |   |                            |
-| 0x0 - 0xff            |   | Not used by Zeke           |
-| 0x100 - 0x4000        | L | Typical placement of ATAGs |
-| **Priv Stacks**       |   |                            |
-| 0x1000 - 0x2fff       | Z | Supervisor (SWI/SVC) stack |
-| 0x3000 - 0x4fff       | Z | Abort stack                |
-| 0x5000 - 0x5fff       | Z | IRQ stack                  |
-| 0x6000 - 0x6fff       | Z | Undef stack                |
-| 0x7000 - 0x7fff       | Z | System stack               |
-| 0x8000 - 0x3fffff     | Z | Kernel area (boot address) |
-| 0x00400000-           | Z | Page Table                 |
-| 0x007FFFFF            |   | Area                       |
-| 0x00800000            | Z | Dynmem                     |
-| 0x00FFFFFF            |   | Area                       |
-| \-                    |   |                            |
-| **Peripherals**       |   |                            |
-| 0x20000000 -          |   |                            |
-| *Interrupts*          |   |                            |
-| 0x2000b200            | B | IRQ basic pending          |
-| 0x2000b204            | B | IRQ pending 1              |
-| 0x2000b20c            | B | IRQ pending 2              |
-| 0x2000b210            | B | Enable IRQs 1              |
-| 0x2000b214            | B | Enable IRQs 2              |
-| 0x2000b218            | B | Enable Basic IRQs          |
-| 0x2000b21c            | B | Disable IRQs 1             |
-| 0x2000b220            | B | Disable IRQs 2             |
-| 0x2000b224            | B | Disable Basic IRQs         |
-| \- 0x20FFFFFF         | B | Peripherals                |
+| Address               |       | Description                |
+| :-------------------- | :---: | :------------------------- |
+| **Interrupt Vectors** |       |                            |
+| 0x0 - 0xff            |       | Not used by Zeke           |
+| 0x100 - 0x4000        | L     | Typical placement of ATAGs |
+| **Priv Stacks**       |       |                            |
+| 0x1000 - 0x2fff       | Z     | Supervisor (SWI/SVC) stack |
+| 0x3000 - 0x4fff       | Z     | Abort stack                |
+| 0x5000 - 0x5fff       | Z     | IRQ stack                  |
+| 0x6000 - 0x6fff       | Z     | Undef stack                |
+| 0x7000 - 0x7fff       | Z     | System stack               |
+| 0x8000 - 0x3fffff     | Z     | Kernel area (boot address) |
+| 0x00400000-           | Z     | Page Table                 |
+| 0x007FFFFF            |       | Area                       |
+| 0x00800000            | Z     | Dynmem                     |
+| 0x00FFFFFF            |       | Area                       |
+| \-                    |       |                            |
+| **Peripherals**       |       |                            |
+| 0x20000000 -          |       |                            |
+| *Interrupts*          |       |                            |
+| 0x2000b200            | B     | IRQ basic pending          |
+| 0x2000b204            | B     | IRQ pending 1              |
+| 0x2000b20c            | B     | IRQ pending 2              |
+| 0x2000b210            | B     | Enable IRQs 1              |
+| 0x2000b214            | B     | Enable IRQs 2              |
+| 0x2000b218            | B     | Enable Basic IRQs          |
+| 0x2000b21c            | B     | Disable IRQs 1             |
+| 0x2000b220            | B     | Disable IRQs 2             |
+| 0x2000b224            | B     | Disable Basic IRQs         |
+| \- 0x20FFFFFF         | B     | Peripherals                |
 
-|   |                                    |
+|    |  Legends                           |
 | :- | :--------------------------------- |
-|   |                                    |
-|   |                                    |
-| Z | Zeke specific                      |
-| L | Linux bootloader specific          |
-| B | BCM2835 firmware specific mappings |
+| Z  | Zeke specific                      |
+| L  | Linux bootloader specific          |
+| B  | BCM2835 firmware specific mappings |
 
 
-MMU HAL- Memory Management Unit Hardware Abstraction Layer
-----------------------------------------------------------
+MMU HAL - Memory Management Unit Hardware Abstraction Layer
+-----------------------------------------------------------
 
 TODO
 
@@ -166,24 +164,13 @@ used instead.
 TODO ASCII art
 
 ```
-  \newcommand{\colorbitbox}[3]{%
-  \rlap{\bitbox{#2}{\color{#1}\rule{\width}{\height}}}%
-  \bitbox{#2}{#3}}
-
-  \definecolor{lightgreen}{rgb}{0.64,1,0.71}
-  \definecolor{lightred}{rgb}{1,0.7,0.71}
-
-  \begin{bytefield}[boxformatting={\centering\small},bitwidth=\widthof{Kernel~}]{4}
-    \bitheader[endianness=little]{0-3} \\
-    \colorbitbox{lightred}{1}{Kernel} &
-    \colorbitbox{lightgreen}{1}{} &
-    \colorbitbox{lightred}{2}{User} &
-  \end{bytefield}
+ 0        1        2      3
++--------+--------+---------------+
+| Kernel |  Free  |      User     |
++--------+--------+---------------+
 ```
 
-**An example of reserved regions in dynmem.**
-
-<span id="figure:dynmem_blocks" label="figure:dynmem_blocks">\[figure:dynmem\_blocks\]</span>
+<span id="figure:dynmem_blocks" label="figure:dynmem_blocks">**An example of reserved regions in dynmem.**</span>
 
 kmalloc
 -------
@@ -191,12 +178,33 @@ kmalloc
 The current implementation of a generic kernel memory allocator is
 largely based on a tutorial written by Marwan Burrelle. Figure
 [\[figure:mm\_layers\]](#figure:mm_layers) shows kmalloc’s relation to
-the the memory management stack of the
-kernel.
+the the memory management stack of the kernel.
 
 - [Marwan Burelle - A malloc tutorial](http://www.inf.udec.cl/~leo/Malloc_tutorial.pdf)
 
-<span id="figure:mm_layers" label="figure:mm_layers">\[figure:mm\_layers\]</span>
+```
+    +---------+
+    | kmalloc |
+    +---------+
+        \/
+    +--------+
+    | dynmem |
+    +--------+
+        \/
+    +---------+
+    | MMU HAL |
+    +---------+
+        \/
++-------------------+
+| CPU specific code |
++-------------------+
+        \/
++-------------------+
+| MMU & coProcessor |
++-------------------+
+```
+
+<span id="figure:mm_layers" label="figure:mm_layers">**Kernel layers from kmalloc to physical CPU level.**</span>
 
 ### The implementation
 
@@ -230,6 +238,8 @@ memory that is used to allocate memory for its clients. Listing
 [\[list:mblockt\]](#list:mblockt) shows the `mblock_t` structure
 definition used internally in kmalloc for linking blocks of memory.
 
+**kmalloc mblock_t struct definition.**
+
 ```c
 typedef struct mblock {
     size_t size;            /* Size of data area of this block. */
@@ -260,9 +270,7 @@ TODO Make an ASCII art of the following
 \end{figure}
 ```
 
-**Kmalloc blocks.**
-
-<span id="figure:kmalloc_blocks" label="figure:kmalloc_blocks">\[figure:kmalloc\_blocks\]</span>
+<span id="figure:kmalloc_blocks" label="figure:kmalloc_blocks">**Kmalloc blocks.**</span>
 
 Descriptor structs are used to store the size of the data block,
 reference counters, and pointers to neighbouring block descriptors.
@@ -290,25 +298,19 @@ implementation.
 \end{eqnarray}
 ```
 
-<span id="algo:realloc_oc" label="algo:realloc_oc">\[algo:realloc\_oc\]</span>
+```
+if req_size > proposed_size then
+    new_size = req_size
+else
+    if limit_min < 4 * (proposed_size / req_size) < limit_max then
+        new_size = proposed_size
+    else
+        new_size = max(req_size, current_size)
+    fi
+fi
+```
 
-```
-\begin{algorithm}
-  \caption{krealloc over commit}
-  \label{algo:realloc_oc}
-  \begin{algorithmic}
-      \If{$\mathrm{req\_size} > \mathrm{proposed\_size}$}
-        \State $\mathrm{new\_size} \gets \mathrm{req\_size}$
-      \Else
-        \If{$\mathrm{limit}_{min} < 4 \frac{proposed\_size}{req\_size} < \mathrm{limit}_{max}$}
-          \State $\mathrm{new\_size} \gets \mathrm{proposed\_size}$
-        \Else
-          \State $\mathrm{new\_size} \gets \mathrm{max(req\_size, curr\_size})$
-        \EndIf
-      \EndIf
-  \end{algorithmic}
-\end{algorithm}
-```
+<span id="algo:realloc_oc" label="algo:realloc_oc">**krealloc over commit.**</span>
 
 Figure [\[figure:realloc\]](#figure:realloc) shows "simulations" for a
 over committing realloc function. This is however completely untested
@@ -343,10 +345,9 @@ used to pass allocated memory for external users.
 +----------------+     +-----------------+     +-------+
 ```
 
-<span id="figure:vralloc_blocks" label="figure:vralloc_blocks">\[figure:vralloc\_blocks\]</span>
+<span id="figure:vralloc_blocks" label="figure:vralloc_blocks">**vregion blocks allocated from dynmem.**</span>
 
-![vralloc and buffer
-interface<span label="figure:vrregbufapi"></span>](gfx/vralloc-buffer)
+![vralloc and buffer interface<span label="figure:vrregbufapi"></span>](gfx/vralloc-buffer)
 
 **vralloc and buffer interface.**
 
