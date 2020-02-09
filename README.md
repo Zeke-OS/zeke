@@ -74,12 +74,6 @@ To successfully compile Zeke, you'll need the following packages/tools:
 - `cloc` for source code stats
 - `ncurses-devel`
 
-**doc-book target**
-
-- LaTeX + various packages
-- latexmk
-- gnuplot
-
 **Doxygen targets**
 
 - Doxygen
