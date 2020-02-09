@@ -203,14 +203,17 @@ is quite cache friendly and can usually avoid fragmentation in memory
 allocation. Figure [\[figure:dir\]](#figure:dir) represents a directory
 inode containing some directory entries.
 
-![Mounted ramfs with some
-inodes.<span label="figure:inodes"></span>](pics/inodes.svg)
+![Mounted ramfs with some inodes<span label="figure:inodes"></span>](pics/inodes.svg)
 
-![Structure of a file stored in
-ramfs.<span label="figure:file"></span>](pics/file.svg)
+**Mounted ramfs with some inodes.**
 
-![Directory containing some directory entries in
-ramfs.<span label="figure:dir"></span>](pics/dir.svg)
+![Structure of a file stored in ramfs<span label="figure:file"></span>](pics/file.svg)
+
+**Structure of a file stored in ramfs.**
+
+![Directory containing some directory entries in ramfs<span label="figure:dir"></span>](pics/dir.svg)
+
+**Directory containing some directory entries in ramfs**
 
 ### Time complexity and performance analysis
 
@@ -294,6 +297,8 @@ creation is relative to size of the array, so its
 
 #### Summary
 
+**Summary of time complexity of ramfs functions.**<span label="table:complexity"></span>
+
 | Function              | Average time complexity | Worst case time complexity |
 | :-------------------- | :---------------------: | :------------------------: |
 | mount                 |        \(O(n)\)         |          \(O(n)\)          |
@@ -301,9 +306,6 @@ creation is relative to size of the array, so its
 | vnode by filename     |        \(O(1)\)         |          \(O(n)\)          |
 | data by vnode         |        \(O(1)\)         |          \(O(1)\)          |
 | create a new vnode    |        \(O(1)\)         |          \(O(n)\)          |
-
-Summary of time complexity of ramfs
-functions.<span label="table:complexity"></span>
 
 ### Performance testing
 
@@ -340,19 +342,21 @@ link count of the directory entry hash table it doesn’t mean lookups are
 slow. Even with 20000 links average lookup takes only \(45\:\mu s\) and
 it’s very rare to have that many directory entries in one directory.
 
-![Directory entry hash table link performance.](plots/dh_link.png)
+![Directory entry hash table link performance](plots/dh_link.png)
 
-<span id="figure:dhlink_perf" label="figure:dhlink_perf">\[figure:dhlink\_perf\]</span>
+**Directory entry hash table link performance.**
 
-![Directory entry hash table lookup performance.](plots/dh_lookup.png)
+![Directory entry hash table lookup performance](plots/dh_lookup.png)
 
-<span id="figure:dhlookup_perf" label="figure:dhlookup_perf">\[figure:dhlookup\_perf\]</span>
+**Directory entry hash table lookup performance**
 
-##### File operations
+**File operations**
 
 Performance tests for file operations were performed on the universal
 target where kmalloc uses malloc instead of dynem block allocator, this
 in fact may make some of the result unreliable.
+
+**ramfs write/read performance**
 
 | **Operation**             |      |    |
 | :------------------------ | ---: | :- |
@@ -364,8 +368,6 @@ in fact may make some of the result unreliable.
 | new file                  |    9 | 06 |
 | existing file             |  335 | 80 |
 | read                      |  426 | 22 |
-
-##### ramfs write/read performance
 
 Write and read performance testing is somewhat biased by the underlying
 kernel even though we have our own memory allocator in place. Actually
@@ -444,8 +446,9 @@ driver has to allocate a new `uart_port` structure and pass it to
 `uart_register_port()` which finally registers the a new device file for
 the port.
 
-![Communication between subsystems when a user process is writing to a
-UART.<span label="figure:fsuart"></span>](pics/uart.svg)
+![Subsystem communication with UART<span label="figure:fsuart"></span>](pics/uart.svg)
+
+**Communication between subsystems when a user process is writing to a UART.**
 
 Footnotes
 ---------

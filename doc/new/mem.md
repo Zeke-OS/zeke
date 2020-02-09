@@ -85,6 +85,8 @@ management are shown in figure [\[figure:vmsubsys\]](#figure:vmsubsys).
 
 <span id="table:bcm_memmap" label="table:bcm_memmap">\[table:bcm\_memmap\]</span>
 
+**The memory map of Zeke running on BCM2835.**
+
 | Address               |   | Description                |
 | :-------------------- | :-: | :------------------------- |
 | **Interrupt Vectors** |   |                            |
@@ -116,8 +118,6 @@ management are shown in figure [\[figure:vmsubsys\]](#figure:vmsubsys).
 | 0x2000b224            | B | Disable Basic IRQs         |
 | \- 0x20FFFFFF         | B | Peripherals                |
 
-The memory map of Zeke running on BCM2835.
-
 |   |                                    |
 | :- | :--------------------------------- |
 |   |                                    |
@@ -126,17 +126,27 @@ The memory map of Zeke running on BCM2835.
 | L | Linux bootloader specific          |
 | B | BCM2835 firmware specific mappings |
 
-The memory map of Zeke running on BCM2835.
 
-\[MMU\]<span>Memory Management Unit</span>
+MMU HAL- Memory Management Unit Hardware Abstraction Layer
+----------------------------------------------------------
 
-<span data-acronym-label="HAL" data-acronym-form="singular+abbrv">HAL</span>
-----------------------------------------------------------------------------
+TODO
+
+- MMU in general
+- ARM MMU
+  - L1 & L2 page tables on ARM
+  - master page table and page table in Zeke
+  - regions in zeke
+
+
+The page table abstraction system in the kernel is relatively light but it
+still allows things that are not usually directly achievable with a plain
+harware implementation, eg. variable sized page tables.
 
 **ARM11 note:** Only 4 kB pages are used with L2 page tables thus XN
 (Execute-Never) bit is always usable also for L2 pages.
 
-#### Domains
+### Domains
 
 See `MMU_DOM_xxx` definitions.
 
@@ -153,13 +163,25 @@ L2 page table, though this is normally not done as the vm interface is
 used instead, though this is normally not done as the vm interface is
 used instead.
 
-\definecolor{lightgreen}{rgb}{0.64,1,0.71}
+TODO ASCII art
 
-\definecolor{lightred}{rgb}{1,0.7,0.71}
+```
+  \newcommand{\colorbitbox}[3]{%
+  \rlap{\bitbox{#2}{\color{#1}\rule{\width}{\height}}}%
+  \bitbox{#2}{#3}}
 
-<span>4</span>  
-& &
-&
+  \definecolor{lightgreen}{rgb}{0.64,1,0.71}
+  \definecolor{lightred}{rgb}{1,0.7,0.71}
+
+  \begin{bytefield}[boxformatting={\centering\small},bitwidth=\widthof{Kernel~}]{4}
+    \bitheader[endianness=little]{0-3} \\
+    \colorbitbox{lightred}{1}{Kernel} &
+    \colorbitbox{lightgreen}{1}{} &
+    \colorbitbox{lightred}{2}{User} &
+  \end{bytefield}
+```
+
+**An example of reserved regions in dynmem.**
 
 <span id="figure:dynmem_blocks" label="figure:dynmem_blocks">\[figure:dynmem\_blocks\]</span>
 
@@ -220,12 +242,23 @@ typedef struct mblock {
 } mblock_t;
 ```
 
-<span>16</span>  
-  
-  
-  
-  
-  
+TODO Make an ASCII art of the following
+
+```
+\begin{figure}
+\begin{bytefield}{16}
+    \wordbox{1}{Descriptor} \\
+    \wordbox[lrt]{1}{Free} \\
+    \skippedwords \\
+    \wordbox[lrb]{1}{} \\
+    \wordbox{1}{Descriptor} \\
+    \wordbox[lrt]{2}{Data} \\
+    \skippedwords
+\end{bytefield}
+\caption{Kmalloc blocks.}
+\label{figure:kmalloc_blocks}
+\end{figure}
+```
 
 <span id="figure:kmalloc_blocks" label="figure:kmalloc_blocks">\[figure:kmalloc\_blocks\]</span>
 
@@ -247,26 +280,42 @@ used to implement something like best-fit instead of first-fit and
 possibly with even smaller time complexity than the current
 implementation.
 
-\[\begin{aligned}
+```
+\begin{eqnarray}
 \mathrm{proposed\_size} &=& \mathrm{req\_size}
   + \frac{\mathrm{curr\_size}}{\mathrm{req\_size}} \mathrm{o\_fact}
-  + \frac{\mathrm{curr\_size}}{o\_div}.\end{aligned}\]
+  + \frac{\mathrm{curr\_size}}{o\_div}.
+\end{eqnarray}
+```
 
 <span id="algo:realloc_oc" label="algo:realloc_oc">\[algo:realloc\_oc\]</span>
 
-\If{$\mathrm{req\_size} > \mathrm{proposed\_size}$}
-
-\(\mathrm{new\_size} \gets \mathrm{req\_size}\)
-\(\mathrm{new\_size} \gets \mathrm{proposed\_size}\)
-\(\mathrm{new\_size} \gets \mathrm{max(req\_size, curr\_size})\)
+```
+\begin{algorithm}
+  \caption{krealloc over commit}
+  \label{algo:realloc_oc}
+  \begin{algorithmic}
+      \If{$\mathrm{req\_size} > \mathrm{proposed\_size}$}
+        \State $\mathrm{new\_size} \gets \mathrm{req\_size}$
+      \Else
+        \If{$\mathrm{limit}_{min} < 4 \frac{proposed\_size}{req\_size} < \mathrm{limit}_{max}$}
+          \State $\mathrm{new\_size} \gets \mathrm{proposed\_size}$
+        \Else
+          \State $\mathrm{new\_size} \gets \mathrm{max(req\_size, curr\_size})$
+        \EndIf
+      \EndIf
+  \end{algorithmic}
+\end{algorithm}
+```
 
 Figure [\[figure:realloc\]](#figure:realloc) shows "simulations" for a
 over committing realloc function. This is however completely untested
 and intuitively derived method but it seems to perform sufficiently well
 for hypothetical memory allocations.
 
-![New realloc
-method.<span label="figure:realloc"></span>](pics/realloc)
+![New realloc method<span label="figure:realloc"></span>](pics/realloc)
+
+**New realloc method.**
 
 vralloc
 -------
@@ -295,7 +344,9 @@ used to pass allocated memory for external users.
 <span id="figure:vralloc_blocks" label="figure:vralloc_blocks">\[figure:vralloc\_blocks\]</span>
 
 ![vralloc and buffer
-interface.<span label="figure:vrregbufapi"></span>](gfx/vralloc-buffer)
+interface<span label="figure:vrregbufapi"></span>](gfx/vralloc-buffer)
+
+**vralloc and buffer interface.**
 
 Virtual Memory
 --------------
