@@ -79,3 +79,15 @@ List of Abbreviations and Meanings
 - \[DMA\] <span>Direct Memory Access</span> is a feature that allows hardware
   subsystems to commit memory transactions without CPU's intervention.
 - \[PC\] <span>Program Counter</span> register.
+
+Footnotes
+---------
+
+1.  Zeke is portable to at least in a sense of portability between
+    different ARM cores and architectures.
+2.  The project is aiming to implement the core set of kernel features
+    specified in
+    <span data-acronym-label="POSIX" data-acronym-form="singular+short">POSIX</span>
+    standard.
+3.  At least almost from scratch, some functionality is derived from BSD
+    kernels as well as some libraries are taken from other sources.

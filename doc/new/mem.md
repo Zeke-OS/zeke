@@ -161,8 +161,6 @@ used instead.
 & &
 &
 
-\centering
-
 <span id="figure:dynmem_blocks" label="figure:dynmem_blocks">\[figure:dynmem\_blocks\]</span>
 
 kmalloc
@@ -175,8 +173,6 @@ the the memory management stack of the
 kernel.
 
 - [Marwan Burelle - A malloc tutorial](http://www.inf.udec.cl/~leo/Malloc_tutorial.pdf)
-
-\centering
 
 <span id="figure:mm_layers" label="figure:mm_layers">\[figure:mm\_layers\]</span>
 
@@ -269,8 +265,6 @@ over committing realloc function. This is however completely untested
 and intuitively derived method but it seems to perform sufficiently well
 for hypothetical memory allocations.
 
-\center
-
 ![New realloc
 method.<span label="figure:realloc"></span>](pics/realloc)
 
@@ -299,8 +293,6 @@ used to pass allocated memory for external users.
 ```
 
 <span id="figure:vralloc_blocks" label="figure:vralloc_blocks">\[figure:vralloc\_blocks\]</span>
-
-\center
 
 ![vralloc and buffer
 interface.<span label="figure:vrregbufapi"></span>](gfx/vralloc-buffer)

@@ -26,8 +26,6 @@ mostlikely in `READY` state for most of the time.
 
 #### The thread management concept
 
-\center
-
 ![Thread tree
 example.<span label="figure:thtree"></span>](gfx/proc-classdiag)
 
@@ -68,8 +66,6 @@ Killing of `child_2` causes `child_2_1` to be killed first.
 
 ### A process
 
-\center
-
 ![Process
 states.<span label="figure:procstates"></span>](gfx/proc-states)
 
@@ -108,12 +104,8 @@ different set of scheduling policies that are then only executable on
 that particular CPU, see figure
 [\[figure:objscheds\]](#figure:objscheds).
 
-\center
-
 ![Thread states in the
 scheduler.<span label="figure:threadstates"></span>](gfx/thread-states)
-
-\center
 
 ![Scheduler CPU objects for two processor cores and per scheduler object
 scheduling policy objects in priority
@@ -164,7 +156,7 @@ minimum size for the main thread stack.
 required to execute a binary file. The elf loader attempts to set each
 capability as an effective capability, which may fail if the capability
 isn’t in the bounding capabilities set. In case the file has
-+OunderscoreEXECunderscoreALTPCAP+ oflag set then the loader will first
++O_EXEC_ALTPCAP+ oflag set then the loader will first
 add the capabilities found in these notes to the bounding capabilities
 set, i.e. the executable can gain the bounding capabilities.
 
@@ -172,7 +164,7 @@ set, i.e. the executable can gain the bounding capabilities.
 
 `NT_CAPABILITIES__REQ` note functions similar to `NT_CAPABILITIES` but
 it doesn’t allow new bounding capabilities to be gained even when the
-binary file is opened with +OunderscoreEXECunderscoreALTPCAP+.
+binary file is opened with +O_EXEC_ALTPCAP+.
 
 The user space implementation of these note types is discussed in
 section

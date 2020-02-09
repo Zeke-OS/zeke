@@ -54,8 +54,6 @@ Figure [\[figure:sigstack\]](#figure:sigstack) shows how entry to a user
 space signal handler constructs necessary data on top of the user stack
 and alters the thread stack frame.
 
-\center
-
 ![A signal stack and the new thread stack
 frame.<span label="figure:sigstack"></span>](pics/signal_stack)
 
@@ -63,8 +61,6 @@ Figure [\[figure:syscallint\]](#figure:syscallint) shows the signal
 handling flow when a signal is received in a middle of a system call and
 the system call is interrupted to immediately run the user space signal
 hanlder.
-
-\center
 
 ![Interruption of a system call when a signal is
 caught.<span label="figure:syscallint"></span>](gfx/syscallint)

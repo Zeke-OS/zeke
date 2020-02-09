@@ -172,7 +172,7 @@ structure and synced later.
 Ramfs should implement the same
 <span data-acronym-label="vfs" data-acronym-form="singular+abbrv">vfs</span>
 interface as any other regular file system for Zeke. This ensures that
-the same POSIX compliant file descriptor interface\[4\] can be used for
+the same POSIX compliant file descriptor interface\[1\] can be used for
 files stored to ramfs as well as to any other file system.
 
 ### Structure of ramfs
@@ -203,17 +203,11 @@ is quite cache friendly and can usually avoid fragmentation in memory
 allocation. Figure [\[figure:dir\]](#figure:dir) represents a directory
 inode containing some directory entries.
 
-\center
-
 ![Mounted ramfs with some
 inodes.<span label="figure:inodes"></span>](pics/inodes)
 
-\center
-
 ![Structure of a file stored in
 ramfs.<span label="figure:file"></span>](pics/file)
-
-\center
 
 ![Directory containing some directory entries in
 ramfs.<span label="figure:dir"></span>](pics/dir)
@@ -422,7 +416,7 @@ There is some notable differences between devfs implementation of Zeke
 and other common devfs or device abstractions in some other operating
 systems, particularly Unices. First of all we don’t use majorminor
 combination as a device idetentifier, it’s only provided for
-compatibility reasons and not used for anything actually.\[5\] So
+compatibility reasons and not used for anything actually.\[2\] So
 devices can’t be accessed by creating a device file anywhere in the
 system, device files in Zeke are very special and only ones that are
 created with `make_dev()` are valid, since the object oriented model of
@@ -452,7 +446,13 @@ driver has to allocate a new `uart_port` structure and pass it to
 `uart_register_port()` which finally registers the a new device file for
 the port.
 
-\center
-
 ![Communication between subsystems when a user process is writing to a
 UART.<span label="figure:fsuart"></span>](pics/uart)
+
+Footnotes
+---------
+
+1.  POSIX file API is not actually yet implemented.
+2.  Some drivers may still use those internally but there is no external
+    interface provided. Uart is one of those using minor numbers for
+    internal indexing.
