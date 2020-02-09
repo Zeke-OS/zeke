@@ -48,15 +48,12 @@ Key Features
 Port Status
 -----------
 
-| HAL       | Status        |
-|:----------|---------------|
-| ARM11     | OK            |
-|----------:|---------------|
-|   BCM2835 | OK            |
-|:----------|               |
-| MIPSel32  | Incomplete    |
-|----------:|               |
-|   JZ4780  | Incomplete    |
+| HAL           | Status        |
+|---------------|---------------|
+| **ARM11**     | OK            |
+|   BCM2835     | OK            |
+| **MIPSel32**  | Incomplete    |
+|   JZ4780      | Incomplete    |
 
 
 Compiling and Testing
