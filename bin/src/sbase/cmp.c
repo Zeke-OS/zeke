@@ -16,7 +16,11 @@ main(int argc, char *argv[])
 {
     FILE *fp[2];
     size_t line = 1, n;
-    int ret = 0, lflag = 0, sflag = 0, same = 1, b[2];
+    int ret = 0;
+    int lflag = 0;
+    int sflag = 0;
+    int same = 1;
+    int b[2];
 
     ARGBEGIN {
     case 'l':

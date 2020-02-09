@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ps.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -45,7 +45,8 @@ static pid_t * get_pids(void)
 {
     int mib_maxproc[] = { CTL_KERN, KERN_MAXPROC };
     int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PID };
-    size_t size = sizeof(size_t), pids_size;
+    size_t size = sizeof(size_t);
+    size_t pids_size;
     pid_t * pids;
 
     if (sysctl(mib_maxproc, num_elem(mib_maxproc), &pids_size, &size, 0, 0))

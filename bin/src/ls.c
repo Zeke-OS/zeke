@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ls.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -58,7 +58,9 @@ static void usage(void)
 int main(int argc, char * argv[], char * envp[])
 {
     char * path = NULL;
-    int ch, fildes, count;
+    int ch;
+    int fildes;
+    int count;
     struct dirent dbuf[10];
 
     argv0 = argv[0];

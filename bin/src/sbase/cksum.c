@@ -63,7 +63,9 @@ static const unsigned long crctab[] = {         0x00000000,
 static void
 cksum(FILE *fp, const char *s)
 {
-    size_t len = 0, i, n;
+    size_t len = 0;
+    size_t i;
+    size_t n;
     uint32_t ck = 0;
     unsigned char buf[BUFSIZ];
 
