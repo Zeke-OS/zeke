@@ -356,9 +356,7 @@ used to pass allocated memory for external users.
                                                    +------+---------+
 ```
 
-<span label="figure:vrregbufapi">**vralloc and buffer interface**</span>
-
-**vralloc and buffer interface.**
+<span label="figure:vrregbufapi">**vralloc and buffer interface.**</span>
 
 Virtual Memory
 --------------
