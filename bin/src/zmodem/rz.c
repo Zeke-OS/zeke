@@ -735,7 +735,7 @@ static int wcgetsec(char *rxbuf, int maxtime)
 {
     int checksum;
     int wcj;
-    intt firstch;
+    int firstch;
     unsigned short oldcrc;
     char *p;
     int sectcurr;
