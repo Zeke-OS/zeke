@@ -5,7 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -248,10 +248,14 @@ static void set_proc_inher(struct proc_info * old_proc,
 
 static pid_t proc_get_next_pid(void)
 {
-    const pid_t pid_reset = (configMAXPROC < 20) ? 2 :
-                            (configMAXPROC < 200) ? configMAXPROC / 2 : 100;
-    pid_t newpid = (proc_lastpid >= configMAXPROC) ? pid_reset :
-                                                     proc_lastpid + 1;
+    const pid_t pid_reset = (configMAXPROC < 20)
+        ? 2
+        : (configMAXPROC < 200)
+            ? configMAXPROC / 2
+            : 200;
+    pid_t newpid = (proc_lastpid >= configMAXPROC)
+        ? pid_reset
+        : proc_lastpid + 1;
 
     KERROR_DBG("%s()\n", __func__);
 
