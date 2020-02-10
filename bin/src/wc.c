@@ -13,12 +13,10 @@
 static long linect;
 static long wordct;
 static long charct;
-static long pagect;
 
 static long tlinect;
 static long twordct;
 static long tcharct;
-static long tpagect;
 
 char * wd = "lwc";
 
