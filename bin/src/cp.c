@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -105,6 +106,7 @@ static int copy(char * from, char * to)
     }
     if (stat(to, &stto) >= 0 &&
         (stto.st_mode&S_IFMT) == S_IFDIR) {
+        size_t destname_size;
         char * last;
 
         last = strrchr(from, '/');
@@ -112,14 +114,15 @@ static int copy(char * from, char * to)
             last++;
         else
             last = from;
-        destname = malloc(strlen(to) + strlen(last));
+        destname_size = strlen(to) + strlen(last) + 2;
+        destname = malloc(destname_size);
         if (!destname) {
             fprintf(stderr, "%s: %s/%s: Name too long\n", argv0, to, last);
             (void)close(fold);
             retval = 1;
             goto out;
         }
-        (void)sprintf(destname, "%s/%s", to, last);
+        (void)snprintf(destname, destname_size, "%s/%s", to, last);
         to = destname;
     }
     if (rflag && (stfrom.st_mode & S_IFMT) == S_IFDIR) {
