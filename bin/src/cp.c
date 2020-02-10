@@ -165,7 +165,8 @@ static int copy(char * from, char * to)
             goto out;
         }
         if (iflag && isatty(fileno(stdin))) {
-            int i, c;
+            int i;
+            int c;
 
             fprintf(stderr, "overwrite %s? ", to);
             i = c = getchar();
@@ -250,7 +251,7 @@ static int rcopy(char * from, char * to)
             errs++;
             continue;
         }
-        (void)sprintf(fromname, "%s/%s", from, dp->d_name);
+        (void)snprintf(fromname, sizeof(fromname), "%s/%s", from, dp->d_name);
         errs += copy(fromname, to);
     }
 }
