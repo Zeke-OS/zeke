@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1980, 1983, 1987, 1988
                  The Regents of the University of California.
@@ -62,7 +62,7 @@ ELFNOTE_CAPABILITIES(
 #define TIMEOUT 300
 
 char * argv0;
-struct flags {
+struct {
     unsigned int f              : 1;
     unsigned int p              : 1;
     unsigned int ask            : 1;
