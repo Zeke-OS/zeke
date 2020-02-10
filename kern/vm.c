@@ -257,6 +257,35 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
 }
 
 /**
+ * Check whether a new address range is overlapping an existing mapping.
+ * @note mm must be locked.
+ */
+static bool is_overlaping_current_regions(
+    struct vm_mm_struct * mm,
+    uintptr_t vaddr,
+    size_t size)
+{
+    const size_t nr_regions = mm->nr_regions;
+    const uintptr_t newreg_end = vaddr + size - 1;
+
+    for (size_t i = 0; i < nr_regions; i++) {
+        struct buf * bp = (*mm->regions)[i];
+        if (!bp)
+            continue;
+
+        const uintptr_t reg_start = bp->b_mmu.vaddr;
+        const uintptr_t reg_end = bp->b_mmu.vaddr + bp->b_bufsize - 1;
+
+        if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
+                                    vaddr, newreg_end)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Get a free random address in mem space of proc and ensure it's mappable.
  * @note mm must be locked.
  */
@@ -265,46 +294,35 @@ static uintptr_t rnd_addr(struct vm_mm_struct * mm, size_t size)
     size_t nr_regions;
     const size_t bits = NBITS(MMU_PGSIZE_SECTION);
     const uintptr_t addr_min = configEXEC_BASE_LIMIT;
+    /*
+     * TODO The max virtual address should probably come from some config knob.
+     */
     const uintptr_t addr_max = (~0) >> 1;
-    uintptr_t vaddr;
 
     KASSERT(mtx_test(&mm->regions_lock), "mm should be locked\n");
 
     nr_regions = mm->nr_regions;
     do {
-        uintptr_t newreg_end;
-
-tryagain:
+        uintptr_t vaddr;
         vaddr = addr_min +
                 (kunirand((addr_max >> bits) - (addr_min >> bits)) << bits);
         vaddr &= ~(MMU_PGSIZE_COARSE - 1);
-        newreg_end = vaddr + size - 1;
 
-        for (size_t i = 0; i < nr_regions; i++) {
-            uintptr_t reg_start, reg_end;
-            struct buf * bp = (*mm->regions)[i];
-            if (!bp)
-                continue;
-
-            reg_start = bp->b_mmu.vaddr;
-            reg_end = bp->b_mmu.vaddr + bp->b_bufsize - 1;
-
-            if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
-                                        vaddr, newreg_end)) {
-                goto tryagain;
-            }
+        /* TODO What if there is no space left? */
+        if (is_overlaping_current_regions(mm, vaddr, size)) {
+            continue;
         }
 
         /*
-         * Create the page tables early so we know it's possible to map
-         * the selected address range.
+         * Create the page tables early to ensure it's possible to map the
+         * selected address range.
          */
         if (!ptlist_get_pt(mm, vaddr, size, VM_PT_CREAT)) {
-            goto tryagain;
+            continue;
         }
-    } while (0); /* TODO What if there is no space left? */
 
-    return vaddr;
+        return vaddr;
+    } while (true);
 }
 
 struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
