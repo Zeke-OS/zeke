@@ -25,9 +25,12 @@ static void spawn(void);
 
 static size_t argbsz;
 static size_t argbpos;
-static size_t maxargs = 0;
-static int    nerrors = 0;
-static int    rflag = 0, nflag = 0, tflag = 0, xflag = 0;
+static size_t maxargs;
+static int    nerrors;
+static int    rflag;
+static int    nflag;
+static int    tflag;
+static int    xflag;
 static char  *argb;
 static char  *cmd[NARGS];
 static char  *eofstr;
@@ -197,8 +200,11 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-    int ret = 0, leftover = 0;
-    size_t argmaxsz, arglen, a;
+    int ret = 0;
+    int leftover = 0;
+    size_t argmaxsz;
+    size_t arglen;
+    size_t a;
     char *arg = "";
 
     if ((argmaxsz = sysconf(_SC_ARG_MAX)) == (size_t)-1)

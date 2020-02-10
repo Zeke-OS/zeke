@@ -43,7 +43,8 @@ static void set_tty_read_timeout(int timeout, struct termios * orig)
  */
 int mode(int n)
 {
-    static struct termios oldtty, tty;
+    static struct termios oldtty;
+    static struct termios tty;
     static int did0 = FALSE;
 
     vfile("mode:%d", n);
@@ -187,6 +188,7 @@ void vfile(const char * format, ...)
 {
     if (Verbose > 2) {
         va_list args;
+
         va_start(args, format);
         vfprintf(stderr, format, args);
         va_end(args);
@@ -246,7 +248,8 @@ void flushmo(void)
  */
 void from_cu(void)
 {
-    struct stat a, b;
+    struct stat a;
+    struct stat b;
 
     fstat(1, &a);
     fstat(2, &b);

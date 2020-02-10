@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   uptime command
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -36,10 +37,8 @@
 
 static void fmt_lavg(char * dst, double load)
 {
-    int x, y;
-
-    x = (int)(load);
-    y = (int)(load * 100.0) % 100;
+    const int x = (int)(load);
+    const int y = (int)(load * 100.0) % 100;
 
     sprintf(dst, "%d.%.2d", x, y);
 }
@@ -48,7 +47,9 @@ int main(void)
 {
     struct timespec ts = {0, 0};
     double loads[3];
-    char l1[5], l2[5], l3[5];
+    char l1[5];
+    char l2[5];
+    char l3[5];
 
     if (clock_gettime(CLOCK_UPTIME, &ts))
         return 1;

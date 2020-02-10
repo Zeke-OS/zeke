@@ -15,7 +15,8 @@ int
 main(int argc, char *argv[])
 {
     FILE *fp[2];
-    size_t line = 1, n;
+    size_t line = 1;
+    size_t n;
     int ret = 0;
     int lflag = 0;
     int sflag = 0;

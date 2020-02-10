@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   date command for tish.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -41,7 +42,8 @@
 static int tish_date(char * argv[])
 {
     struct timespec ts = {0, 0};
-    unsigned sec, nsec;
+    unsigned sec;
+    unsigned nsec;
 
     if (clock_gettime(CLOCK_REALTIME, &ts))
         return -1;

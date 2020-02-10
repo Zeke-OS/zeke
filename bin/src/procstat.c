@@ -91,7 +91,9 @@ int main(int argc, char * argv[], char * envp[])
     pid_t pid;
     long clk_tck;
     struct kinfo_proc ps;
-    clock_t utime, stime, sutime;
+    clock_t utime;
+    clock_t stime;
+    clock_t sutime;
 
     if (argc < 2 || sscanf(argv[1], "%d", &pid) != 1) {
         fprintf(stderr, "usage: %s PID\n", argv[0]);

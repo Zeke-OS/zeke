@@ -33,7 +33,9 @@ static inline int _PDCLIB_c16rtoc32(
             ps->_Surrogate = 0;
             return 1;
         }
-    } if((*in & ~0x3FF) == 0xD800) {
+    }
+
+    if ((*in & ~0x3FF) == 0xD800) {
         // Lead surrogate
         if(bufsize >= 2) {
             // Buffer big enough

@@ -207,7 +207,9 @@ static void exec2(char *s)
  */
 static int tryz(void)
 {
-    int c, n, cmdzack1flg;
+    int c;
+    int n;
+    int cmdzack1flg;
 
     if (Nozmodem)       /* Check for "rb" program name */
         return 0;
@@ -330,7 +332,8 @@ static int closeit(void)
  */
 static int procheader(char *name)
 {
-    char *openmode, *p;
+    char *openmode;
+    char *p;
 
     /* set default parameters and overrides */
     openmode = "w";
@@ -456,7 +459,8 @@ static int putsec(char *buf, int n)
  */
 static int rzfile(void)
 {
-    int c, n;
+    int c;
+    int n;
     long rxbytes;
 
     Eofseen = FALSE;
@@ -729,7 +733,9 @@ char *rbmsg =
 
 static int wcgetsec(char *rxbuf, int maxtime)
 {
-    int checksum, wcj, firstch;
+    int checksum;
+    int wcj;
+    intt firstch;
     unsigned short oldcrc;
     char *p;
     int sectcurr;
@@ -832,7 +838,8 @@ static void report(int sct)
 
 int wcrx(void)
 {
-    int sectnum, sectcurr;
+    int sectnum;
+    int sectcurr;
     char sendchar;
     int cblklen;            /* bytes to dump this block */
 
@@ -971,7 +978,8 @@ int main(int argc, char *argv[])
 {
     char *cp;
     int npats;
-    char *virgin, **patts;
+    char *virgin;
+    char **patts;
     int exitcode = 0;
 
     Rxtimeout = 100;
@@ -1137,7 +1145,8 @@ static int make_dirs(char *pathname)
  */
 static int makedir(char *dpath, int dmode)
 {
-    int cpid, status;
+    int cpid;
+    int status;
     struct stat statbuf;
 
     if (stat(dpath, &statbuf) == 0) {

@@ -86,7 +86,10 @@ usage:
 #define MAXBSIZE 1000
 static int copy(char * from, char * to)
 {
-    int fold, fnew, n, exists;
+    int fold;
+    int fnew;
+    int n;
+    int exists;
     char * destname = NULL;
     char * buf = NULL;
     struct stat stfrom, stto;

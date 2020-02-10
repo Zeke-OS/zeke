@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   TTY id to string.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -40,7 +40,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define DEV_PATH    "/dev"
+#define DEV_PATH "/dev"
 
 struct ttydev {
     dev_t dev;
@@ -63,7 +63,8 @@ void init_ttydev_arr(void)
     }
 
     while ((d = readdir(dirp))) {
-        int fildes, istty;
+        int fildes;
+        int istty;
         struct stat statbuf;
 
         if (d->d_name[0] == '.' || !(d->d_type & DT_CHR))

@@ -1,6 +1,7 @@
 /*
  * wc line and word count
  *
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -9,8 +10,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-long linect, wordct, charct, pagect;
-long tlinect, twordct, tcharct, tpagect;
+static long linect;
+static long wordct;
+static long charct;
+static long pagect;
+
+static long tlinect;
+static long twordct;
+static long tcharct;
+static long tpagect;
+
 char * wd = "lwc";
 
 static void ipr(long num)
@@ -39,7 +48,8 @@ static void wcp(char * wd, long charct, long wordct, long linect)
 
 int main(int argc, char ** argv)
 {
-    int i, token;
+    int i;
+    int token;
     FILE *fp;
     int c;
 

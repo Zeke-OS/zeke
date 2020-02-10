@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -92,7 +93,8 @@ static void print_mib_name(int * mib, int len)
 static int print_tree(int * mib_start, int len_start)
 {
     int mib[CTL_MAXNAME];
-    int err, len = len_start;
+    int err;
+    int len = len_start;
     size_t len_next;
 
 #if 0
@@ -241,7 +243,8 @@ static int tish_ikut(char * argv[])
     int mib_test[5];
     int mib_cur[5];
     int mib_next[5];
-    size_t len_cur, len_next;
+    size_t len_cur;
+    size_t len_next;
     const int one = 1;
 
     const size_t len_test = sysctlnametomib("debug.test", mib_test,

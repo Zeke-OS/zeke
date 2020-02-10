@@ -17,8 +17,10 @@ int recurse_status = 0;
 void
 recurse(const char *path, void *data, struct recursor *r)
 {
-    struct history *new, *h;
-    struct stat st, dst;
+    struct history *new;
+    struct history *h;
+    struct stat st;
+    struct stat dst;
     DIR *dp;
     int (*statf)(const char *, struct stat *);
     char *statf_name;

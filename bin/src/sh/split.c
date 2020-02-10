@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny shell.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -35,15 +36,20 @@
 #include <string.h>
 #include "tish.h"
 
+enum states {
+    DULL,
+    IN_WORD,
+    IN_STRING
+};
+
 size_t split(char * buffer, char * argv[], size_t argc_max)
 {
     char * p;
     char * start_of_word;
-    enum states { DULL, IN_WORD, IN_STRING } state;
+    enum states state = DULL;
     char quote;
     size_t argc = 0;
 
-    state = DULL;
     for (p = buffer; argc < argc_max && *p != '\0'; p++) {
         int c = (unsigned char) *p;
         switch (state) {

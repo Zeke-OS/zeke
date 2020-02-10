@@ -305,7 +305,10 @@ int getnak(void)
  */
 int wcputsec(char *buf, int sectnum, int cseclen)
 {
-    int checksum, wcj, firstch, attempts;
+    int checksum;
+    int wcj;
+    int firstch;
+    int attempts;
     unsigned oldcrc;
     char *cp;
 
@@ -447,7 +450,9 @@ int zfilbuf(void)
 /* Send the data in the file */
 int zsendfdata(void)
 {
-    int c, e, n;
+    int c;
+    int e;
+    int n;
     int newcnt;
     long tcount = 0;
     int junkcount;      /* Counts garbage chars received by TX */
@@ -701,7 +706,8 @@ again:
  */
 int wctxpn(char *name)
 {
-    char *p, *q;
+    char *p;
+    char *q;
     char name2[PATHLEN];
     struct stat f;
 
@@ -769,7 +775,8 @@ int wctxpn(char *name)
 /* fill buf with count chars padding with ^Z for CPM */
 int filbuf(char *buf, int count)
 {
-    int c, m;
+    int c;
+    int m;
 
     if (!Ascii) {
         m = read(fileno(in), buf, count);
@@ -811,7 +818,9 @@ int filbuf(char *buf, int count)
 int wctx(int flen)
 {
     int thisblklen;
-    int sectnum, attempts, firstch;
+    int sectnum;
+    int attempts;
+    int firstch;
     long charssent;
 
     charssent = 0;
@@ -1154,7 +1163,8 @@ Usage: sz [-2+abdefkLlNnquvwYy] [-] file ...\n\
 int main(int argc, char *argv[])
 {
     char *cp;
-    int npats, dm;
+    int npats;
+    int dm;
     char **patts;
     static char xXbuf[BUFSIZ];
 

@@ -18,15 +18,18 @@ parsemode(const char *str, mode_t mode, mode_t mask)
 {
     char *end;
     const char *p = str;
-    int octal, op;
-    mode_t who, perm, clear;
+    const int octal = strtol(str, &end, 8);
+    int op;
+    mode_t who;
+    mode_t perm;
+    mode_t clear;
 
-    octal = strtol(str, &end, 8);
     if (*end == '\0') {
         if (octal < 0 || octal > 07777) {
             eprintf("%s: invalid mode\n", str);
             return -1;
         }
+
         mode = 0;
         if (octal & 04000) mode |= S_ISUID;
         if (octal & 02000) mode |= S_ISGID;
@@ -40,6 +43,7 @@ parsemode(const char *str, mode_t mode, mode_t mask)
         if (octal & 00004) mode |= S_IROTH;
         if (octal & 00002) mode |= S_IWOTH;
         if (octal & 00001) mode |= S_IXOTH;
+
         return mode;
     }
 next:

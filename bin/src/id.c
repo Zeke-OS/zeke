@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1991, 1993
  *  The Regents of the University of California.  All rights reserved.
@@ -133,7 +133,8 @@ int main(int argc, char * argv[])
 
 static void pretty(struct passwd * pw)
 {
-    uid_t eid, rid;
+    uid_t eid;
+    uid_t rid;
 
     if (pw) {
         printf("uid\t%s\n", pw->pw_name);
@@ -180,7 +181,9 @@ static void current(void)
 {
     struct group *gr;
     struct passwd *pw;
-    uid_t id, eid, lastid;
+    uid_t id;
+    uid_t eid;
+    uid_t lastid;
     int ngroups;
     gid_t groups[NGROUPS_MAX];
 
@@ -224,7 +227,10 @@ static void user(struct passwd * pw)
 {
     struct group * gr;
     gid_t groups[NGROUPS_MAX + 1];
-    int cnt, id, lastid, ngroups;
+    int cnt;
+    int id;
+    int lastid;
+    int ngroups;
     char * fmt;
 
     id = pw->pw_uid;
@@ -249,7 +255,9 @@ static void user(struct passwd * pw)
 
 static void group(struct passwd * pw, int nflag)
 {
-    int cnt, lastid, ngroups;
+    int cnt;
+    int lastid;
+    int ngroups;
     gid_t groups[NGROUPS_MAX + 1];
     char *fmt;
 

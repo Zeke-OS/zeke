@@ -1,22 +1,31 @@
 /*
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
-/*
- * Concatenate files.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-char * cmd;
-int bflg, eflg, nflg, sflg, tflg, uflg, vflg;
-int spaced, col, lno, inlin, ibsize, obsize;
+static char * cmd;
+static int bflg;
+static int eflg;
+static int nflg;
+static int sflg;
+static int tflg;
+static int uflg;
+static int vflg;
+
+static int spaced;
+static int lno;
+static int inlin;
+static int ibsize;
+static int obsize;
 
 static int copyopt(FILE * file);
 static int unbufcat(FILE * file);
@@ -25,7 +34,8 @@ static int fastcat(FILE * file);
 int main(int argc, char ** argv)
 {
     int fflg = 0;
-    int dev = 0, ino = -1;
+    int dev = 0;
+    int ino = -1;
     struct stat statb;
     int retval = 0;
     int (*catfn)(FILE * file);
@@ -188,8 +198,11 @@ static int unbufcat(FILE * file)
 
 static int fastcat(FILE * file)
 {
-    int    fd, buffsize, n, nwritten;
-    char   * buff;
+    int fd;
+    int buffsize;
+    int n;
+    int nwritten;
+    char * buff;
 
     fd = fileno(file);
 
