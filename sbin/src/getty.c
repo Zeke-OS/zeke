@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Single process multi-tty get teletype.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -47,9 +48,9 @@ struct gettytab_entry {
     int tty_bdrate;
     int tty_csize; /* 5, 6, 7, 8 bits */
     struct {
-        int cstopb : 1; /* s */
-        int parenb : 1; /* p */
-        int parodd : 1; /* o */
+        unsigned cstopb : 1; /* s */
+        unsigned parenb : 1; /* p */
+        unsigned parodd : 1; /* o */
     } tty_ctrl;
     char login[40];
     pid_t pid; /* pid of process handling this tty */
