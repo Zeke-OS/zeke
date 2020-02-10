@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File System wrapper for FatFs.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -321,7 +321,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     vnode_t * xvp;
     mode_t vn_mode;
     ino_t inum;
-    int err = 0, retval = 0;
+    int err = 0;
+    int retval = 0;
 
     KERROR_DBG("%s(fpath \"%s\", vn_hash %u)\n",
                __func__, fpath, (uint32_t)vn_hash);

@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Device file system.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -140,7 +141,8 @@ int make_dev(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
              vnode_t ** result)
 {
     vnode_t * vn;
-    int err, mode = ((devnfo->block_size > 1) ? S_IFBLK : S_IFCHR) | perms;
+    int err;
+    const int mode = ((devnfo->block_size > 1) ? S_IFBLK : S_IFCHR) | perms;
 
     if (!vn_devfs->vnode_ops->lookup(vn_devfs, devnfo->dev_name, NULL))
         return -EEXIST;

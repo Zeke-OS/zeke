@@ -6,6 +6,7 @@
  * This is a free software that opened for education, research and commercial
  * developments under license policy of following terms.
  *
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  *  Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  *  Copyright (C) 2014, ChaN, all right reserved.
  *
@@ -737,7 +738,8 @@ static DWORD create_chain(FATFS * fs, DWORD clst)
  */
 static DWORD clmt_clust(FF_FIL * fp, DWORD ofs)
 {
-    DWORD cl, ncl;
+    DWORD cl;
+    DWORD ncl;
     DWORD * tbl;
 
     /* Top of CLMT */
@@ -765,7 +767,8 @@ static DWORD clmt_clust(FF_FIL * fp, DWORD ofs)
  */
 static FRESULT dir_sdi(FF_DIR * dp, unsigned int idx)
 {
-    DWORD clst, sect;
+    DWORD clst;
+    DWORD sect;
     unsigned int ic;
 
     dp->index = (WORD)idx;  /* Current index */
@@ -969,8 +972,10 @@ static const uint8_t LfnOfs[] = {1, 3, 5, 7, 9, 14, 16, 18, 20, 22, 24, 28, 30};
  */
 static int cmp_lfn(WCHAR * lfnbuf, uint8_t * dir)
 {
-    unsigned int i, s;
-    WCHAR wc, uc;
+    unsigned int i;
+    unsigned int s;
+    WCHAR wc;
+    WCHAR uc;
 
     i = ((dir[LDIR_Ord] & ~LLE) - 1) * 13;  /* Get offset in the LFN buffer */
     s = 0; wc = 1;
@@ -1005,8 +1010,10 @@ static int cmp_lfn(WCHAR * lfnbuf, uint8_t * dir)
  */
 static int pick_lfn(WCHAR * lfnbuf, uint8_t * dir)
 {
-    unsigned int i, s;
-    WCHAR wc, uc;
+    unsigned int i;
+    unsigned int s;
+    WCHAR wc;
+    WCHAR uc;
 
     i = ((dir[LDIR_Ord] & 0x3F) - 1) * 13;  /* Offset in the LFN buffer */
 
@@ -1044,7 +1051,8 @@ static int pick_lfn(WCHAR * lfnbuf, uint8_t * dir)
 static void fit_lfn(const WCHAR * lfnbuf, uint8_t * dir, uint8_t ord,
                     uint8_t sum)
 {
-    unsigned int i, s;
+    unsigned int i;
+    unsigned int s;
     WCHAR wc;
 
     dir[LDIR_Chksum] = sum;         /* Set check sum */
@@ -1079,8 +1087,10 @@ static void fit_lfn(const WCHAR * lfnbuf, uint8_t * dir, uint8_t ord,
 static void gen_numname(uint8_t * dst, const uint8_t * src, const WCHAR * lfn,
                         unsigned int seq)
 {
-    uint8_t ns[8], c;
-    unsigned int i, j;
+    uint8_t ns[8];
+    uint8_t c;
+    unsigned int i;
+    unsigned int j;
 
     memcpy(dst, src, 11);
 
@@ -1158,7 +1168,9 @@ static FRESULT dir_find(FF_DIR * dp)
     uint8_t c;
     uint8_t * dir;
 #if configFATFS_LFN
-    uint8_t a, ord, sum;
+    uint8_t a;
+    uint8_t ord;
+    uint8_t sum;
 #endif
 
     res = dir_sdi(dp, 0);           /* Rewind directory object */
@@ -1227,7 +1239,8 @@ static FRESULT dir_find(FF_DIR * dp)
 static FRESULT dir_read(FF_DIR * dp, int vol)
 {
     FRESULT res;
-    uint8_t a, c;
+    uint8_t a;
+    uint8_t c;
     uint8_t * dir;
 #if configFATFS_LFN
     uint8_t ord = 0xFF, sum = 0xFF;
@@ -1294,8 +1307,10 @@ static FRESULT dir_register(FF_DIR * dp)
 {
     FRESULT res;
 #if configFATFS_LFN    /* LFN configuration */
-    unsigned int n, nent;
-    uint8_t sn[12], sum;
+    unsigned int n;
+    unsigned int nent;
+    uint8_t sn[12];
+    uint8_t sum;
     uint8_t * fn;
     WCHAR * lfn;
 
@@ -1509,10 +1524,14 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
 static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
 {
 #if configFATFS_LFN    /* LFN configuration */
-    uint8_t b, cf;
+    uint8_t b;
+    uint8_t cf;
     WCHAR w;
     WCHAR * lfn;
-    unsigned int i, ni, si, di;
+    unsigned int i;
+    unsigned int ni;
+    unsigned int si;
+    unsigned int di;
     const TCHAR * p;
 
     /*
@@ -1668,8 +1687,13 @@ static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
 
 
 #else   /* Non-LFN configuration */
-    uint8_t b, c, d, *sfn;
-    unsigned int ni, si, i;
+    uint8_t b;
+    uint8_t c;
+    uint8_t d;
+    uint8_t *sfn;
+    unsigned int ni;
+    unsigned int si;
+    unsigned int i;
     const char *p;
 
     /*
@@ -1854,7 +1878,11 @@ static FRESULT access_volume(FATFS * fs, enum access_volume_mode mode)
 static FRESULT prepare_volume(FATFS * fs)
 {
     uint8_t fmt;
-    DWORD fasize, tsect, sysect, nclst, szbfat;
+    DWORD fasize;
+    DWORD tsect;
+    DWORD sysect;
+    DWORD nclst;
+    DWORD szbfat;
     WORD nrsv;
     FRESULT ferr;
     DRESULT derr;
@@ -2163,8 +2191,11 @@ fail:
  */
 FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
 {
-    DWORD clst, sect, remain;
-    unsigned int rcnt, cc;
+    DWORD clst;
+    DWORD sect;
+    DWORD remain;
+    unsigned int rcnt;
+    unsigned int cc;
     uint8_t csect;
     uint8_t * rbuff = (uint8_t *)buff;
 
@@ -2270,8 +2301,10 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
 FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
                 unsigned int * bw)
 {
-    DWORD clst, sect;
-    unsigned int wcnt, cc;
+    DWORD clst;
+    DWORD sect;
+    unsigned int wcnt;
+    unsigned int cc;
     const uint8_t * wbuff = (const uint8_t *)buff;
     uint8_t csect;
 
@@ -2754,7 +2787,10 @@ fail:
 FRESULT f_getfree(FATFS * fs, DWORD * nclst)
 {
     FRESULT res;
-    DWORD n, clst, sect, stat;
+    DWORD n;
+    DWORD clst;
+    DWORD sect;
+    DWORD stat;
     unsigned int i;
     uint8_t fat;
     uint8_t * p;
@@ -2958,8 +2994,12 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
 {
     FRESULT res;
     FF_DIR dj = { .fs = fs };
-    uint8_t * dir, n;
-    DWORD dsc, dcl, pcl, tm = fatfs_time_get_time();
+    uint8_t * dir;
+    uint8_t n;
+    DWORD dsc;
+    DWORD dcl;
+    DWORD pcl;
+    DWORD tm = fatfs_time_get_time();
     DEF_NAMEBUF;
 
     if (lock_fs(dj.fs))
@@ -3130,7 +3170,8 @@ fail:
 FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
 {
     FRESULT res;
-    FF_DIR djo, djn;
+    FF_DIR djo;
+    FF_DIR djn;
     uint8_t buf[21], *dir;
     DWORD dw;
     DEF_NAMEBUF;
@@ -3280,7 +3321,9 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
     FRESULT res;
     FF_DIR dj = { .fs = fs };
     uint8_t vn[11] = { 0 };
-    unsigned int i, j, sl;
+    unsigned int i;
+    unsigned int j;
+    unsigned int sl;
     WCHAR w;
     DWORD tm;
 

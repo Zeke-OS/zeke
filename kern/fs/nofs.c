@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system, nofs.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -167,16 +167,14 @@ int nofs_revlookup(vnode_t * dir, ino_t * ino, char * name, size_t name_len)
 
     do {
         err = dir->vnode_ops->readdir(dir, &d, &doff);
-        if (!err) {
-            if (d.d_ino == *ino) {
-                size_t len;
+        if (!err && d.d_ino == *ino) {
+            size_t len;
 
-                len = strlcpy(name, d.d_name, name_len);
-                if (len >= name_len)
-                    return -ENAMETOOLONG;
+            len = strlcpy(name, d.d_name, name_len);
+            if (len >= name_len)
+                return -ENAMETOOLONG;
 
-                return 0;
-            }
+            return 0;
         }
     } while (!err);
 
