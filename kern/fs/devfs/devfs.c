@@ -266,16 +266,14 @@ ssize_t dev_read(file_t * file, struct uio * uio, size_t bcount)
             devnfo->block_size : bcount;
         ssize_t ret;
 
-        while (1) {
+        do {
             ret = devnfo->read(devnfo, offset + block_offset,
                                &buf[buf_offset], to_read, oflags);
             if (ret < 0 && --tries <= 0) {
                 bytes_rd = (buf_offset > 0) ? buf_offset : ret;
                 goto out;
-            } else {
-                break;
             }
-        }
+        } while (ret < 0);
 
         buf_offset += ret;
         block_offset++;
@@ -320,16 +318,14 @@ ssize_t dev_write(file_t * file, struct uio * uio, size_t bcount)
             devnfo->block_size : bcount;
         ssize_t ret;
 
-        while (1) {
+        do {
             ret = devnfo->write(devnfo, offset + block_offset,
                                 &buf[buf_offset], to_write, oflags);
             if (ret < 0 && --tries <= 0) {
                 bytes_wr = (buf_offset > 0) ? buf_offset : ret;
                 goto out;
-            } else {
-                break;
             }
-        }
+        } while (ret < 0);
 
         buf_offset += ret;
         block_offset++;
