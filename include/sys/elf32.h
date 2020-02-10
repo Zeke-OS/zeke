@@ -227,6 +227,6 @@ typedef uint16_t Elf32_Versym;
 struct elf32_syminfo {
     uint16_t si_boundto;    /*!< direct bindings - symbol bound to */
     uint16_t si_flags;      /*!< per symbol flags */
-} Elf32_Syminfo;
+};
 
 #endif /* _ELF32_H_ */
