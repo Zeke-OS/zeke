@@ -5,8 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
- * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -37,6 +36,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <sys/wait.h>
 #include <syscall.h>
 #include <unistd.h>
@@ -410,9 +410,9 @@ int proc_exists_locked(pid_t pid)
 
     if (proc) {
         proc_unref(proc);
-        return (1 == 1);
+        return true;
     }
-    return 0;
+    return false;
 }
 
 int proc_exists(pid_t pid)
@@ -421,9 +421,9 @@ int proc_exists(pid_t pid)
 
     if (proc) {
         proc_unref(proc);
-        return (1 == 1);
+        return true;
     }
-    return 0;
+    return false;
 }
 
 struct proc_info * proc_ref_locked(pid_t pid)

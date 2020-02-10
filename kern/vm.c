@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -32,6 +32,7 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <buf.h>
 #include <dynmem.h>
 #include <hal/mmu.h>
@@ -770,7 +771,7 @@ void vm_fixmemmap_proc(struct proc_info * proc)
 static int test_ap_priv(uint32_t rw, struct dynmem_ap ap)
 {
     if (rw & VM_PROT_EXECUTE && ap.xn) {
-        return 0; /* XN bit set. */
+        return false; /* XN bit set. */
     }
 
     if (rw & VM_PROT_WRITE) { /* Test for RWxx */
@@ -778,9 +779,9 @@ static int test_ap_priv(uint32_t rw, struct dynmem_ap ap)
         case MMU_AP_RWNA:
         case MMU_AP_RWRO:
         case MMU_AP_RWRW:
-            return (1 == 1);
+            return true;
         default:
-            return 0; /* No write access. */
+            return false; /* No write access. */
         }
     } else if (rw & VM_PROT_READ) { /* Test for ROxx */
         switch (ap.ap) {
@@ -789,13 +790,13 @@ static int test_ap_priv(uint32_t rw, struct dynmem_ap ap)
         case MMU_AP_RWRW: /* I guess it's ok to accept if we have rw. */
         case MMU_AP_RONA:
         case MMU_AP_RORO:
-            return (1 == 1);
+            return true;
         default:
-            return 0; /* No read access. */
+            return false; /* No read access. */
         }
     }
 
-    return 0;
+    return false;
 }
 
 int kernacc(__kernel const void * addr, int len, int rw)
@@ -813,48 +814,48 @@ int kernacc(__kernel const void * addr, int len, int rw)
 
         if (((size_t)addr >= reg_start) &&
             ((size_t)addr < reg_start + reg_size)) {
-            return (1 == 1);
+            return true;
         }
     }
 
     ap = dynmem_acc(addr, len);
     if (ap.ap != 0 && test_ap_priv(rw, ap)) {
-        return (1 == 1);
+        return true;
     }
 
     KERROR(KERROR_WARN,
            "Can't fully verify access to address (%p) in kernacc()\n", addr);
 
-    return (1 == 1);
+    return true;
 }
 
 static int test_ap_user(uint32_t rw, struct buf * bp)
 {
     uint32_t mmu_ap = bp->b_mmu.ap;
     uint32_t mmu_control = bp->b_mmu.control;
-    int retval = 0;
+    bool retval = false;
 
     if (rw & VM_PROT_EXECUTE) {
         if (mmu_control & MMU_CTRL_XN) {
             return 0; /* XN bit set. */
         } else {
-            retval = (1 == 1);
+            retval = true;
         }
     }
 
     if (rw & VM_PROT_WRITE) { /* Test for xxRW */
         if (mmu_ap & MMU_AP_RWRW) {
-            return (1 == 1);
+            return true;
         } else {
-            return 0;
+            return false;
         }
     } else if (rw & VM_PROT_READ) { /* Test for xxRO */
         if ((mmu_ap & MMU_AP_RWRO) ||
             (mmu_ap & MMU_AP_RWRW) ||
             (mmu_ap & MMU_AP_RORO)) {
-            return (1 == 1);
+            return true;
         } else {
-            return 0;
+            return false;
         }
     }
 

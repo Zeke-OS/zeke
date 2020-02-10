@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Zero Kernel sysctl API.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -37,8 +38,9 @@
 */
 
 #define __SYSCALL_DEFS__
-#include <syscall.h>
+#include <stdbool.h>
 #include <string.h>
+#include <syscall.h>
 #include <sys/sysctl.h>
 
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
@@ -144,7 +146,7 @@ int sysctltstmib(int * left, int * right, int len)
 {
     for (int i = 0; i < len; i++) {
         if (left[i] != right[i])
-            return 0;
+            return false;
     }
-    return (1 == 1);
+    return true;
 }
