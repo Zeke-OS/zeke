@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Threads.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -41,6 +42,8 @@
 #include <sys/_sigset.h>
 #include <sys/types/_pthread_t.h>
 
+#define _ZEKE_THREAD_NAME_SIZE 16
+
 /* TODO Missing types:
  * - pthread_barrier_t
  * - pthread_barrierattr_t
@@ -66,6 +69,7 @@ typedef struct pthread_attr {
     void *          stack_addr; /*!< Stack address */
     size_t          stack_size; /*!< Size of stack reserved for the thread. */
     unsigned        flags;
+    char            name[_ZEKE_THREAD_NAME_SIZE];
 } pthread_attr_t;
 
 typedef struct pthread_condattr {

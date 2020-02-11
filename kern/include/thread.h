@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Public external thread management and scheduling functions.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -112,7 +113,7 @@ struct thread_info {
     pthread_t id;                   /*!< Thread id. */
     uint32_t flags;                 /*!< Status flags. */
     pid_t pid_owner;                /*!< Owner process of this thread. */
-    char name[16];                  /*!< Thread name. */
+    char name[_ZEKE_THREAD_NAME_SIZE]; /*!< Thread name. */
 
     /**
      * Scheduler data.

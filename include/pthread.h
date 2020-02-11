@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Threads.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
@@ -213,7 +214,7 @@ struct _sched_tls_desc {
  */
 struct _sched_pthread_create_args {
     struct sched_param param;
-    char            name[16];   /*!< Thread name. */
+    char            name[_ZEKE_THREAD_NAME_SIZE]; /*!< Thread name. */
     void          * stack_addr; /*!< Stack address */
     size_t          stack_size; /*!< Size of stack reserved for the thread. */
     unsigned        flags;      /*!< Thread creation flags */
@@ -259,6 +260,9 @@ int     pthread_attr_setguardsize(pthread_attr_t *, size_t);
 int     pthread_attr_setstack(pthread_attr_t *, void *, size_t);
 int     pthread_attr_setstackaddr(pthread_attr_t *, void *);
 int     pthread_attr_setdetachstate(pthread_attr_t *, int);
+/* TODO Zeke specific functions should be hidden by default? */
+int
+pthread_attr_setname_zeke(pthread_attr_t * attr, const char * restrict name);
 /*
 int     pthread_barrier_destroy(pthread_barrier_t *);
 int     pthread_barrier_init(pthread_barrier_t *,
