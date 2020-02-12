@@ -1178,10 +1178,17 @@ static intptr_t sys_proc_chdir(__user void * user_args)
     int err;
     int retval = -1;
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _proc_chdir_args),
-            GET_STRUCT_OFFSETS(struct _proc_chdir_args,
-                name, name_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _proc_chdir_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    /* TODO Verify that args->name_len is sane */
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _proc_chdir_args,
+                                                name, name_len));
     if (err) {
         set_errno(EFAULT);
         goto out;

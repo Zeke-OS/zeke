@@ -5,6 +5,7 @@
  * @brief   vm copyinstruct() for copying structs from user space to kernel
  *          space.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -253,20 +254,31 @@
             structure, field, __VA_ARGS__) 0, 0
 
 /**
- * Copy in struct and selected members from user space to kernel space.
- * Usage: copyinst(usr, &kern, sizeof(usr),
- *                 GET_STRUCT_OFFSETS(struct x, a, a_len, c, c_len));
- *        Supports upto 63 struct members.
+ * Initialize a kernel structure for copy in by copyinstruct().
+ * The function will copy the whole struct but leave any pointers untouched.
+ * Usage: copyinst_init(usr, &kern, sizeof(struct _xx_yy_args))
  * @param[in]   usr     is the user space address to the struct.
  * @param [out] kern    is a kernel space pointer that will be set to point to
  *                      the newly copied struct.
  * @param       bytes   is the size of the container struct in bytes.
+ * @return      0 if succeed;
+ *              Otherwise a negative errno value is returned.
+ */
+int copyinstruct_init(__user void * usr, __kernel void ** kern, size_t bytes);
+
+/**
+ * Copy in struct and selected members from user space to kernel space.
+ * Usage: copyinst(usr, &kern, sizeof(struct _xx_yy_args),
+ *                 GET_STRUCT_OFFSETS(struct x, a, a_len, c, c_len));
+ *        Supports upto 63 struct members.
+ * @param       kern    is a kernel space pointer pointing to a struct allocated
+ *                      and initialized with copyinstruct_init().
  * @param       ...     byte offset of members to be copied and sizes of the
  *                      members. (offset, len)
  * @return      0 if succeed;
  *              Otherwise a negative errno value is returned.
  */
-int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...);
+int copyinstruct(__kernel void * kern, ...);
 
 /**
  * Free a structure and copied members allocated with copyinstruct().

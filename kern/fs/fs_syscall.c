@@ -167,13 +167,29 @@ static intptr_t sys_open(__user void * user_args)
 {
     struct _fs_open_args * args = NULL;
     vnode_autorele vnode_t * vn_file = NULL;
-    int err, fd, retval = -1;
+    int err;
+    int fd;
+    int retval = -1;
+
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_open_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    /*
+     * Validate name_len before actually wasting time and memory to copy a too
+     * long string.
+     */
+    if (args->name_len > PATH_MAX + 1) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
 
     /* Copyin args struct */
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_open_args),
-            GET_STRUCT_OFFSETS(struct _fs_open_args,
-                name, name_len));
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_open_args,
+                                                name, name_len));
     if (err) {
         set_errno(-err);
         goto out;
@@ -185,8 +201,7 @@ static intptr_t sys_open(__user void * user_args)
     }
 
     /* Validate name string */
-    if (args->name_len > PATH_MAX + 1 ||
-        !strvalid(args->name, args->name_len)) {
+    if (!strvalid(args->name, args->name_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -422,22 +437,37 @@ out:
 static intptr_t sys_link(__user void * user_args)
 {
     struct _fs_link_args * args;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_link_args),
-            GET_STRUCT_OFFSETS(struct _fs_link_args,
-                path1, path1_len,
-                path2, path2_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_link_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    /*
+     * Validate string lengths before actually wasting time and memory to copy
+     * a too long string.
+     */
+    if (args->path1_len > PATH_MAX + 1 ||
+        args->path2_len > PATH_MAX + 1) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = copyinstruct(args,
+        GET_STRUCT_OFFSETS(struct _fs_link_args,
+                           path1, path1_len,
+                           path2, path2_len));
     if (err) {
         set_errno(-err);
         goto out;
     }
 
     /* Validate strings */
-    if (args->path1_len > PATH_MAX + 1 ||
-        args->path2_len > PATH_MAX + 1 ||
-        !strvalid(args->path1, args->path1_len) ||
+    if (!strvalid(args->path1, args->path1_len) ||
         !strvalid(args->path2, args->path2_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
@@ -460,20 +490,30 @@ out:
 static intptr_t sys_unlink(__user void * user_args)
 {
     struct _fs_unlink_args * args;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_unlink_args),
-            GET_STRUCT_OFFSETS(struct _fs_unlink_args,
-                path, path_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+        sizeof(struct _fs_unlink_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args->path_len > PATH_MAX + 1) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_unlink_args,
+                                                path, path_len));
     if (err) {
         set_errno(-err);
         goto out;
     }
 
     /* Validate path string */
-    if (args->path_len > PATH_MAX + 1 ||
-        !strvalid(args->path, args->path_len)) {
+    if (!strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -494,20 +534,31 @@ out:
 static intptr_t sys_mkdir(__user void * user_args)
 {
     struct _fs_mkdir_args * args = NULL;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
-    err = copyinstruct(user_args, (void **)(&args),
-                       sizeof(struct _fs_mkdir_args),
-                       GET_STRUCT_OFFSETS(struct _fs_mkdir_args,
-                                          path, path_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_mkdir_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args->path_len > PATH_MAX + 1) {
+        err = ENAMETOOLONG;
+        set_errno(err);
+        goto out;
+    }
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_mkdir_args,
+                                                path, path_len));
     if (err) {
         set_errno(-err);
         goto out;
     }
 
     /* Validate path string */
-    if (args->path_len > PATH_MAX + 1 ||
-        !strvalid(args->path, args->path_len)) {
+    if (!strvalid(args->path, args->path_len)) {
         err = ENAMETOOLONG;
         set_errno(err);
         goto out;
@@ -530,20 +581,30 @@ out:
 static intptr_t sys_rmdir(__user void * user_args)
 {
     struct _fs_rmdir_args * args = 0;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_rmdir_args),
-            GET_STRUCT_OFFSETS(struct _fs_rmdir_args,
-                path, path_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_rmdir_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args->path_len > PATH_MAX + 1) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_rmdir_args,
+                                                path, path_len));
     if (err) {
         set_errno(-err);
         goto out;
     }
 
     /* Validate path string */
-    if (args->path_len > PATH_MAX + 1 ||
-        !strvalid(args->path, args->path_len)) {
+    if (!strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -565,7 +626,9 @@ static intptr_t sys_statfile(__user void * user_args)
     struct _fs_stat_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
     struct stat stat_buf;
-    int err, filref = 0, retval = -1;
+    int err;
+    int filref = 0;
+    int retval = -1;
 
     err = priv_check(&curproc->cred, PRIV_VFS_STAT);
     if (err) {
@@ -573,10 +636,21 @@ static intptr_t sys_statfile(__user void * user_args)
         return -1;
     }
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_stat_args),
-            GET_STRUCT_OFFSETS(struct _fs_stat_args,
-                path, path_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_stat_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    /* Validate path string */
+    if (args->path_len > PATH_MAX + 1) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_stat_args,
+                                                path, path_len));
     if (err) {
         set_errno(-err);
         goto out;
@@ -589,8 +663,7 @@ static intptr_t sys_statfile(__user void * user_args)
     }
 
     /* Validate path string */
-    if (args->path_len > PATH_MAX + 1 ||
-        !strvalid(args->path, args->path_len)) {
+    if (!strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -664,19 +737,29 @@ static intptr_t sys_statfs(__user void * user_args)
     vnode_autorele vnode_t * vnode = NULL;
     struct fs_superblock * sb;
     struct statvfs st;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_statfs_args),
-            GET_STRUCT_OFFSETS(struct _fs_statfs_args,
-                path, path_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_statfs_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args->path_len > PATH_MAX + 1) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_statfs_args,
+                                                path, path_len));
     if (err) {
         set_errno(-err);
         goto out;
     }
 
-    if (args->path_len > PATH_MAX + 1 ||
-        !strvalid(args->path, args->path_len)) {
+    if (!strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -755,19 +838,29 @@ static intptr_t sys_access(__user void * user_args)
     struct _fs_access_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
     struct cred tmp_cred;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_access_args),
-            GET_STRUCT_OFFSETS(struct _fs_access_args,
-                path, path_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_access_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args->path_len > PATH_MAX + 1) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_access_args,
+                                                path, path_len));
     if (err) {
         set_errno(-err);
         goto out;
     }
 
-    if (args->path_len > PATH_MAX + 1 ||
-        !strvalid(args->path, args->path_len)) {
+    if (!strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -900,23 +993,32 @@ static intptr_t sys_mount(__user void * user_args)
         return -1;
     }
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_mount_args),
-            GET_STRUCT_OFFSETS(struct _fs_mount_args,
-                source, source_len,
-                target, target_len,
-                parm,   parm_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_mount_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args->source_len > PATH_MAX + 1 ||
+        args->target_len > PATH_MAX + 1 ||
+        !strvalid(args->fsname, sizeof(args->fsname))) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_mount_args,
+                                                source, source_len,
+                                                target, target_len,
+                                                parm,   parm_len));
     if (err) {
         set_errno(-err);
         goto out;
     }
 
     /* Validate path strings */
-    if (args->source_len > PATH_MAX + 1 ||
-        args->target_len > PATH_MAX + 1 ||
-        !strvalid(args->source, args->source_len) ||
-        !strvalid(args->target, args->target_len) ||
-        !strvalid(args->fsname, sizeof(args->fsname))) {
+    if (!strvalid(args->source, args->source_len) ||
+        !strvalid(args->target, args->target_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -944,7 +1046,8 @@ static intptr_t sys_umount(__user void * user_args)
     struct _fs_umount_args * args = NULL;
     vnode_t * mpt;
     struct fs_superblock * sb;
-    int err, retval = -1;
+    int err;
+    int retval = -1;
 
     err = priv_check(&curproc->cred, PRIV_VFS_UNMOUNT);
     if (err) {
@@ -952,17 +1055,26 @@ static intptr_t sys_umount(__user void * user_args)
         return -1;
     }
 
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_umount_args),
-            GET_STRUCT_OFFSETS(struct _fs_umount_args,
-                target, target_len));
+    err = copyinstruct_init(user_args, (void **)(&args),
+                            sizeof(struct _fs_umount_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args->target_len > PATH_MAX + 1) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = copyinstruct(args, GET_STRUCT_OFFSETS(struct _fs_umount_args,
+                                                target, target_len));
     if (err) {
         set_errno(-err);
         goto out;
     }
 
-    if (args->target_len > PATH_MAX + 1 ||
-        !strvalid(args->target, args->target_len)) {
+    if (!strvalid(args->target, args->target_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
