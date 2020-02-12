@@ -31,6 +31,7 @@
  *******************************************************************************
  */
 
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/proc.h>
@@ -93,16 +94,24 @@ int main(int argc, char * argv[], char * envp[])
         return EX_OSERR;
     }
 
-    printf("  PID TTY          TIME CMD\n");
+    printf("USER   PID TTY          TIME CMD\n");
     pid_iter = pids;
     while ((pid = *pid_iter++) != 0) {
         struct kinfo_proc ps;
+        struct passwd * pw;
+        char * user = "";
         clock_t sutime;
 
         if (pid2pstat(&ps, pid) == -1)
             continue;
+
+        pw = getpwuid(ps.euid);
+        if (pw)
+            user = pw->pw_name;
         sutime = (ps.utime + ps.stime) / clk_tck;
-        printf("%5d %-6s   %02u:%02u:%02u %s\n",
+
+        printf("%-5s %5d %-6s   %02u:%02u:%02u %s\n",
+               user,
                ps.pid,
                devttytostr(ps.ctty),
                sutime / 3600, (sutime % 3600) / 60, sutime % 60,
