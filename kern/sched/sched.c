@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel scheduler, the generic part of thread scheduling.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -307,6 +307,9 @@ void sched_get_loads(uint32_t loads[3])
 #ifdef configSCHED_TIME_AVG
 #define SCHED_TIME_AVG_N 10
 
+/**
+ * Update per CPU avg scheduling time.
+ */
 static void calc_sched_time_avg(struct cpu_sched * cpu,
                                 uint64_t start, uint64_t end)
 {
@@ -319,6 +322,9 @@ static void calc_sched_time_avg(struct cpu_sched * cpu,
     *sched_time_avg = avg;
 }
 
+/*
+ * A macro to create a function that gets the CPU specific scheduling time avg.
+ */
 #define SYSCTL_CPU_SCHED_TIME_AVG(cpu, name)                    \
 static int sysctl_sched_time_avg_##name(SYSCTL_HANDLER_ARGS)    \
 {                                                               \
@@ -328,6 +334,7 @@ static int sysctl_sched_time_avg_##name(SYSCTL_HANDLER_ARGS)    \
     return error;                                               \
 }
 
+/* Create a function for each CPU. */
 FOREACH_CPU(SYSCTL_CPU_SCHED_TIME_AVG)
 
 /*
@@ -358,7 +365,7 @@ void sched_handler(void)
     }
 
     /*
-     * Pre-scheduling tasks.
+     * Run pre-scheduling tasks.
      */
     SET_FOREACH(task_p, pre_sched_tasks) {
         sched_task_t * task = *(sched_task_t **)task_p;
@@ -400,12 +407,13 @@ void sched_handler(void)
             break;
         }
     }
+    /* Check if we need to remap the kstack. */
     if (current_thread != prev_thread) {
         mmu_map_region(&current_thread->kstack_region->b_mmu);
     }
 
     /*
-     * Post-scheduling tasks
+     * Run post-scheduling tasks.
      */
     SET_FOREACH(task_p, post_sched_tasks) {
         sched_task_t * task = *(sched_task_t **)task_p;
@@ -543,7 +551,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     struct thread_info * tp;
     thread_cdtor_t ** thread_ctor_p;
 
-    /* TODO The following should never happen. */
+    /* TODO The following error should not be allowed to happen. */
     thread_id = atomic_inc(&next_thread_id);
     if (thread_id < 0)
         panic("Out of thread IDs");
@@ -601,7 +609,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
         strlcpy(tp->name, "thread", sizeof(tp->name));
     }
 
-    /* Select master page table used on startup. */
+    /* Select the master page table to be used on startup. */
     if (unlikely(!parent) || thread_mode == THREAD_MODE_PRIV) {
         /*
          * This branch is only taken during init or when a kernel mode thread
