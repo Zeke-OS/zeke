@@ -137,9 +137,9 @@ TODO
   - regions in zeke
 
 
-The page table abstraction system in the kernel is relatively light but it
-still allows things that are not usually directly achievable with a plain
-harware implementation, eg. variable sized page tables.
+The page table abstraction system in the kernel is relatively lightweight but it
+still has some features that are not usually directly achievable with a plain
+hardware implementation, eg. variable sized page tables.
 
 **ARM11 note:** Only 4 kB pages are used with L2 page tables thus XN
 (Execute-Never) bit is always usable also for L2 pages.
@@ -151,15 +151,13 @@ See `MMU_DOM_xxx` definitions.
 dynmem
 ------
 
-Dynmem is a memory block allocator that always allocates memory in
-\(1 \:\textrm{MB}\) blocks. See fig.
-[\[figure:dynmem\_blocks\]](#figure:dynmem_blocks). Dynmem allocates its
-blocks as \(1 \:\textrm{MB}\) sections from the L1 kernel master page
-table and always returns physically contiguous memory regions. If dynmem
-is passed for a thread it can be mapped either as a section entry or via
-L2 page table, though this is normally not done as the vm interface is
-used instead, though this is normally not done as the vm interface is
-used instead.
+Dynmem is a memory block allocator that always allocates memory in 1 MB blocks.
+See fig. [\[figure:dynmem\_blocks\]](#figure:dynmem_blocks). Dynmem allocates
+its blocks as 1 MB sections from the L1 kernel master page table and always
+returns physically contiguous memory regions. If dynmem is passed for a thread
+it can be mapped either as a section entry or via L2 page table, though this is
+normally not done as the vm interface is used instead, though this is normally
+not done as the vm interface is used instead.
 
 TODO ASCII art
 
@@ -230,7 +228,7 @@ suffer some fragmentation over time.
 
 When kmalloc is out of (large enough) memory blocks it will expand its
 memory space by allocating a new block of memory from dynmem. Allocation
-is commited in 1 MB blocks (naturally) and always rounded to the next 1
+is committed in 1 MB blocks (naturally) and always rounded to the next 1
 MB.
 
 Kmalloc stores its linked list of reserved and free blocks in the same
@@ -273,7 +271,7 @@ TODO Make an ASCII art of the following
 <span id="figure:kmalloc_blocks" label="figure:kmalloc_blocks">**Kmalloc blocks.**</span>
 
 Descriptor structs are used to store the size of the data block,
-reference counters, and pointers to neighbouring block descriptors.
+reference counters, and pointers to neighboring block descriptors.
 
 ### Suggestions for further development
 
@@ -331,7 +329,7 @@ system buffering. Vralloc implements the `geteblk()` part of the
 interface described by `buf.h`, meaning allocating memory for generic
 use.
 
-`vreg` struct is the intrenal representation of a generic page aligned
+`vreg` struct is the internal representation of a generic page aligned
 allocation made from dynmem and `struct buf` is the external interface
 used to pass allocated memory for external users.
 
@@ -361,30 +359,28 @@ used to pass allocated memory for external users.
 Virtual Memory
 --------------
 
-Each process owns their own master page table, in contrast to some
-kernels where there might be only one master page table or one partial
-master page table, and varying number of level two page tables. The
-kernel, also known as proc 0, has its own master page table that is used
-when a process executes in kernel mode, as well as when ever a kernel
-thread is executing. Static or fixed page table entries are copied to
-all master page tables created. A process shares its master page table
-with its childs on `fork()` while `exec()` will trigger a creation of a
-new master page table.
+Each process owns their own master page table, in contrast to some kernels where
+there might be only one master page table or one partial master page table, and
+varying number of level two page tables. The kernel, also known as proc 0, has
+its own master page table that is used when a process executes in kernel mode,
+as well as when ever a kernel thread is executing. Static or fixed page table
+entries are copied to all master page tables created. A process shares its
+master page table with its children on `fork()` while `exec()` will trigger a
+creation of a new master page table.
 
-Virtual memory is managed as virtual memory buffers (`struct buf`) that
-are suitable for in-kernel buffers, IO buffers as well as user space
-memory mappings. Additionlly the buffer system supports copy-on-write as
-well as allocator schemes where a part of the memory is stored on a
-secondary storage (i.e. paging).
+Virtual memory is managed as virtual memory buffers (`struct buf`) that are
+suitable for in-kernel buffers, IO buffers as well as user space memory
+mappings. Additionally the buffer system supports copy-on-write as well as
+allocator schemes where a part of the memory is stored on a secondary storage
+(i.e. paging).
 
-Due to the fact that `buf` structures are used in different allocators
-there is no global knowledge of the actual state of a particular
-allocation, instead each allocator should/may keep track of allocation
-structs if desired so. Ideally the same struct can be reused when moving
-data from a secondary storage allocator to vralloc memory (physical
-memory). However we always know whether a buffer is currently in core or
-not (`b_data`) and we also know if a buffer can be swapped to a
-different allocator (`B_BUSY` flag).
+Due to the fact that `buf` structures are used in different allocators there
+is no global knowledge of the actual state of a particular allocation, instead
+each allocator should/may keep track of allocation structs if desired so.
+Ideally the same struct can be reused when moving data from a secondary storage
+allocator to vralloc memory (physical memory). However we always know whether a
+buffer is currently in core or not (`b_data`) and we also know if a buffer can
+be swapped to a different allocator (`B_BUSY` flag).
 
 ### Page Fault handling and VM Region virtualization
 
@@ -399,7 +395,7 @@ Libc: Memory Management
 -----------------------
 
 Zeke libc provides memory management features comparable to most modern
-Unices available. The syscalls that can be used for memory allocation are
-`brk()`/`sbrk()` and `mmap()`/`munmap()`. The standard malloc interface
-provided by the libc is internally using these facilities to manage its
+Unices. The system calls available used for memory allocation are
+`brk()`/`sbrk()` and `mmap()`/`munmap()`. The standard `malloc` interface
+provided by the libc uses these system calls internally to manage its
 memory chunks.
