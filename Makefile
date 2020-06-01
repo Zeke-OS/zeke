@@ -1,5 +1,6 @@
 # Zeke - Main Makefile
 #
+# Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
 # Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # Copyright (c) 2012, 2013 Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 # All rights reserved.
@@ -55,6 +56,7 @@ doc: doc-man
 doc-man: clean-man
 	doxygen Doxyfile.libc
 	doxygen Doxyfile.kern
+	cp doc/sman/man3/* doc/man/man3/
 
 # target_comp: tools - Build tools.
 tools: tools/exec_qemu
@@ -154,4 +156,4 @@ clean-tools:
 
 # target_clean: clean-man - Clean man pages.
 clean-man:
-	$(RM) doc/man/*
+	rm -rf doc/man

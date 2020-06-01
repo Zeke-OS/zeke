@@ -43,8 +43,13 @@ contributing. That document describes the guidelines for development and
 contribution as well as gives some information about calling conventions and
 initialization of kernel subsystems.
 
-This directory also contains some auto generated as well as
-manually written man pages under `man` and `sman` directories.
+**Man pages**
+
+This directory also contains some auto generated as well as manually written
+man pages under `man` and `sman` directories. To build the man pages, run
+`make doc-man` in the root directory. After that it's possible to read the
+man pages using `./zman <name>` in this directory.
+
 
 List of Abbreviations and Meanings
 ----------------------------------
