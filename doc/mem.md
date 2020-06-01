@@ -13,7 +13,7 @@ are
 <span data-acronym-label="HAL" data-acronym-form="singular+abbrv">HAL</span>
 that abstracts the hardware, `dynmem` handling the dynamic allocation of
 contiguous blocks of memory and `kmalloc` that allocates memory for the
-kernel itself, and probably most importantly `vralloc/buf/bio` subsystem
+kernel itself, and probably most importantly the `vralloc/buf/bio` subsystem
 that’s handling all allocations for processes and IO buffers. Relations
 between different kernel subsystems using and implementing memory
 management are shown in figure [\[figure:vmsubsys\]](#figure:vmsubsys).
@@ -329,9 +329,9 @@ system buffering. Vralloc implements the `geteblk()` part of the
 interface described by `buf.h`, meaning allocating memory for generic
 use.
 
-`vreg` struct is the internal representation of a generic page aligned
+A `vreg` struct is the internal representation of a generic page aligned
 allocation made from dynmem and `struct buf` is the external interface
-used to pass allocated memory for external users.
+used to pass allocated memory to external users.
 
 ``` 
                       last_vreg
@@ -354,19 +354,19 @@ used to pass allocated memory for external users.
                                                    +------+---------+
 ```
 
-<span label="figure:vrregbufapi">**vralloc and buffer interface.**</span>
+<span label="figure:vrregbufapi">**vralloc and the buffer interface.**</span>
 
 Virtual Memory
 --------------
 
 Each process owns their own master page table, in contrast to some kernels where
 there might be only one master page table or one partial master page table, and
-varying number of level two page tables. The kernel, also known as proc 0, has
-its own master page table that is used when a process executes in kernel mode,
-as well as when ever a kernel thread is executing. Static or fixed page table
-entries are copied to all master page tables created. A process shares its
-master page table with its children on `fork()` while `exec()` will trigger a
-creation of a new master page table.
+varying number of L2 page tables that are attached to the master page table on
+demand. The kernel, also known as proc 0, has its own master page table that is
+used when a process executes in kernel mode, as well as when ever a kernel
+thread is executing. Static or fixed page table entries are copied to all master
+page tables created. A process shares its master page table with its children on
+`fork()`, and `exec()` will trigger a creation of a new master page table.
 
 Virtual memory is managed as virtual memory buffers (`struct buf`) that are
 suitable for in-kernel buffers, IO buffers as well as user space memory
