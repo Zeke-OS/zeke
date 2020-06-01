@@ -48,16 +48,19 @@ Key Features
 Port Status
 -----------
 
-| HAL           | Status        |
-|---------------|---------------|
-| **ARM11**     | OK            |
-|   BCM2835     | OK            |
-| **MIPSel32**  | Incomplete    |
-|   JZ4780      | Incomplete    |
+| HAL                   | Status        | Documentation                        |
+|-----------------------|---------------|--------------------------------------|
+| **ARM11**             | Stable        | [/doc/arm.md](Running Zeke on ARM)   |
+| &nbsp;&nbsp;BCM2835   | Stable        |                                      |
+| &nbsp;&nbsp;QEMU      | Stable        | [/doc/qemu.md](Running Zeke in QEMU) |
+| **MIPSel32**          | Incomplete    | [/doc/mips.md](Running Zeke on MIPS) |
+| &nbsp;&nbsp;JZ4780    | Incomplete    |                                      |
 
 
-Compiling and Testing
----------------------
+Build
+-----
+
+See [/doc/build.md](doc/build.md) for details about the build system.
 
 ### Prerequisites
 
@@ -104,29 +107,3 @@ Finally you can build the rootfs image by running:
 ```bash
 $ make rootfs
 ```
-
-### Running Zeke in QEMU
-
-Qemu from rpi branch of `git@github.com:Torlus/qemu.git` repository seems to work
-best for BCM2835/Raspberry Pi version of Zeke.
-
-```bash
-$ ../src/configure --prefix=[PATH TO BIN] --target-list=arm-softmmu,arm-linux-user,armeb-linux-user --enable-sdl
-$ make -j4 && sudo make install
-```
-
-Once you have Qemu installed you can run Zeke in Qemu by using the following
-build target.
-
-```bash
-$ make qemu
-```
-
-### Running Zeke on real ARM
-
-Zeke should boot just fine with, practically, any bootloader that is capable of
-loading a linux image. However, Zeke only supports ATAGs for gathering device
-information so some older bootloader may work better. Alhough ATAGs are optional
-therefore practically any bootloader should work if you run the build with
-`configATAG` unset.
-

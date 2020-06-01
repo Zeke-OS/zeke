@@ -1,5 +1,7 @@
-MIPS Build
-==========
+Running Zeke on MIPS
+====================
+
+**The MIPS port is incomplete.**
 
 **Compile binutils**
 
