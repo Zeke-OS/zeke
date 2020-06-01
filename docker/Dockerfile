@@ -28,8 +28,8 @@ RUN cd /root && \
 
 # Compile and install GDB
 RUN apt-get install -y texinfo
-RUN cd /root && wget http://ftp.gnu.org/gnu/gdb/gdb-7.10.tar.xz && \
-    tar xvf gdb-7.10.tar.xz && rm gdb-7.10.tar.xz && \
+COPY gdb-7.10.tar.xz /root/
+RUN tar xvf gdb-7.10.tar.xz && rm gdb-7.10.tar.xz && \
     cp /root/scripts/install_gdb.sh /root/gdb-7.10/ && \
     cd /root/gdb-7.10 && ./install_gdb.sh && \
     rm -rf /root/gdb-7.10
