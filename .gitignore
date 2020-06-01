@@ -75,3 +75,7 @@ Thumbs.db
 # Directiories
 doc/html
 include/machine
+
+# Static analysis tools
+/sonar-*
+/.scannerwork

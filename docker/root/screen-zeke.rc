@@ -1,0 +1,2 @@
+screen -t qemu 0 /root/qemu-zeke
+screen -t gdb  1 arm-none-eabi-gdb

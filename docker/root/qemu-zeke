@@ -1,0 +1,4 @@
+#!/bin/bash
+qemu-system-arm -kernel kernel.elf -sd zeke-rootfs.img \
+    -cpu arm1176 -m 256 -M raspi -nographic -serial stdio \
+    -monitor telnet::4444,server,nowait -d unimp,guest_errors -s

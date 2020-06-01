@@ -1,0 +1,9 @@
+#!/bin/bash
+cd /root
+git clone https://github.com/Zeke-OS/zeke.git
+cd zeke/
+export KBUILD_DEFCONFIG=qemu_rpi_headless_testing.defconfig
+./configure defconfig
+make all opttest -j$(grep -c ^processor /proc/cpuinfo) && make rootfs
+/root/qemu-zeke
+#screen -c /root/screen-zeke.rc
