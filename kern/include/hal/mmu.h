@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU headers.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -253,14 +254,67 @@ typedef int abo_handler(const struct mmu_abo_param * restrict abo);
  * "Generic" MMU interface, must be implemented by HAL
  * @{
  */
+
+/**
+ * Initialize the page table pt by filling it with FAULT entries.
+ * @param pt    page table.
+ * @return  0 if page table was initialized; value other than zero if page table
+ *          was not initialized successfully.
+ */
 int mmu_init_pagetable(const mmu_pagetable_t * pt);
+
+/**
+ * Map memory region.
+ * @param region    Structure that specifies the memory region.
+ * @return  Zero if succeed; non-zero error code otherwise.
+ */
 int mmu_map_region(const mmu_region_t * region);
+
+/**
+ * Unmap mapped memory region.
+ * @param region    Original descriptor structure for the region.
+ */
 int mmu_unmap_region(const mmu_region_t * region);
+
+/**
+ * Attach a L2 page table to a L1 master page table or attach a L1 page table.
+ * @param pt    A page table descriptor structure.
+ * @return  Zero if attach succeed; non-zero error code if invalid page table
+ *          type.
+ */
 int mmu_attach_pagetable(const mmu_pagetable_t * pt);
+
+/**
+ * Detach a L2 page table from a L1 master page table.
+ * @param pt    A page table descriptor structure.
+ * @return  Zero if attach succeed; value other than zero in case of error.
+ */
 int mmu_detach_pagetable(const mmu_pagetable_t * pt);
+
+/**
+ * Read domain access bits.
+ */
 uint32_t mmu_domain_access_get(void);
+
+/**
+ * Set access rights for selected domains.
+ *
+ * Mask is selected so that 0x3 = domain 1 and 0xC is domain 2 etc.
+ * @param value Contains the configuration bit fields for changed domains.
+ * @param mask  Selects which domains are updated.
+ */
 void mmu_domain_access_set(uint32_t value, uint32_t mask);
+
+/**
+ * Set MMU control bits.
+ * @param value Control bits.
+ * @param mask  Control bits that will be changed.
+ */
 void mmu_control_set(uint32_t value, uint32_t mask);
+
+/**
+ * Translate a vaddr to a physical address.
+ */
 void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr);
 
 const char * mmu_abo_strtype(const struct mmu_abo_param * restrict abo);
