@@ -275,7 +275,7 @@ void siphash128(const void * in, const size_t inlen, uint64_t k[2],
 /**
  * Access a pointer.
  * Access the pointer as a volatile so we get the latest value in case it was
- * changed by another thread or a interrupt handler.
+ * changed by another thread or an interrupt handler.
  * Keeps execution order.
  */
 #define ACCESS_ONCE(_p_) \
