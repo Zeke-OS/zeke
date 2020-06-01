@@ -1,5 +1,5 @@
-Zeke Coding Standards & Generic Documentation
-=============================================
+Zeke Coding Standards and Guidelines
+====================================
 
 Here is some misc documentation and general guidelines on topic of how to write
 new code for Zeke.

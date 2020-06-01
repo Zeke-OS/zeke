@@ -17,6 +17,7 @@ https://sonarcloud.io/dashboard?id=Zeke-OS_zeke
 
 Key Features
 ------------
+
 - Kernel
     - Fully pre-emptible kernel mode
     - Object-oriented thread scheduling system
@@ -57,53 +58,9 @@ Port Status
 | &nbsp;&nbsp;JZ4780    | Incomplete    |                                      |
 
 
-Build
------
+Documentation
+-------------
 
-See [doc/build.md](/doc/build.md) for details about the build system.
-
-### Prerequisites
-
-To successfully compile Zeke, you'll need the following packages/tools:
-
-- GNU `make` >3.8
-- `llvm` 3.3 or 3.4
-- `clang` 3.3 or 3.4
-- `binutils` 2.24
-    - `arm-none-eabi`
-    - `mipsel-sde-elf`
-- `bash`
-- `mkdosfs` and `mtools` for creating a rootfs image
-- `cloc` for source code stats
-- `ncurses-devel`
-
-**Doxygen targets**
-
-- Doxygen
-- `man` for viewing man pages
-
-### Compiling
-
-+ `configure`- Set defaults for files in config dir
-+ `make all rootfs` - Compile the kernel, user space and create a rootfs image
-+ `make kernel.img` - Compile the kernel
-+ `make world` - Compile only the user space without creating a rootfs image
-+ `make opttest` - Compile on target tests
-+ `make clean` - Clean all compilation targets
-
-Run `make help` for full list of targets and compilation flags.
-
-```bash
-$ KBUILD_DEFCONFIG=qemu_rpi_headless_testing.defconfig ./configure defconfig
-$ ./configure menuconfig
-$ make all -j4
-```
-
-`KBUILD_DEFCONFIG` can be set as any of the defconfig targest found under
-the `defconfigs` directory.
-
-Finally you can build the rootfs image by running:
-
-```bash
-$ make rootfs
-```
+- [Introduction to Zeke](/doc/README.md)
+- [Build System](/doc/build.md)
+- [Zeke Coding Standards and Guidelines](/doc/coding_standards.md)

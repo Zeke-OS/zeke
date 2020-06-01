@@ -1,6 +1,51 @@
 Build System
 ============
 
+Prerequisites
+-------------
+
+To successfully compile Zeke, you'll need the following packages/tools:
+
+**Zeke**
+
+- GNU `make` >3.8
+- `llvm` 3.3 or 3.4
+- `clang` 3.3 or 3.4
+- `binutils` 2.24
+    - `arm-none-eabi`
+    - `mipsel-sde-elf`
+- `bash`
+- `mkdosfs` and `mtools` for creating a rootfs image
+- `cloc` for source code stats
+- `ncurses-devel`
+
+**Documentation**
+
+- Doxygen
+- `man` for viewing man pages
+
+Fortunately this is made easy with Docker, see the
+[Zekedoc documentation](/docker/README.md).
+
+### Compiling
+
++ `configure`- Set defaults for files in config dir
++ `make all rootfs` - Compile the kernel, user space and create a rootfs image
++ `make kernel.img` - Compile the kernel
++ `make world` - Compile only the user space without creating a rootfs image
++ `make opttest` - Compile on target tests
++ `make clean` - Clean all compilation targets
+
+Run `make help` for full list of targets and compilation flags.
+
+Arch Specific Instructions
+--------------------------
+
+- [Running Zeke on ARM](/doc/arm.md)
+- [Running Zeke in QEMU](/doc/qemu.md)
+- [Running Zeke on MIPS](/doc/mips.md)
+
+
 Build Config Tool
 -----------------
 
@@ -27,6 +72,12 @@ Configure script accepts following commands as an argument:
 
 To use defconfig you must set `KBUILD_DEFCONFIG` environment variable to any of the
 filenames seen under `defconfigs` directory.
+
+For example:
+
+```
+$ KBUILD_DEFCONFIG=qemu_rpi_headless_testing.defconfig ./configure defconfig
+```
 
 
 Kernel Build

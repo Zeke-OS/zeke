@@ -13,7 +13,7 @@ Running on Raspberry Pi
 First, configure the build using `rpi.defconfig` as a template.
 
 ```
-KBUILD_DEFCONFIG=rpi.defconfig ./configure defconfig
+$ KBUILD_DEFCONFIG=rpi.defconfig ./configure defconfig
 ```
 
 After this you may do some manual configuration changes by running:
@@ -25,14 +25,14 @@ After this you may do some manual configuration changes by running:
 Then run the build:
 
 ```
-make all opttest -j4
-make rootfs
+$ make all opttest -j4
+$ make rootfs
 ```
 
 Finally you can copy the resulting rottfs image to an SD card.
 
 ```
-dd if=zeke-rootfs.img of=/dev/sdX bs=1M
+$ dd if=zeke-rootfs.img of=/dev/sdX bs=1M
 ```
 
 Boot it!
