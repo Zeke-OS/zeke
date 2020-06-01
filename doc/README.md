@@ -52,24 +52,24 @@ List of Abbreviations and Meanings
 | Term      | Description                                                   |
 |-----------|---------------------------------------------------------------|
 | \[POSIX\] <span>Portable Operating System Interface for uniX</span> is a
-  family of standards specifying a standard set of features for
-  compatibility between operating systems.                                  |
+family of standards specifying a standard set of features for
+compatibility between operating systems.                                    |
 | \[HAL\]   | <span>Hardware Abstraction Layer</span>.
 |           |                                                               |
 | \[inode\] | <span>inode</span> is the file index node in Unix-style file
-  systems that is used to represent a file fie system object.               |
+systems that is used to represent a file fie system object.                 |
 | \[LFN\]   | <span>Long File Name</span>.                                  |
 | \[MBR\]   | <span>Master Boot Record</span>.                              |
 | \[ramfs\] | <span>RAM file system</span>.                                 |
 | \[SFN\]   |  <span>Short File Name</span>.                                |
 | \[VFS\]   | <span>Virtual File System</span>.                             |
 | \[vnode\] | <span>vnode</span> is like an inode but it's used as an
-  abstraction level for compatibility between different file systems in Zeke.
-  Particularly it's used at VFS level.                                      |
+abstraction level for compatibility between different file systems in Zeke.
+Particularly it's used at VFS level.                                        |
 |           |                                                               |
-| \[bio\] <span>IO Buffer Cache</span>.
+| \[bio\]   | <span>IO Buffer Cache</span>.                                 |
 | \[dynmem\] (<span>dynamic memory</span>) is the block memory allocator
-  system in Zeke, allocating in 1 MB blocks.                                |
+system in Zeke, allocating in 1 MB blocks.                                  |
 | \[VRAlloc\] | or \[vralloc] <span>Virtual Region Allocator</span>.        |
 |           |                                                               |
 | \[MIB\]   | <span>Management Information Base</span> tree.                |
@@ -79,17 +79,17 @@ List of Abbreviations and Meanings
 | \[RCU\]   | <span>Read-Copy-Update</span>.                                |
 |           |                                                               |
 | \[ELF\]   | <span>Executable and Linkable or Extensible Linking
-  Format</span>.                                                            |
+Format</span>.                                                              |
 |           |                                                               |
 | \[PUnit\] | a portable unit testing framework for C.                      |
 | \[GCC\] | | GNU Compiler Collection.                                      |
 | \[GLIBC\] | The GNU C Library.                                            |
 | \[CPU\]   | <span>Central Processing Unit</span> is, generally speaking,
-  the main processor of some computer or embedded system.                   |
+the main processor of some computer or embedded system.                     |
 |           |                                                               |
 | \[DMA\]   | <span>Direct Memory Access</span> is a feature that allows
-  hardware subsystems to commit memory transactions without CPU's
-  intervention.                                                             |
+hardware subsystems to commit memory transactions without CPU's
+intervention.                                                               |
 | \[PC\]    | <span>Program Counter</span> register.                        |
 
 Footnotes
