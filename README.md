@@ -77,7 +77,7 @@ To successfully compile Zeke, you'll need the following packages/tools:
 **Doxygen targets**
 
 - Doxygen
-- man for viewing man pages
+- `man` for viewing man pages
 
 ### Compiling
 
