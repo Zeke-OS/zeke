@@ -51,7 +51,7 @@ List of Abbreviations and Meanings
 
 | Term      | Description                                                   |
 |-----------|---------------------------------------------------------------|
-| \[POSIX\] <span>Portable Operating System Interface for uniX</span> is a family of standards specifying a standard set of features for compatibility between operating systems. |
+| \[POSIX\] | <span>Portable Operating System Interface for uniX</span> is a family of standards specifying a standard set of features for compatibility between operating systems. |
 | \[HAL\]   | <span>Hardware Abstraction Layer</span>.                      |
 |           |                                                               |
 | \[inode\] | <span>inode</span> is the file index node in Unix-style file systems that is used to represent a file fie system object. |
@@ -63,7 +63,7 @@ List of Abbreviations and Meanings
 | \[vnode\] | <span>vnode</span> is like an inode but it's used as an abstraction level for compatibility between different file systems in Zeke. Particularly it's used at VFS level. |
 |           |                                                               |
 | \[bio\]   | <span>IO Buffer Cache</span>.                                 |
-| \[dynmem\] (<span>dynamic memory</span>) is the block memory allocator system in Zeke, allocating in 1 MB blocks. |
+| \[dynmem\] | (<span>dynamic memory</span>) is the block memory allocator system in Zeke, allocating in 1 MB blocks. |
 | \[VRAlloc\] | or \[vralloc] <span>Virtual Region Allocator</span>.        |
 |           |                                                               |
 | \[MIB\]   | <span>Management Information Base</span> tree.                |
