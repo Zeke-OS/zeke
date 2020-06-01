@@ -3,7 +3,7 @@ Running Zeke in QEMU
 
 Qemu from rpi branch of `git@github.com:Torlus/qemu.git` repository seems to work
 best for BCM2835/Raspberry Pi version of Zeke. It's downloaded and built from our
-own mirror in the [/docker/Dockerfile](Zekedock Dockerfile). Currently no other
+own mirror in the [Zekedock Dockerfile](/docker/Dockerfile). Currently no other
 machine targets are supported with Qemu.
 
 ```bash
@@ -20,4 +20,4 @@ $ make qemu
 
 This command also works inside Zekedock but without SDL.
 
-See [gdb.md](Debugging with GDB) if you are interested in debugging Zeke in GDB.
+See [Debugging with GDB](gdb.md) if you are interested in debugging Zeke in GDB.

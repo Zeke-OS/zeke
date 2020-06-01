@@ -50,17 +50,17 @@ Port Status
 
 | HAL                   | Status        | Documentation                        |
 |-----------------------|---------------|--------------------------------------|
-| **ARM11**             | Stable        | [/doc/arm.md](Running Zeke on ARM)   |
+| **ARM11**             | Stable        | [Running Zeke on ARM](/doc/arm.md)   |
 | &nbsp;&nbsp;BCM2835   | Stable        |                                      |
-| &nbsp;&nbsp;QEMU      | Stable        | [/doc/qemu.md](Running Zeke in QEMU) |
-| **MIPSel32**          | Incomplete    | [/doc/mips.md](Running Zeke on MIPS) |
+| &nbsp;&nbsp;QEMU      | Stable        | [Running Zeke in QEMU](/doc/qemu.md) |
+| **MIPSel32**          | Incomplete    | [Running Zeke on MIPS](/doc/mips.md) |
 | &nbsp;&nbsp;JZ4780    | Incomplete    |                                      |
 
 
 Build
 -----
 
-See [/doc/build.md](doc/build.md) for details about the build system.
+See [doc/build.md](/doc/build.md) for details about the build system.
 
 ### Prerequisites
 
