@@ -106,28 +106,27 @@ Clang, which is a bit different from the standard calling convention
 defined by ARM. Here follows is a brief description of ABI and calling
 convention used in Zeke.
 
-    +----------+------+-----------------------------------------------------+
-    | Register | Alt. | Usage                                               |
-    +----------+------+-----------------------------------------------------+
-    | r0       |      | First function arg./Return value for sizeof(size_t) |
-    |          |      | return values.                                      |
-    | r1       |      | Second function argument.                           |
-    | r2       |      | Third function argument.                            |
-    | r3       |      | Fourth function argument.                           |
-    | r4       |      | Local variable. (non stacked scratch for syscalls)  |
-    | r5 - r8  |      | Local variables.                                    |
-    | r9       | rfp  | Local variable/Real frame pointer?                  |
-    | r10      | sl   | Stack limit?                                        |
-    | r11      |      | Argument pointer.                                   |
-    | r12      | ip   | Temporary workspace?                                |
-    | r13      | sp   | Stack pointer.                                      |
-    | r14      | lr   | Link register.                                      |
-    | r15      | pc   | Program counter.                                    |
-    +----------+------+-----------------------------------------------------+
+| Register | Alt. | Usage                                               |
+|----------|------|-----------------------------------------------------|
+| r0       |      | First function arg./Return value for sizeof(size_t) |
+|          |      | return values.                                      |
+| r1       |      | Second function argument.                           |
+| r2       |      | Third function argument.                            |
+| r3       |      | Fourth function argument.                           |
+| r4       |      | Local variable. (non stacked scratch for syscalls)  |
+| r5 - r8  |      | Local variables.                                    |
+| r9       | rfp  | Local variable/Real frame pointer?                  |
+| r10      | sl   | Stack limit?                                        |
+| r11      |      | Argument pointer.                                   |
+| r12      | ip   | Temporary workspace?                                |
+| r13      | sp   | Stack pointer.                                      |
+| r14      | lr   | Link register.                                      |
+| r15      | pc   | Program counter.                                    |
 
 Table partially based on:
-http://en.wikipedia.org/wiki/Calling_convention
-http://www.ethernut.de/en/documents/arm-inline-asm.html
+
+- http://en.wikipedia.org/wiki/Calling_convention
+- http://www.ethernut.de/en/documents/arm-inline-asm.html
 
 If return value is a pointer or otherwise too large to be returned by pointer
 stored in r0.
