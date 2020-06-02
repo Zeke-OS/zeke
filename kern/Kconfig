@@ -128,11 +128,12 @@ config configPROC_STACK_DFL
     Default stack size of a new process main().
 
 config configCOW_ENABLED
-    bool "Enable copy-on-write for processes"
+    bool "Enable copy-on-access for processes"
     default y
     ---help---
     Selects whether process memory regions shall be copied on demand as COW
-    (Copy-On-Write) or immediately when a process is forked.
+    (Copy-On-Write) or immediately when a process is forked. This will also
+    enable Copy-On-Read for allocators that support it.
 
 config configCORE_DUMPS
     bool "Core dump support"

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for common elf definitions.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2000, 2001, 2008, 2011, David E. O'Brien
  * Copyright (c) 1998 John D. Polstra.
@@ -429,6 +429,7 @@ typedef struct elf_prpsinfo {
 #define PF_W        0x2     /* Writable. */
 #define PF_R        0x4     /* Readable. */
 #define PF_ZEKE_COW 0x00100000 /* Zeke - Copy-On-Write. */
+#define PF_ZEKE_COR 0x00200000 /* Zeke - Copy-On-Read. */
 #define PF_MASKOS   0x0ff00000  /* Operating system-specific. */
 #define PF_MASKPROC 0xf0000000  /* Processor-specific. */
 

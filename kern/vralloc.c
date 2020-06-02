@@ -337,8 +337,11 @@ static struct buf * vr_rclone(struct buf * old_region)
     memcpy((void *)(new_region->b_data), (void *)(old_region->b_data),
            rsize);
 
-    /* Copy attributes */
-    new_region->b_uflags = ~VM_PROT_COW & old_region->b_uflags;
+    /*
+     * Copy attributes.
+     * COW|COR needs to be cleared on clone.
+     */
+    new_region->b_uflags = ~(VM_PROT_COW | VM_PROT_COR) & old_region->b_uflags;
     new_region->b_mmu.vaddr = old_region->b_mmu.vaddr;
     /* num_pages already set */
     new_region->b_mmu.ap = old_region->b_mmu.ap;

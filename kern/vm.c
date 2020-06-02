@@ -248,7 +248,10 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
     if (!new_region)
         return NULL;
 
-    new_region->b_uflags = prot & ~VM_PROT_COW;
+    /*
+     * COW|COR not allowed for a new section.
+     */
+    new_region->b_uflags = prot & ~(VM_PROT_COW | VM_PROT_COR);
     new_region->b_mmu.vaddr = start_vaddr;
     new_region->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
     vm_updateusr_ap(new_region);
@@ -390,6 +393,7 @@ struct buf * vm_new_userstack_curproc(size_t size)
 
 void vm_updateusr_ap(struct buf * region)
 {
+    const int cowrd = VM_PROT_COW | VM_PROT_READ;
     int usr_rw;
     unsigned ap;
 
@@ -397,8 +401,17 @@ void vm_updateusr_ap(struct buf * region)
     usr_rw = region->b_uflags;
     ap = region->b_mmu.ap;
 
-#define _COWRD (VM_PROT_COW | VM_PROT_READ)
-    if ((usr_rw & _COWRD) == _COWRD) {
+    if ((usr_rw & VM_PROT_COR) == VM_PROT_COR) {
+        /*
+         * COR should make the region unavailable until there is an attempt to
+         * read or write.
+         */
+        region->b_mmu.ap = MMU_AP_NANA;
+    } else if ((usr_rw & cowrd) == cowrd) {
+        /*
+         * COW should make the region read-only until there is an attempt to
+         * write.
+         */
         region->b_mmu.ap = MMU_AP_RORO;
     } else if (usr_rw & VM_PROT_WRITE) {
         region->b_mmu.ap = MMU_AP_RWRW;
@@ -434,7 +447,6 @@ void vm_updateusr_ap(struct buf * region)
             break;
         }
     }
-#undef _COWRD
 
     mtx_unlock(&region->lock);
 }
@@ -925,6 +937,6 @@ void vm_get_uapstring(char str[5], struct buf * bp)
     str[0] = (uap & VM_PROT_READ) ?     'r' : '-';
     str[1] = (uap & VM_PROT_WRITE) ?    'w' : '-';
     str[2] = (uap & VM_PROT_EXECUTE) ?  'x' : '-';
-    str[3] = (uap & VM_PROT_COW) ?      'c' : '-';
+    str[3] = (uap & VM_PROT_COR) ? 'C' : (uap & VM_PROT_COW) ? 'c' : '-';
     str[4] = '\0';
 }

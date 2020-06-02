@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -42,10 +43,13 @@
  * VM permissions.
  * @{
  */
-#define VM_PROT_READ    0x1 /*!< Read. */
-#define VM_PROT_WRITE   0x2 /*!< Write. */
-#define VM_PROT_EXECUTE 0x4 /*!< Execute. */
-#define VM_PROT_COW     0x8 /*!< Copy-on-write. */
+#define VM_PROT_READ    0x1     /*!< Read. */
+#define VM_PROT_WRITE   0x2     /*!< Write. */
+#define VM_PROT_EXECUTE 0x4     /*!< Execute. */
+#define VM_PROT_COW     0x8     /*!< Copy-on-write. */
+#define VM_PROT_COR     0x10    /*!< Copy-on-read. COR has precedence over COR
+                                 *   meaning that read access is not granted to
+                                 *   a COW | COR region. */
 /**
  * @}
  */

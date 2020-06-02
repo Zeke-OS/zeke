@@ -370,9 +370,20 @@ page tables created. A process shares its master page table with its children on
 
 Virtual memory is managed as virtual memory buffers (`struct buf`) that are
 suitable for in-kernel buffers, IO buffers as well as user space memory
-mappings. Additionally the buffer system supports copy-on-write as well as
-allocator schemes where a part of the memory is stored on a secondary storage
-(i.e. paging).
+mappings. Additionally the buffer system supports copy-on-write (`VM_PROT_COW`)
+as well as allocator schemes where a part of the memory is stored on a secondary
+storage (i.e. paging). The latter can also utilize copy-on-read (`VM_PROT_COW`)
+mode.
+
+The following `uap` (use access permission) flags are available in `vm/vm.h`:
+
+| Flag              | Purpose                               |
+|-------------------|---------------------------------------|
+| `VM_PROT_READ`    | Make the memory region readable.      |
+| `VM_PROT_WRITE`   | Make the memory region writable.      |
+| `VM_PROT_EXECUTE` | Make the memory region executable.    |
+| `VM_PROT_COW`     | Make a new copy on write attempt.     |
+| `VM_PROT_COR`     | Make a new copy on read attempt.      |
 
 Due to the fact that `buf` structures are used in different allocators there
 is no global knowledge of the actual state of a particular allocation, instead

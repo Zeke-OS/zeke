@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   32bit ELF core dumps.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -96,6 +97,7 @@ static uint32_t uap2p_flags(struct buf * bp)
     p_flags |= (uap & VM_PROT_WRITE)    ? PF_W : 0;
     p_flags |= (uap & VM_PROT_EXECUTE)  ? PF_X : 0;
     p_flags |= (uap & VM_PROT_COW)      ? PF_ZEKE_COW : 0;
+    p_flags |= (uap & VM_PROT_COR)      ? PF_ZEKE_COR : 0;
 
     return p_flags;
 }

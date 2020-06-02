@@ -607,8 +607,8 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
             return 0;
         }
 
-        /* Test for COW flag. */
-        if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {
+        /* Test for COW and COR flags. */
+        if ((region->b_uflags & (VM_PROT_COW | VM_PROT_COR)) == 0) {
             KERROR_DBG("Memory protection error\n");
             err = -EACCES; /* Memory protection error. */
             goto fail;
@@ -631,8 +631,8 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
             goto fail;
         }
         /*
-         * The old region remains marked as COW as it would be racy to change
-         * its state at this point.
+         * The old region remains marked as COW|COR as it would be racy to
+         * change its state at this point.
          */
 
         mtx_unlock(&mm->regions_lock);
