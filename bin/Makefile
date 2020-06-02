@@ -71,9 +71,9 @@ ls-SRC-y := src/ls.c
 minised-SRC-$(configMINISED) := src/minised/sedcomp.c src/minised/sedexec.c
 mount-SRC-y := src/mount.c src/utils/opt.c
 pcaps-SRC-y := src/pcaps.c
-procstat-SRC-y := src/procstat.c src/utils/skipwhite.c src/utils/tty.c
-ps-SRC-y := src/ps.c src/utils/skipwhite.c src/utils/tty.c
-sh-SRC-y := $(wildcard src/sh/*.c) src/utils/gline.c src/utils/skipwhite.c
+procstat-SRC-y := src/procstat.c src/utils/tty.c
+ps-SRC-y := src/ps.c src/utils/tty.c
+sh-SRC-y := $(wildcard src/sh/*.c)
 stty-SRC-y := src/stty.c
 sz-SRC-y := src/zmodem/sz.c src/zmodem/zm.c src/zmodem/io.c \
 	src/zmodem/zstring.c src/zmodem/crctab.c

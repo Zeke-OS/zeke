@@ -1,6 +1,6 @@
 #include <ctype.h>
 
-char * util_skipwhite(char * s)
+char * _PDCLIB_skipwhite(char * s)
 {
     while (isspace(*s)) {
         ++s;

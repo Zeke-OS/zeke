@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Originally by the Regents of the University of California?
  * All rights reserved.
@@ -31,14 +32,14 @@
  *******************************************************************************
  */
 
-#include <stdio.h>
-#include <ctype.h>
 #include <errno.h>
 #include <paths.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/_PDCLIB_util.h>
 #include <syscall.h>
 #include <unistd.h>
 
@@ -64,18 +65,9 @@ static char * execat(char * s1, const char * s2, char * si)
     return *s1 ? ++s1 : NULL;
 }
 
-static char * skipwhite(char * s)
-{
-    while (isspace(*s)) {
-        ++s;
-    }
-
-    return s;
-}
-
 static size_t parse_shebang(char * argv[], char * fname, char * line)
 {
-    char * arg0 = skipwhite(line + 2);
+    char * arg0 = _PDCLIB_skipwhite(line + 2);
     char * arg1;
     size_t skip;
 

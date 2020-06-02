@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1980, 1989, 1993, 1994
  *  The Regents of the University of California.  All rights reserved.
@@ -47,9 +47,6 @@ struct optarr {
 char * catopt(char * s0, char * s1);
 unsigned long opt2flags(struct optarr * optnames, size_t n_elem,
                         char ** options);
-char * gline(char * str, int num);
-
-char * util_skipwhite(char * s);
 
 void init_ttydev_arr(void);
 char * devttytostr(dev_t tty);
