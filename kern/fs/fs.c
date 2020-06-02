@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -321,6 +321,12 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
 
         if (!strcmp(nodename, "."))
             continue;
+
+        /*
+         * Prevent curproc from escaping chroot.
+         */
+        if (*result == curproc->croot && !strcmp(nodename, ".."))
+            break;
 
 again:  /* Get vnode by name in this dir. */
         vnode = NULL;

@@ -160,7 +160,7 @@ static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 /**
  * Mount a new fatfs.
  * @param mode      mount flags.
- * @param param     contains optional mount parameters.
+ * @param parm      contains optional mount parameters.
  * @param parm_len  length of param string.
  * @param[out] sb   Returns the superblock of the new mount.
  * @return error code, -errno.
