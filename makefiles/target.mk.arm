@@ -39,7 +39,6 @@ ifdef __ARM6__
 	ASFLAGS  += -march=armv6 -EL
 	ELFLD    := $(ARM32_ELFLD)
 endif
-# TODO Enable thumb?
 ifdef __ARM6K__
 	CCFLAGS  += -target armv6k-none-eabi
 	LLCFLAGS += -march=arm
