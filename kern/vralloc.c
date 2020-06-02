@@ -87,7 +87,6 @@ struct vregion {
 static struct vregion * vreg_alloc_node(size_t count);
 static void vrref(struct buf * region);
 static struct buf * vr_rclone(struct buf * old_region);
-static int vrmmap(struct buf * region, struct vm_pt * pt);
 
 /** List of all allocations done by vralloc. */
 static LIST_HEAD(vrlisthead, vregion) vrlist_head =
@@ -436,7 +435,7 @@ void vrfree(struct buf * bp)
     kobj_unref(&bp->b_obj);
 }
 
-static int vrmmap(struct buf * region, struct vm_pt * pt)
+int vrmmap(struct buf * region, struct vm_pt * pt)
 {
     mmu_region_t mmu_region;
 

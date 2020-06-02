@@ -325,6 +325,16 @@ int clone2vr(struct buf * src, struct buf ** out);
 void vrfree(struct buf * region);
 
 /**
+ * Map a vregion allocated with vralloc to a page table.
+ * Usually vm_map_region() is preferred.
+ */
+int vrmmap(struct buf * region, struct vm_pt * pt);
+
+/**
+ *
+ */
+
+/**
  * @}
  */
 

@@ -75,7 +75,7 @@ struct vm_ops fb_mm_bufops = {
     .rref = fb_mm_ref,
     .rclone = NULL, /* What ever, but we don't like clones. */
     .rfree = fb_mm_rfree, /* You can try me but it will be never free. */
-    .vrmmap = NULL,
+    .vrmmap = vrmmap,
 };
 
 /* TODO Should support multiple frame buffers or fail */
@@ -235,7 +235,7 @@ static void draw_splash(struct fb_conf * fb)
 }
 
 /**
- * Ioctl function for rame buffer memory mapping device.
+ * Ioctl function for frame buffer memory mapping device.
  */
 static int fb_mm_ioctl(struct dev_info * devnfo, uint32_t request,
                        void * arg, size_t arg_len)
