@@ -5,7 +5,9 @@
  * Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
  */
 
-/* Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+/*
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012 Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -92,7 +94,7 @@
  */
 #define ku_assert_ptr_equal(message, left, right) do { if (!(left == right)) { \
         printf("FAILED: %s:%d: %s == %s\n\tleft:\t%i\n\tright:\t%i\n",         \
-            __FILE__, __LINE__, #left, #right, (int)(left), (int)(right));     \
+            __FILE__, __LINE__, #left, #right, (unsigned)(left), (unsigned)(right)); \
         return message; }                                                      \
 } while(0)
 

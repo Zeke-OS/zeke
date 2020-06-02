@@ -5,7 +5,9 @@
  * Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
  */
 
-/* Copyright (c) 2013, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+/*
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2013, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -85,8 +87,8 @@
  * @param right value.
  */
 #define pu_assert_ptr_equal(message, left, right) do { if (!(left == right)) { \
-        printf("FAILED: %s:%d: %s == %s\n\tleft:\t%i\n\tright:\t%i\n",         \
-            __FILE__, __LINE__, #left, #right, (int)(left), (int)(right));     \
+        printf("FAILED: %s:%d: %s == %s\n\tleft:\t%zx\n\tright:\t%zx\n",       \
+            __FILE__, __LINE__, #left, #right, (size_t)(left), (size_t)(right)); \
         return message; }                                                      \
 } while (0)
 
@@ -111,7 +113,7 @@
 #if PU_LMATH == 1
 /**
  * Doubles approximately equal.
- * Checks if left and right doubles are appoximately equal.
+ * Checks if left and right doubles are approximately equal.
  * @param message shown if assert fails.
  * @param left value as double.
  * @param right value as double.
