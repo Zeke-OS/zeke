@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Buffer Cache.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -38,6 +39,8 @@
 #include <fs/fs.h>
 #include <hal/mmu.h>
 #include <kobj.h>
+
+struct vm_pt;
 
 /**
  * @addtogroup buffercache vralloc bread breadn bwrite bawrite bdwrite getblk geteblk incore allocbuf brelse biodone biowait
@@ -102,7 +105,7 @@ struct buf {
  */
 typedef struct vm_ops {
     /**
-     * Increment region reference count.
+     * Increment the reference count of this region.
      * @note Can be null.
      */
     void (*rref)(struct buf * this);
@@ -110,7 +113,9 @@ typedef struct vm_ops {
     /**
      * Pointer to a 1:1 region cloning function.
      * This function if set clones contents of the region to another
-     * physical locatation.
+     * physical location.
+     * E.g. Useful for making a copy of a read-only (COW) region and
+     * later making the new copy writable.
      * @note Can be null.
      * @param cur_region    is a pointer to the current region.
      */
@@ -122,6 +127,17 @@ typedef struct vm_ops {
      * @param this is the current region.
      */
     void (*rfree)(struct buf * this);
+
+    /**
+     * Map this region to physical memory.
+     * Typically this function will just make whatever mapping is requested in
+     * `this->b_mmu` by calling `mmu_map_region()` but some allocator/mapper
+     * that doesn't allocate physical memory or allocates only on-demand could
+     * make this a page fault and cause a call to `proc_abo_handler()` which
+     * in turn could be modified to do something specific in this situation or
+     * just call `this->rclone()`.
+     */
+    int (*rmmap)(struct buf * this, struct vm_pt * pt);
 } vm_ops_t;
 
 /* generic */

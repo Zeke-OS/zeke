@@ -672,19 +672,11 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
 
 int vm_map_region(struct buf * region, struct vm_pt * pt)
 {
-    mmu_region_t mmu_region;
+    if (!region->vm_ops->rmmap) {
+        return -ENOTSUP;
+    }
 
-    KASSERT(region, "region can't be null\n");
-
-    vm_updateusr_ap(region);
-    mtx_lock(&region->lock);
-
-    mmu_region = region->b_mmu; /* Make a copy. */
-    mmu_region.pt = &(pt->pt);
-
-    mtx_unlock(&region->lock);
-
-    return mmu_map_region(&mmu_region);
+    return region->vm_ops->rmmap(region, pt);
 }
 
 int vm_mapproc_region(struct proc_info * proc, struct buf * region)

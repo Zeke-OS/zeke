@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic frame buffer driver.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -74,6 +75,7 @@ struct vm_ops fb_mm_bufops = {
     .rref = fb_mm_ref,
     .rclone = NULL, /* What ever, but we don't like clones. */
     .rfree = fb_mm_rfree, /* You can try me but it will be never free. */
+    .vrmmap = NULL,
 };
 
 /* TODO Should support multiple frame buffers or fail */

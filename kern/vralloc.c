@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual Region Allocator.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -37,7 +37,7 @@
 #include <bitmap.h>
 #include <buf.h>
 #include <dynmem.h>
-#include <errno.h>
+#include <hal/mmu.h>
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
@@ -87,6 +87,7 @@ struct vregion {
 static struct vregion * vreg_alloc_node(size_t count);
 static void vrref(struct buf * region);
 static struct buf * vr_rclone(struct buf * old_region);
+static int vrmmap(struct buf * region, struct vm_pt * pt);
 
 /** List of all allocations done by vralloc. */
 static LIST_HEAD(vrlisthead, vregion) vrlist_head =
@@ -111,7 +112,8 @@ SYSCTL_UINT(_vm_vralloc, OID_AUTO, used, CTLFLAG_RD, &vralloc_used, 0,
 static const vm_ops_t vra_ops = {
     .rref = vrref,
     .rclone = vr_rclone,
-    .rfree = vrfree
+    .rfree = vrfree,
+    .rmmap = vrmmap,
 };
 
 
@@ -408,7 +410,7 @@ void allocbuf(struct buf * bp, size_t size)
         }
     } else {
 #if 0 /*
-       * We don't usually want to shrunk because it's hard to get memory back.
+       * We don't usually want to shrink because it's hard to get memory back.
        */
         const size_t sblock = VREG_ADDR2I(vreg, bp->b_data) + bcount +
                               blockdiff;
@@ -432,6 +434,23 @@ void vrfree(struct buf * bp)
     KASSERT(bp != NULL, "bp can't be NULL");
 
     kobj_unref(&bp->b_obj);
+}
+
+static int vrmmap(struct buf * region, struct vm_pt * pt)
+{
+    mmu_region_t mmu_region;
+
+    KASSERT(region, "region can't be null\n");
+
+    vm_updateusr_ap(region);
+    mtx_lock(&region->lock);
+
+    mmu_region = region->b_mmu; /* Make a copy. */
+    mmu_region.pt = &(pt->pt);
+
+    mtx_unlock(&region->lock);
+
+    return mmu_map_region(&mmu_region);
 }
 
 int clone2vr(struct buf * src, struct buf ** out)

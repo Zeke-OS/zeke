@@ -592,7 +592,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
              * replacements during exec. This is something we have to accept
              * with the current implementation if we want to make exec more
              * robust in failure cases.
-             * This may happen if new section A is bigger that old_A and
+             * This may happen if a new section A is bigger than old_A and
              * due to that old_B is close to old_A and also overlaps A. Now
              * if old_A is replaced with A but old_B is unmapped later in time
              * it will cause the unmap operation to unmap some of the pages
@@ -615,6 +615,10 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
         }
 
         if (!region->vm_ops->rclone) {
+            /*
+             * For whatever reason a read-only region doesn't seem to support
+             * cloning.
+             */
             KERROR_DBG("rclone() not supported\n");
             err = -ENOTSUP; /* rclone() not supported. */
             goto fail;
@@ -628,7 +632,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
         }
         /*
          * The old region remains marked as COW as it would be racy to change
-         * its state.
+         * its state at this point.
          */
 
         mtx_unlock(&mm->regions_lock);
