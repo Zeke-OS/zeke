@@ -1,5 +1,5 @@
-Interrupt Handling
-==================
+irq: Interrupt Handling
+=======================
 
 [irq.c](/kern/hal/irq.c) provides a generic HW-independent interface for
 managing interrupts. The external API is defined in

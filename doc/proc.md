@@ -1,5 +1,5 @@
-Process and Thread Management
-=============================
+proc: Process and Thread Management
+===================================
 
 Processes and Threads
 ---------------------
