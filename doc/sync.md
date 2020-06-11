@@ -14,7 +14,7 @@ Mtx is an umbrella for multiple more or less traditional spin lock types
 and options. Main lock types are `MTX_TYPE_SPIN` implementing a very
 traditional racy busy loop spinning and `MTX_TYPE_TICKET` implementing a
 spin lock that guarantees the lock is given to waiters in they called
-`mtx_lock()`, therefore per the most popular defintion `MTX_TYPE_TICKET`
+`mtx_lock()`, therefore per the most popular definition `MTX_TYPE_TICKET`
 can be considered as a fair locking method.
 
 ### Rwlock
@@ -32,7 +32,12 @@ basis.
 ### Index semaphores
 
 Index semaphores is a Zeke specific somewhat novel concept for
-allocating concurrently accessed indexes from an array. The acquistion
+allocating concurrently accessed indexes from an array. The acquisition
 of indexes is blocking in case there is no indexes available, ie. the
 `isema_acquire()` blocks until a free index is
 found.
+
+### Read-Copy-Update (RCU)
+
+A novel version of Read-Copy-Update that attemps to be more realtime
+friendly.
