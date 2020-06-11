@@ -431,8 +431,8 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     } else { /* Implicit AT_FDCWD */
         start = curproc->cwd;
     }
-    KASSERT(start, "Start is set");
-    KASSERT(start->vnode_ops, "vnode ops of start is valid");
+    KASSERT(start, "vnode start is set");
+    KASSERT(start->vnode_ops, "vnode start is missing vnode_ops");
 
     if (path[strlenn(path, PATH_MAX)] == '/') {
         oflags |= O_DIRECTORY;
