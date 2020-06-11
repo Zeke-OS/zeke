@@ -186,7 +186,7 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     }
 
     /*
-     * Fail if mouting a read-only device but
+     * Fail if mounting a read-only device but
      * mount mode is not MNT_READONLY.
      */
     if (!((mode & MNT_RDONLY) == MNT_RDONLY) &&
@@ -195,7 +195,7 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
         goto fail;
     }
 
-    /* Allocate superblock */
+    /* Allocate the superblock */
     fatfs_sb = kzalloc(sizeof(struct fatfs_sb));
     if (!fatfs_sb) {
         retval = -ENOMEM;
@@ -238,7 +238,7 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     fatfs_sb->sb.sb_dev = vndev;
     fatfs_sb->sb.sb_hashseed = fatfs_sb->sb.vdev_id;
     fatfs_sb->sb.root = create_root(fatfs_sb);
-    /* Function pointers to superblock methods */
+    /* Function pointers to the superblock methods */
     fatfs_sb->sb.statfs = fatfs_statfs;
     fatfs_sb->sb.delete_vnode = fatfs_delete_vnode;
     fatfs_sb->sb.umount = fatfs_umount;
@@ -355,7 +355,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     }
 
     /* Try open */
-    if (fno.fattrib & AM_DIR) {
+    if ((fno.fattrib & AM_DIR) == AM_DIR) {
         /* it's a directory */
         vn_mode = S_IFDIR;
         err = f_opendir(&in->dp, &sb->ff_fs, in->in_fpath);
@@ -524,7 +524,7 @@ static int fatfs_delete_vnode(vnode_t * vnode)
 
     /*
      * We need to decrement the refcount if the function was called in order to
-     * sync diry vnodes.
+     * sync dirty vnodes.
      */
     vrele_nunlink(vnode);
 
@@ -881,8 +881,26 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
         d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 1;
     } else if (*off == DIRENT_SEEK_START + 1) { /* Emulate .. */
+        /*
+         * FIXME fatfs_lookup() should be incrementing the refcount of this
+         *       vnode. However, if I use autorele here the kernel will panic
+         *       after hitting the vnode a few times, which looks like it's
+         *       getting freed.
+         */
+        /* vnode_autorele */ vnode_t * vnode_dotdot = NULL;
+        int lookup_err;
+
+        lookup_err = fatfs_lookup(dir, "..", &vnode_dotdot);
+
+        if (lookup_err == -EDOM) {
+            d->d_ino = 0;
+        } else if (lookup_err) {
+            return -ENOTDIR;
+        } else {
+            d->d_ino = vnode_dotdot->vn_num;
+        }
+
         strlcpy(d->d_name, "..", sizeof(d->d_name));
-        d->d_ino = 0; /* TODO ino should be properly set */
         d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 2;
     } else { /* Normal dir entry */
@@ -959,6 +977,13 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
                        __func__, &ffsb->ff_fs, in->in_fpath, &fno);
             return fresult2errno(err);
         }
+
+        /*
+         * RFE Weird ino numbers (fno.ino != vnode->vn_num)
+         * Sometimes files will see weird ino numbers (e.g. multiple files with
+         * 0), especially empty files and files stored on the root directory.
+         * As of now, it's considered a feature.
+         */
 
         memset(buf, 0, sizeof(struct stat));
         buf->st_dev = vnode->sb->vdev_id;

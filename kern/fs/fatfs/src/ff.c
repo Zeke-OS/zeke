@@ -932,6 +932,7 @@ static DWORD ld_clust(FATFS * fs, uint8_t * dir)
 {
     DWORD cl;
 
+    KASSERT(fs != NULL, "fs must be set");
     KASSERT(dir != NULL, "dir must be set");
 
     cl = LD_WORD(dir + DIR_FstClusLO);
@@ -953,7 +954,11 @@ static void st_clust(uint8_t * dir, DWORD cl)
 
 static inline DWORD get_ino(FF_DIR * dp)
 {
-    return dp->index + ld_clust(dp->fs, dp->dir);
+    /*
+     * We used to add dp->index to the start cluster but it seems to lead to
+     * nondeterministic results.
+     */
+    return ld_clust(dp->fs, dp->dir);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1482,7 +1487,7 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
                             LD_WORD(dir + DIR_CrtTime), 0);
         fno->ino = get_ino(dp);
     }
-    *p = 0;     /* Terminate SFN string by a \0 */
+    *p = '\0';     /* Terminate SFN string by a \0 */
 
 #if configFATFS_LFN
     if (fno->lfname) {
@@ -2695,7 +2700,12 @@ FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path)
     }
 
     res = dir_sdi(dp, 0); /* Rewind directory */
-    dp->ino = get_ino(dp);
+
+    /*
+     * We cannot use get_ino(dp) here because it would lead into wrong results.
+     * However, we know that ino is the same as sclust.
+     */
+    dp->ino = dp->sclust;
 
     if (res == FR_NO_FILE)
         res = FR_NO_PATH;
