@@ -143,7 +143,7 @@ The elf loader in Zeke can be used to load statically linked executables as well
 as anything linked dynamically. Currently only two loadable sections can be
 loaded, code region and heap region.
 
-#### Suported elf sections
+#### Supported elf sections
 
 The kernel reads process memory regions based on information provided by
 `PT_LOAD` sections in the elf file.
@@ -152,31 +152,31 @@ The kernel can read additional information needed for executing a binary
 from the elf notes. The non-standard notes are only parsed if `Zeke` is
 defined as an owner of the note.
 
-`NT_VERSION` TODO
+**NT_VERSION**
 
-`NT_STACKSIZE` TODO
+**NT_STACKSIZE**
 
 `NT_STACKIZE` note can be used to hint the kernel about the preferred
 minimum size for the main thread stack.
 
-`NT_CAPABILITIES` TODO
+**NT_CAPABILITIES**
 
 `NT_CAPABILITIES` note is used to inform the kernel about capabilities
 required to execute a binary file. The elf loader attempts to set each
 capability as an effective capability, which may fail if the capability
 isn’t in the bounding capabilities set. In case the file has
-+O_EXEC_ALTPCAP+ oflag set then the loader will first
+`O_EXEC_ALTPCAP` `oflag` set then the loader will first
 add the capabilities found in these notes to the bounding capabilities
 set, i.e. the executable can gain the bounding capabilities.
 
-`NT_CAPABILITIES_REQ` TODO
+**NT_CAPABILITIES_REQ**
 
-`NT_CAPABILITIES__REQ` note functions similar to `NT_CAPABILITIES` but
+`NT_CAPABILITIES_REQ` note functions similar to `NT_CAPABILITIES` but
 it doesn’t allow new bounding capabilities to be gained even when the
-binary file is opened with +O_EXEC_ALTPCAP+.
+binary file is opened with `O_EXEC_ALTPCAP`.
 
 The user space implementation of these note types is discussed in
-section [1](#sec:libc_elf).
+the Libc: ELF support section.
 
 Libc: Process and Thread Management
 -----------------------------------
@@ -192,13 +192,13 @@ used for indicating the minimum stack size needed by the main tread of
 an executable, see listing [\[list:hugestack\]](#list:hugestack).
 
 Another important Zeke specific note type is `NT_CAPABILITIES` that can
-be used to annotate the capabilities required to succesfully execute a
+be used to annotate the capabilities required to successfully execute a
 given elf binary file. The capability notes can be created using the
 `ELFNOTE_CAPABILITIES(...)` macro. Each note can have 64 capabilities
 and the total number of these notes is unlimited. Depending on the file
 system if the file is marked as a system file the binary can gain these
-capabilities as bounding and effective capabilities, similar to +suid+
-allowing a program to gain priviliges of another user.
+capabilities as bounding and effective capabilities, similar to `suid`
+allowing a program to gain privileges of another user.
 
 The `NT_CAPABILITIES_REQ` note type is similar to `NT_CAPABILITIES` but
 it doesn’t allow gaining new bounding capabilities. This note can be

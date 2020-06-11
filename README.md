@@ -27,6 +27,7 @@ Key Features
     - ASLR
     - Copy-On-Write virtual memory
     - Per process capabilities
+    - Capabilities can fully replace the magic Unix super user
     - Unix-like fork and exec
     - elf32 support
     - Linux-style elf32 core dumps

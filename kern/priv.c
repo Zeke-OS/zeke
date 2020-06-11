@@ -175,7 +175,7 @@ void priv_cred_init(struct cred * cred)
         gid[i] = NOGROUP;
     }
 
-    /* First make syre the capability maps are clear. */
+    /* First make sure the capability maps are clear. */
     (void)bitmap_block_update(cred->pcap_effmap, 0, 0, _PRIV_MENT, _PRIV_MLEN);
     (void)bitmap_block_update(cred->pcap_bndmap, 0, 0, _PRIV_MENT, _PRIV_MLEN);
 
