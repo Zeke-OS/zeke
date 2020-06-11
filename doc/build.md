@@ -78,9 +78,9 @@ Run `make help` for full list of targets and compilation flags.
 
 ### Arch Specific Instructions
 
-- [Running Zeke on ARM](/doc/arm.md)
-- [Running Zeke in QEMU](/doc/qemu.md)
-- [Running Zeke on MIPS](/doc/mips.md)
+- [Running Zeke on ARM](/doc/arch/arm.md)
+- [Running Zeke in QEMU](/doc/arch/qemu.md)
+- [Running Zeke on MIPS](/doc/arch/mips.md)
 
 
 ### Build Config Tool
