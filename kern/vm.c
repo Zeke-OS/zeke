@@ -300,7 +300,7 @@ static uintptr_t rnd_addr(struct vm_mm_struct * mm, size_t size)
     /*
      * TODO The max virtual address should probably come from some config knob.
      */
-    const uintptr_t addr_max = (~0) >> 1;
+    const uintptr_t addr_max = (~0LU) >> 1;
 
     KASSERT(mtx_test(&mm->regions_lock), "mm should be locked\n");
 
