@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -133,6 +133,18 @@ int exec_file(struct exec_loadfn * loader, int fildes,
         goto fail;
     }
 
+    /*
+     * Can only execute if MNT_NOEXEC is not set.
+     */
+    if (file->vnode->sb->mode_flags & MNT_NOEXEC) {
+        fs_fildes_ref(curproc->files, fildes, -1);
+        err = -EACCES;
+        goto fail;
+    }
+
+    /*
+     * Can only execute regular files.
+     */
     if (!S_ISREG(file->vnode->vn_mode)) {
         fs_fildes_ref(curproc->files, fildes, -1);
         err = -ENOEXEC;

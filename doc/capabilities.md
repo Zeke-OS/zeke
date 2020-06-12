@@ -40,10 +40,16 @@ only set by the kernel, as it's outside of `O_USERMASK`. How the flag
 is set is file system dependant, on `fatfs` it's set when the `system`
 attribute of the file is set.
 
-So how the `login` command works is that it has `system` attribute set
+How the `login` command works is that it has `system` attribute set
 in the rootfs image and it can therefore request new bounding and effective
-capabilities when it's executed. Then when a user logs in unncessary
+capabilities when it's executed. Then when a user logs in unnecessary
 capabilities will be dropped.
+
+Moreover, to prevent untrusted users to execute files bumping capabilities,
+the feature is naturally limited to only those file systems that allows
+executing binaries in the first place. Therefore, if `MNT_NOEXEC` is set
+the file won't be even given `O_EXEC_ALTPCAP` when opened and later on
+it neither can be executed du to the flag.
 
 Such an elf note for requesting or requiring capabilities can be created
 as follows:

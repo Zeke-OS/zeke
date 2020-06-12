@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   32bit ELF loader.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -373,7 +373,6 @@ static int load_notes(struct proc_info * proc,
             break;
         case NT_CAPABILITIES:
         case NT_CAPABILITIES_REQ:
-            /* TODO Only allow settings caps if VFS allows it */
             retval = nt_capabilities(note, align, altpcap, &proc->cred);
             if (retval < 0) {
                 goto out;
