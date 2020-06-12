@@ -48,8 +48,8 @@ endif
 # Checks #######################################################################
 # Check that MEMMAP and STARTUP are defined
 ifndef MEMMAP
-    $(error Missing kernel MEMMAP! Wrong configMCU_MODEL?)
+    $(error Missing kernel MEMMAP! Wrong MCU/CPU model selected?)
 endif
 ifndef STARTUP
-    $(error Missing kernel STARTUP! Wrong configMCU_MODEL?)
+    $(error Missing kernel STARTUP! Wrong MCU/CPU model selected?)
 endif
