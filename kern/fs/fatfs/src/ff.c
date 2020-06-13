@@ -2487,7 +2487,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
  */
 FRESULT f_sync(FF_FIL * fp)
 {
-    FRESULT res;
+    FRESULT res = FR_OK;
     DWORD tm;
     uint8_t * dir;
 
@@ -2528,8 +2528,6 @@ FRESULT f_sync(FF_FIL * fp)
         fp->flag &= ~FA__WRITTEN;
         fp->fs->wflag = 1;
         res = sync_fs(fp->fs);
-    } else {
-      res = FR_OK;
     }
 
 fail:

@@ -426,7 +426,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     return 0;
 fail:
 #ifdef configFATFS_DEBUG
-    FS_KERROR_FS(KERROR_DEBUG, sb->sb.fs, "retval %i\n", retval);
+    FS_KERROR_FS(KERROR_DEBUG, sb->sb.fs, "retval for %s: %i\n", fpath, retval);
 #endif
 
     inpool_insert_clean(&sb->inpool, vn); /* Return it back to the pool. */
