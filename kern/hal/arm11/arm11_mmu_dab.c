@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU control functions for ARM11 ARMv6 instruction set.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -151,9 +152,10 @@ void mmu_data_abort_handler(void)
             switch (err) {
             case -EACCES:
             case -EFAULT:
-                arm11_abo_buser(&abo);
-                /* Doesn't return */
-                break;
+                err = arm11_abo_buser(&abo);
+                if (err != -ENOTRECOVERABLE) {
+                    break;
+                }
             default:
                 KERROR(KERROR_CRIT, "DAB handling failed: %i\n", err);
                 dab_fatal(&abo);
