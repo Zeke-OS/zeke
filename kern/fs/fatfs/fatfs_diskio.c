@@ -1,9 +1,10 @@
 /**
  *******************************************************************************
- * @file    fatfs_zeke.c
+ * @file    fatfs_diskio.c
  * @author  Olli Vanhoja
  * @brief   IO wrapper for FatFs.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -68,7 +69,7 @@ DRESULT fatfs_disk_read(FATFS * ff_fs, uint8_t * buff, DWORD sector,
     retval = vnops->read(file, &uio, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
-        KERROR(KERROR_ERR, "fatfs_disk_read(): err %i\n", retval);
+        KERROR(KERROR_ERR, "%s(): err %i\n", __func__, retval);
 #endif
         return RES_ERROR;
     }
@@ -128,8 +129,9 @@ DRESULT fatfs_disk_ioctl(FATFS * ff_fs, unsigned cmd, void * buff, size_t bsize)
     ssize_t err;
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG,
-            "fatfs_disk_ioctl(pdrv %u, cmd %u, buff %p, bsize %u)\n",
-            (uint32_t)pdrv, (uint32_t)cmd, buff, (uint32_t)bsize);
+           "fatfs_disk_ioctl(ff_fs %u, cmd %u, buff %p, bsize %u)\n",
+           (uint32_t)file->vnode->vn_num, (uint32_t)cmd, buff,
+           (uint32_t)bsize);
 #endif
 
     if (!vnops->ioctl)
