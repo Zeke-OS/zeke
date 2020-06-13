@@ -15,6 +15,11 @@ Zeke and its GDB Python scripts.
 If you wish to use [Zekedock](/docker), which you should as Zeke only works with
 very specific versions of build and debug tools, it already includes GDB 7.10.
 
+While running Zeke in QEMU gdb can be started by executing `rm-none-eabi-gdb`
+which will automatically attach to the Zeke in QEMU, thanks to
+[.gdbinit](/.gdbinit). It might be helpful to run these in `screen` when
+using the Docker image. `screen` is preinstalled in the Docker image.
+
 Debugging
 ---------
 
