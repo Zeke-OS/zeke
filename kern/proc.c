@@ -552,6 +552,8 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
     const char * abo_str = mmu_abo_strerror(abo);
     int err;
 
+    KASSERT(abo, "abo must be set");
+
     if (!abo->proc) {
         return -ESRCH;
     }
@@ -647,7 +649,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 fail:
     mtx_unlock(&mm->regions_lock);
 
-    return err; /* Not found or error occured. */
+    return err; /* Not found or an error occurred. */
 }
 
 pid_t proc_update(void)
