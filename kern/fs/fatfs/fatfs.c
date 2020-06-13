@@ -91,6 +91,7 @@ vnode_ops_t fatfs_vnode_ops = {
     .stat = fatfs_stat,
     .chmod = fatfs_chmod,
     .chflags = fatfs_chflags,
+    .chown = fatfs_chown,
 };
 
 /**
@@ -808,7 +809,12 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 
     if (result)
         *result = &res->in_vnode;
+
     fatfs_chmod(&res->in_vnode, mode);
+#ifdef configFATFS_OWNER_ID
+    /* RFE or to egid of the parent dir */
+    fatfs_chown(&res->in_vnode, curproc->cred.euid, curproc->cred.egid);
+#endif
 
 #ifdef configFATFS_DEBUG
     FS_KERROR_VNODE(KERROR_DEBUG, dir, "ok\n");
@@ -990,8 +996,13 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
         buf->st_ino = vnode->vn_num;
         buf->st_mode = vnode->vn_mode;
         buf->st_nlink = 1; /* Always one link on FAT. */
+#if defined(configFATFS_OWNER_ID)
+        buf->st_uid = fno.uid;
+        buf->st_gid = fno.gid;
+#else
         buf->st_uid = mp_stat.st_uid;
         buf->st_gid = mp_stat.st_gid;
+#endif
         buf->st_size = fno.fsize;
         buf->st_atim = fno.fatime;
         buf->st_mtim = fno.fmtime;
@@ -1049,6 +1060,21 @@ int fatfs_chflags(vnode_t * vnode, fflags_t flags)
     fresult = f_chmod(&ffsb->ff_fs, in->in_fpath, attr, mask);
 
     return fresult2errno(fresult);
+}
+
+int fatfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
+{
+#ifdef configFATFS_OWNER_ID
+    struct fatfs_sb * ffsb = get_ffsb_of_sb(vnode->sb);
+    struct fatfs_inode * in = get_inode_of_vnode(vnode);
+    FRESULT fresult;
+
+    fresult = f_chown(&ffsb->ff_fs, in->in_fpath, owner, group);
+
+    return fresult2errno(fresult);
+#else
+    return -ENOTSUP;
+#endif
 }
 
 /**

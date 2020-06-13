@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Password structure.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -44,20 +45,6 @@
 
 /**
  * @addtogroup pwd
- * /etc/passwd file format
- *
- * The file contains newline separated records, each line containing
- * colon (`:') separated fields. The fields are as follows:
- *
- * 1. Username: Used as a login username. 1 to MAXLOGNAME characters in length,
- *              shouldn't start with dash (`-').
- * 2. Password: A number value indicates that encrypted password is stored in
- *              /etc/shadow file with an offset indicated by the number.
- * 3. UID:      User ID. Zero (0) is reserved for root.
- * 4. GID:      The primary group. (Stored in /etc/group)
- * 5. GECOS:    Full name.
- * 6. Home dir: User's home directory.
- * 7. Shell:    The command that's executed when the user logs in.
  * @{
  */
 
@@ -77,11 +64,44 @@ struct passwd {
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 
+/**
+ * Get password file entry.
+ * The first time getpwent() is called, it returns the first entry;
+ * thereafter, it returns successive entries.
+ */
 struct passwd * getpwent(void);
+
+/**
+ * Get password file entry.
+ * Returns the entry that matches to the username nam.
+ */
 struct passwd * getpwnam(char * nam);
+
+/**
+ * Get password file entry.
+ * Return the entry that matches to the user ID uid.
+ */
 struct passwd * getpwuid(uid_t uid);
+
+/**
+ * Rewind to the begining of the password database.
+ */
 int setpwent(void);
+
+/**
+ * Rewind to the begining of the password database.
+ * If stayopen is non-zero the file descriptors are left open on subsequent
+ * calls to getpwnam() and getpwuid(), other pwd functions are not affected.
+ *
+ * Long running processes should not keep the file descriptors open for long
+ * periods of time as the database might be updated during the runtime of the
+ * process.
+ */
 int setpassent(int stayopen);
+
+/**
+ * Close open files related to pwd.
+ */
 void endpwent(void);
 
 __END_DECLS

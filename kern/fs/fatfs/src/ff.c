@@ -20,7 +20,9 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <stdint.h>
 #include <sys/ioctl.h>
+#include <sys/types/_id_t.h>
 #include <kactype.h>
 #include <kerror.h>
 #include <kmalloc.h>
@@ -335,7 +337,14 @@
 #define DIR_CrtTimeTenth    13      /*!< Created time sub-second (1) */
 #define DIR_CrtTime         14      /*!< Created time (2) */
 #define DIR_CrtDate         16      /*!< Created date (2) */
+#if defined(configFATFS_ACCDATE)
 #define DIR_LstAccDate      18      /*!< Last accessed date (2) */
+#elif defined(configFATFS_OWNER_ID)
+#define DIR_UID             18      /*!< User ID (1) */
+#define DIR_GID             19      /*!< Group ID (1) */
+#else
+#error FAT offset 0x12 behaviour not selected
+#endif
 #define DIR_FstClusHI       20      /*!< Higher 16-bit of first cluster (2) */
 #define DIR_WrtTime         22      /*!< Modified time (2) */
 #define DIR_WrtDate         24      /*!< Modified date (2) */
@@ -387,6 +396,50 @@
 #ifdef _EXCVT
 /* Upper conversion table for extended characters */
 static const uint8_t ExCvt[] = _EXCVT;
+#endif
+
+#ifdef configFATFS_OWNER_ID
+/**
+ * Pack uid or gid into 8 bits.
+ * Ranges:
+ * - 0 - 63         => 0x00 - 0x3f
+ * - 100 - 163      => 0x40 - 0x7f
+ * - 500 - 563      => 0x80 - 0xbf
+ * - 1000 - 1063    => 0xc0 - 0xff
+ */
+static uint8_t f_idpack(id_t id)
+{
+    uint8_t o;
+
+    if (id >= 1000) {
+        o = 0xc0 | ((id - 1000) & 0x3f);
+    } else if (id >= 500) {
+        o = 0x80 | ((id - 500) & 0x3f);
+    } else if (id >= 100) {
+        o = 0x40 | ((id - 100) & 0x3f);
+    } else {
+        o = id & 0x3f;
+    }
+
+    return o;
+}
+
+static id_t f_idunpack(uint8_t id)
+{
+    id_t o;
+
+    if ((id & 0xc0) == 0xc0) {
+        o = 1000 + (id & 0x3f);
+    } else if ((id & 0x80) == 0x80) {
+        o = 500 + (id & 0x3f);
+    } else if ((id & 0x40) == 0x40) {
+        o = 100 + (id & 0x3f);
+    } else {
+        o = id;
+    }
+
+    return o;
+}
 #endif
 
 /*
@@ -1477,8 +1530,10 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
         }
         fno->fattrib = dir[DIR_Attr];               /* Attribute */
         fno->fsize = LD_DWORD(dir + DIR_FileSize);  /* Size */
+#ifdef configFATFS_ACCDATE
         fatfs_time_fat2unix(&fno->fatime,
                             LD_WORD(dir + DIR_LstAccDate) << 16, 0);
+#endif
         fatfs_time_fat2unix(&fno->fmtime,
                             (LD_WORD(dir + DIR_WrtDate) << 16) |
                             LD_WORD(dir + DIR_WrtTime), 0);
@@ -1486,6 +1541,12 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
                             (LD_WORD(dir + DIR_CrtDate) << 16) |
                             LD_WORD(dir + DIR_CrtTime), 0);
         fno->ino = get_ino(dp);
+
+#ifdef configFATFS_OWNER_ID
+        memcpy(&fno->fatime, &fno->fmtime, sizeof(fno->fatime));
+        fno->uid = f_idunpack(dir[DIR_UID]);
+        fno->gid = f_idunpack(dir[DIR_GID]);
+#endif
     }
     *p = '\0';     /* Terminate SFN string by a \0 */
 
@@ -2461,7 +2522,9 @@ FRESULT f_sync(FF_FIL * fp)
         tm = fatfs_time_get_time();                 /* Update updated time */
         ST_WORD(dir + DIR_WrtTime, tm & 0xffff);
         ST_WORD(dir + DIR_WrtDate, tm >> 16);
+#ifdef configFATFS_ACCDATE
         ST_WORD(dir + DIR_LstAccDate, 0);
+#endif
         fp->flag &= ~FA__WRITTEN;
         fp->fs->wflag = 1;
         res = sync_fs(fp->fs);
@@ -3129,6 +3192,56 @@ FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask)
 fail:
     return LEAVE_FF(dj.fs, res);
 }
+
+#ifdef configFATFS_OWNER_ID
+/**
+ * Change owner.
+ */
+FRESULT f_chown(FATFS * fs, const TCHAR * path, uid_t uid, gid_t gid)
+{
+    FRESULT res;
+    FF_DIR dj = { .fs = fs };
+    uint8_t * dir;
+    DEF_NAMEBUF;
+
+    if (uid < 0 && gid < 0) {
+        /* No changes */
+        return FR_OK;
+    }
+
+    if (lock_fs(dj.fs))
+        return FR_TIMEOUT;
+
+    res = access_volume(dj.fs, ACCVOL_WRITE);
+    if (res != FR_OK)
+        goto fail;
+
+    INIT_NAMEBUF(dj);
+    res = follow_path(&dj, path); /* Follow the file path */
+    FREE_BUF();
+    if (res != FR_OK)
+        goto fail;
+
+    dir = dj.dir;
+    if (!dir) { /* Is it a root directory? */
+        res = FR_INVALID_NAME; /* TODO It should be possible to set uid & gid
+                                * for the root too */
+    } else { /* File or sub directory */
+        if (uid >= 0) {
+            dir[DIR_UID] = f_idpack(uid);
+        }
+        if (gid >= 0) {
+            dir[DIR_GID] = f_idpack(gid);
+        }
+
+        dj.fs->wflag = 1;
+        res = sync_fs(dj.fs);
+    }
+
+fail:
+    return LEAVE_FF(dj.fs, res);
+}
+#endif
 
 /**
  * Change Timestamp.

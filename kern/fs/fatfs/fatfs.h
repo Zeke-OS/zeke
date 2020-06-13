@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   FatFs public header.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -112,6 +113,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off);
 int fatfs_stat(vnode_t * vnode, struct stat * buf);
 int fatfs_chmod(vnode_t * vnode, mode_t mode);
 int fatfs_chflags(vnode_t * vnode, fflags_t flags);
+int fatfs_chown(vnode_t * vnode, uid_t owner, gid_t group);
 
 #endif /* FATFS_H */
 

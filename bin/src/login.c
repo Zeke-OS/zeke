@@ -426,6 +426,7 @@ int main(int argc, char * argv[])
         priv_setpcap(1, PRIV_SYSCTL_DEBUG, 1);
         priv_setpcap(1, PRIV_SYSCTL_WRITE, 1);
         priv_setpcap(1, PRIV_VFS_ADMIN, 1);
+        priv_setpcap(1, PRIV_VFS_CHOWN, 1);
         priv_setpcap(1, PRIV_VFS_STAT, 1);
         priv_setpcap(1, PRIV_VFS_MOUNT, 1);
     }

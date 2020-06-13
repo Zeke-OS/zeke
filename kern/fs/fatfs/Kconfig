@@ -31,6 +31,30 @@ config configFATFS_UNICODE
     bool "FAT Unicode support"
     default n
 
+choice
+
+    prompt "Directory entry offset 0x12"
+    ---help---
+        Since DOS 7.0 the offsets 0x12 and 0x13 have been used for saving the
+        last access time (known as atime in Unix-like systems). However, atime
+        is not a very popular file system feature these days and even DOS had it
+        disabled by default (ACCDATE in CONFIG.SYS enabled it).
+
+        FlexOS, 4680 OS, 4690 OS, DR-DOS and some other multi-user operating
+        systems used these bytes for storing owner IDs.
+
+        Zeke offers a choice between atime or storing UID and GID in these
+        bytes.
+
+config configFATFS_ACCDATE
+    bool "ACCDATE"
+    default y
+
+config configFATFS_OWNER_ID
+    bool "Owner ID"
+
+endchoice
+
 config configFATFS_DESIREDVNODES
     int "desiredvnodes"
     default 100

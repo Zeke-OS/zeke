@@ -5,6 +5,7 @@
 / This is a free software that opened for education, research and commercial
 / developments under license policy of following terms.
 /
+/ Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
 /  Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 /  Copyright (C) 2014, ChaN, all right reserved.
 /
@@ -23,6 +24,8 @@ __BEGIN_DECLS
 
 #include <time.h>
 #include <klocks.h>
+#include <sys/types/_uid_t.h>
+#include <sys/types/_gid_t.h>
 #include "integer.h"    /* Basic integer types */
 #include "ffconf.h"     /* FatFs configuration options */
 
@@ -127,46 +130,52 @@ typedef struct {
 
 
 
-/* File status structure (FILINFO) */
-
+/**
+ * File status structure (FILINFO)
+ */
 typedef struct {
-    DWORD   fsize;          /* File size */
-    struct timespec fatime; /* Access time. */
-    struct timespec fmtime; /* Modification time. */
-    struct timespec fbtime; /* Creation time. */
-    uint8_t fattrib;        /* Attribute */
-    uint64_t ino;           /* Emulated ino */
-    TCHAR   fname[13];      /* Short file name (8.3 format) */
+    DWORD   fsize;          /*!< File size */
+    struct timespec fatime; /*!< Access time. */
+    struct timespec fmtime; /*!< Modification time. */
+    struct timespec fbtime; /*!< Creation time. */
+    uint8_t fattrib;        /*!< Attribute */
+    uint64_t ino;           /*!< Emulated ino */
+#ifdef configFATFS_OWNER_ID
+    uid_t uid;              /*!< User ID of the file owner. */
+    gid_t gid;              /*!< Group ID of the file owner. */
+#endif
+    TCHAR   fname[13];      /*!< Short file name (8.3 format) */
 #if configFATFS_LFN
-    TCHAR * lfname;         /* Pointer to the LFN buffer */
+    TCHAR * lfname;         /*!< Pointer to the LFN buffer */
 #endif
 } FILINFO;
 
 
 
-/* File function return code (FRESULT) */
-
+/**
+ * File function return code (FRESULT)
+ */
 typedef enum {
-    FR_OK = 0,              /* (0) Succeeded */
-    FR_DISK_ERR,            /* (1) A hard error occurred in the low level disk I/O layer */
-    FR_INT_ERR,             /* (2) Assertion failed */
-    FR_NOT_READY,           /* (3) The physical drive cannot work */
-    FR_NO_FILE,             /* (4) Could not find the file */
-    FR_NO_PATH,             /* (5) Could not find the path */
-    FR_INVALID_NAME,        /* (6) The path name format is invalid */
-    FR_DENIED,              /* (7) Access denied due to prohibited access or directory full */
-    FR_EXIST,               /* (8) Access denied due to prohibited access */
-    FR_INVALID_OBJECT,      /* (9) The file/directory object is invalid */
-    FR_WRITE_PROTECTED,     /* (10) The physical drive is write protected */
-    FR_INVALID_DRIVE,       /* (11) The logical drive number is invalid */
-    FR_NOT_ENABLED,         /* (12) The volume has no work area */
-    FR_NO_FILESYSTEM,       /* (13) There is no valid FAT volume */
-    FR_MKFS_ABORTED,        /* (14) The f_mkfs() aborted due to any parameter error */
-    FR_TIMEOUT,             /* (15) Could not get a grant to access the volume within defined period */
-    FR_LOCKED,              /* (16) The operation is rejected according to the file sharing policy */
-    FR_NOT_ENOUGH_CORE,     /* (17) LFN working buffer could not be allocated */
-    FR_TOO_MANY_OPEN_FILES, /* (18) Number of open files > _FS_SHARE */
-    FR_INVALID_PARAMETER    /* (19) Given parameter is invalid */
+    FR_OK = 0,              /*!< (0) Succeeded */
+    FR_DISK_ERR,            /*!< (1) A hard error occurred in the low level disk I/O layer */
+    FR_INT_ERR,             /*!< (2) Assertion failed */
+    FR_NOT_READY,           /*!< (3) The physical drive cannot work */
+    FR_NO_FILE,             /*!< (4) Could not find the file */
+    FR_NO_PATH,             /*!< (5) Could not find the path */
+    FR_INVALID_NAME,        /*!< (6) The path name format is invalid */
+    FR_DENIED,              /*!< (7) Access denied due to prohibited access or directory full */
+    FR_EXIST,               /*!< (8) Access denied due to prohibited access */
+    FR_INVALID_OBJECT,      /*!< (9) The file/directory object is invalid */
+    FR_WRITE_PROTECTED,     /*!< (10) The physical drive is write protected */
+    FR_INVALID_DRIVE,       /*!< (11) The logical drive number is invalid */
+    FR_NOT_ENABLED,         /*!< (12) The volume has no work area */
+    FR_NO_FILESYSTEM,       /*!< (13) There is no valid FAT volume */
+    FR_MKFS_ABORTED,        /*!< (14) The f_mkfs() aborted due to any parameter error */
+    FR_TIMEOUT,             /*!< (15) Could not get a grant to access the volume within defined period */
+    FR_LOCKED,              /*!< (16) The operation is rejected according to the file sharing policy */
+    FR_NOT_ENOUGH_CORE,     /*!< (17) LFN working buffer could not be allocated */
+    FR_TOO_MANY_OPEN_FILES, /*!< (18) Number of open files > _FS_SHARE */
+    FR_INVALID_PARAMETER    /*!< (19) Given parameter is invalid */
 } FRESULT;
 
 /*--------------------------------------------------------------*/
@@ -186,6 +195,9 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path);
 FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new);
 FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno);
 FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask);
+#ifdef configFATFS_OWNER_ID
+FRESULT f_chown(FATFS * fs, const TCHAR * path, uid_t uid, gid_t gid);
+#endif
 FRESULT f_utime(FATFS * fs, const TCHAR * path, const struct timespec * ts);
 FRESULT f_chdir(const TCHAR * path);
 FRESULT f_chdrive(const TCHAR * path);
