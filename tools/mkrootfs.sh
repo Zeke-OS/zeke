@@ -13,10 +13,12 @@ BOOT_FILES=$(cat "$2")
 PADDING_SECTORS=8192
 BOOTFS_SECTORS=65536
 ROOTFS_SECTORS=114688
+HOME_SECTORS=335872
 
-let "SECTORS =  PADDING_SECTORS + BOOTFS_SECTORS + ROOTFS_SECTORS"
+let "SECTORS = PADDING_SECTORS + BOOTFS_SECTORS + ROOTFS_SECTORS + HOME_SECTORS"
 let "BOOTFS_BEGIN = PADDING_SECTORS"
-let "ROOTFS_BEGIN = PADDING_SECTORS + BOOTFS_SECTORS"
+let "ROOTFS_BEGIN = BOOTFS_BEGIN + BOOTFS_SECTORS"
+let "HOME_BEGIN = ROOTFS_BEGIN + ROOTFS_SECTORS"
 
 function dir2img {
     local manifest="$(cat "$1/manifest")"
@@ -36,12 +38,17 @@ function dir2img {
 }
 
 # Create the file system image
+# C is the boot partition
+# D is the system partition
+# E is the /home partition
 dd if=/dev/zero of="$IMG" bs=512 count=$SECTORS
 mpartition -I C:
 mpartition -c -b $BOOTFS_BEGIN -l $BOOTFS_SECTORS C:
 mpartition -c -b $ROOTFS_BEGIN -l $ROOTFS_SECTORS D:
+mpartition -c -b $HOME_BEGIN -l $HOME_SECTORS E:
 mformat C:
 mformat D:
+mformat E:
 
 # Copy the bootloader and kernel image
 for file in $BOOT_FILES; do
@@ -52,13 +59,16 @@ done
 # Create dirs
 mmd D:boot
 mmd D:dev
+mmd D:home
 mmd D:mnt
 mmd D:opt
 mmd D:opt/test
 mmd D:proc
 mmd D:root
 mmd D:tmp
-mcopy README.markdown D:
+mmd D:usr
+mmd E:hbp # TODO create homedirs more dynamically
+mcopy README.md D:
 
 # Copy binaries
 MANIFEST=$(find . -name manifest -exec dirname {} \;)
