@@ -294,7 +294,6 @@ static bool is_overlaping_current_regions(
  */
 static uintptr_t rnd_addr(struct vm_mm_struct * mm, size_t size)
 {
-    size_t nr_regions;
     const size_t bits = NBITS(MMU_PGSIZE_SECTION);
     const uintptr_t addr_min = configEXEC_BASE_LIMIT;
     /*
@@ -304,7 +303,6 @@ static uintptr_t rnd_addr(struct vm_mm_struct * mm, size_t size)
 
     KASSERT(mtx_test(&mm->regions_lock), "mm should be locked\n");
 
-    nr_regions = mm->nr_regions;
     do {
         uintptr_t vaddr;
         vaddr = addr_min +
