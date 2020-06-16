@@ -190,7 +190,7 @@ FRESULT f_truncate(FF_FIL * fp);
 FRESULT f_sync(FF_FIL * fp);
 FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path);
 FRESULT f_readdir(FF_DIR * dp, FILINFO * fno);
-FRESULT f_mkdir(FATFS * fs, const TCHAR * path);
+FRESULT f_mkdir(FATFS * fs, const TCHAR * path, uint8_t attr);
 FRESULT f_unlink(FATFS * fs, const TCHAR * path);
 FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new);
 FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno);

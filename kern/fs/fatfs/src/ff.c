@@ -3061,7 +3061,7 @@ fail:
  * Create a Directory.
  * @param path Pointer to the directory path.
  */
-FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
+FRESULT f_mkdir(FATFS * fs, const TCHAR * path, uint8_t attr)
 {
     FRESULT res;
     FF_DIR dj = { .fs = fs };
@@ -3104,7 +3104,7 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
             memset(dir, 0, dj.fs->ssize);
             memset(dir + DIR_Name, ' ', 11); /* Create "." entry */
             dir[DIR_Name] = '.';
-            dir[DIR_Attr] = AM_DIR;
+            dir[DIR_Attr] = AM_DIR | attr;
             ST_WORD(dir + DIR_WrtTime, tm & 0xffff);
             ST_WORD(dir + DIR_WrtDate, tm >> 16);
             st_clust(dir, dcl);

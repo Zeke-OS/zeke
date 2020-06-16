@@ -63,6 +63,7 @@ static void fatfs_event_file_closed(struct proc_info * p, file_t * file);
 static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result);
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
                              struct fs_superblock * sb);
+static uint8_t mode2attr(mode_t mode);
 static int get_mp_stat(vnode_t * vnode, struct stat * st);
 static int fresult2errno(int fresult);
 
@@ -653,7 +654,9 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
         retval = -EIO;
     } else if (vn) { /* vnode found in vfs_hash */
 #ifdef configFATFS_DEBUG
-        FS_KERROR_VNODE(KERROR_DEBUG, vn, "vn found in vfs_hash (%p)\n", vn);
+        FS_KERROR_VNODE(KERROR_DEBUG, vn,
+                        "vn for \"%s\" found in vfs_hash (%p)\n",
+                        in_fpath, vn);
 #endif
 
         *result = vn;
@@ -823,7 +826,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
     return 0;
 }
 
-int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
+int fatfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
 {
     struct fatfs_sb * ffsb = get_ffsb_of_sb(dir->sb);
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
@@ -838,7 +841,7 @@ int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
     if (!in_fpath)
         return -ENOMEM;
 
-    err = f_mkdir(&ffsb->ff_fs, in_fpath);
+    err = f_mkdir(&ffsb->ff_fs, in_fpath, mode2attr(mode));
     if (err)
         retval = fresult2errno(err);
 
@@ -1018,16 +1021,24 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     return 0;
 }
 
+static uint8_t mode2attr(mode_t mode)
+{
+    uint8_t attr = 0;
+
+
+    if (!(mode & (S_IWUSR | S_IWGRP | S_IWOTH)))
+        attr |= AM_RDO;
+
+    return attr;
+}
+
 int fatfs_chmod(vnode_t * vnode, mode_t mode)
 {
     struct fatfs_sb * ffsb = get_ffsb_of_sb(vnode->sb);
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
-    uint8_t attr = 0;
+    uint8_t attr = mode2attr(mode);
     const uint8_t mask = AM_RDO;
     int err;
-
-    if (!(mode & (S_IWUSR | S_IWGRP | S_IWOTH)))
-        attr |= AM_RDO;
 
     err = fresult2errno(f_chmod(&ffsb->ff_fs, in->in_fpath, attr, mask));
     if (!err)
