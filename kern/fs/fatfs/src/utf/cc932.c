@@ -3715,9 +3715,7 @@ const WCHAR sjis2uni[] = {
 };
 #endif
 
-
-
-WCHAR ff_convert(    /* Converted code, 0 means conversion error */
+WCHAR fatfs_cc932_convert(    /* Converted code, 0 means conversion error */
     WCHAR   chr,     /* Character code to be converted */
     unsigned int dir /* 0: Unicode to OEMCP, 1: OEMCP to Unicode */
 )
@@ -3774,9 +3772,7 @@ WCHAR ff_convert(    /* Converted code, 0 means conversion error */
     return c;
 }
 
-
-
-WCHAR ff_wtoupper ( /* Upper converted character */
+WCHAR fatfs_cc932_wtoupper( /* Upper converted character */
     WCHAR chr       /* Input character */
 )
 {

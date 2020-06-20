@@ -24,4 +24,4 @@ fs-SRC-$(configPROCFS) += $(wildcard fs/procfs/*.c)
 # fatfs
 fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/*.c)
 fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/src/*.c)
-fs-SRC-$(configFATFS) += fs/fatfs/src/utf/unicode.c
+fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/src/utf/*.c)

@@ -220,7 +220,8 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     }
 
     /* Mount */
-    err = f_mount(&fatfs_sb->ff_fs, 0);
+    /* TODO Select code page */
+    err = f_mount(&fatfs_sb->ff_fs, 0, "437");
     if (err) {
         retval = fresult2errno(err);
         KERROR_DBG("Can't init a work area for FAT (%d)\n", retval);

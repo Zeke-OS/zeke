@@ -75,6 +75,9 @@ typedef struct {
     WORD    ssize;          /* uint8_ts per sector (512, 1024, 2048 or 4096) */
     mtx_t   sobj;           /* Identifier of sync object */
     unsigned opt;           /* fs mount options */
+#ifdef configFATFS_LFN
+    const struct fatfs_cp *cp; /* Fs codepage. */
+#endif
     DWORD   last_clust;     /* Last allocated cluster */
     DWORD   free_clust;     /* Number of free clusters */
     DWORD   n_fatent;       /* Number of FAT entries, = number of clusters + 2 */
@@ -204,7 +207,7 @@ FRESULT f_chdrive(const TCHAR * path);
 FRESULT f_getfree(FATFS * fs, DWORD * nclst);
 FRESULT f_getlabel(FATFS * fs, TCHAR * label, DWORD * vsn);
 FRESULT f_setlabel(FATFS * fs, const TCHAR * label);
-FRESULT f_mount(FATFS * fs, uint8_t opt);
+FRESULT f_mount(FATFS * fs, uint8_t opt, char *codepage_id);
 FRESULT f_umount(FATFS * fs);
 
 #define f_eof(fp) (((fp)->fptr == (fp)->fsize) ? 1 : 0)
@@ -227,8 +230,40 @@ uint32_t fatfs_time_get_time(void);
 
 /* Unicode support functions */
 #if configFATFS_LFN                     /* Unicode - OEM code conversion */
-WCHAR ff_convert(WCHAR chr, unsigned int dir); /* OEM-Unicode bidirectional conversion */
-WCHAR ff_wtoupper(WCHAR chr);           /* Unicode upper-case conversion */
+struct fatfs_dbcs;
+struct fatfs_cp {
+    const char cp_id[6];
+    const char cp_name[36];
+    struct fatfs_dbcs *cp_dbcs;
+    const uint8_t *cp_ExCvt;
+
+    int (*cp_isDBCS1)(const struct fatfs_cp * restrict cp, int c);
+    int (*cp_isDBCS2)(const struct fatfs_cp * restrict cp, int c);
+
+    /**
+     * OEM-Unicode bidirectional conversion.
+     */
+    WCHAR (*cp_convert)(WCHAR chr, unsigned int dir);
+
+    /**
+     * Unicode upper-case conversion.
+     */
+    WCHAR (*cp_wtoupper)(WCHAR chr);
+};
+
+const struct fatfs_cp * fatfs_cp_get(const char * cp_id);
+/* OEM-Unicode bidirectional conversion */
+WCHAR fatfs_cc932_convert(WCHAR chr, unsigned int dir);
+ /* Unicode upper-case conversion */
+WCHAR fatfs_cc932_wtoupper(WCHAR chr);
+WCHAR fatfs_cc936_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_cc936_wtoupper(WCHAR chr);
+WCHAR fatfs_cc949_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_cc949_wtoupper(WCHAR chr);
+WCHAR fatfs_cc950_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_cc950_wtoupper(WCHAR chr);
+WCHAR fatfs_ccsbcs_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_ccsbcs_wtoupper(WCHAR chr);
                                         /* Memory functions */
 void * ff_memalloc(unsigned int msize); /* Allocate memory block */
 void ff_memfree(void* mblock);          /* Free memory block */
