@@ -6767,9 +6767,7 @@ const WCHAR oem2uni[] = {
     0xF9FC, 0x2570, 0xF9FD, 0x256F, 0xF9FE, 0x2593, 0, 0
 };
 
-
-
-WCHAR ff_convert (  /* Converted code, 0 means conversion error */
+WCHAR fatfs_cc950_convert(  /* Converted code, 0 means conversion error */
     WCHAR   chr,    /* Character code to be converted */
     unsigned int dir /* 0: Unicode to OEMCP, 1: OEMCP to Unicode */
 )
@@ -6803,10 +6801,7 @@ WCHAR ff_convert (  /* Converted code, 0 means conversion error */
     return c;
 }
 
-
-
-
-WCHAR ff_wtoupper ( /* Upper converted character */
+WCHAR fatfs_cc950_wtoupper( /* Upper converted character */
     WCHAR chr       /* Input character */
 )
 {
