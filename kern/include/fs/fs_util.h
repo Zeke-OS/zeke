@@ -133,6 +133,7 @@ void fs_vnode_cleanup(struct vnode * vnode);
  *              the same order as `names` has them.
  * @param parse_size is the size of `parsed` in bytes.
  */
-void fs_parse_parm(char * parm, const char * names[], void * parsed, size_t parsed_size);
+void fs_parse_parm(char * parm, const char * names[],
+                   void * parsed, size_t parsed_size);
 
 #endif /* FS_UTIL_H */

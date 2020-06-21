@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system utils.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -33,11 +33,13 @@
 
 #include <stddef.h>
 #include <sys/param.h>
-#include <kmalloc.h>
+#include <sys/types.h>
+#include <buf.h>
 #include <hal/core.h>
 #include <kerror.h>
 #include <klocks.h>
-#include <buf.h>
+#include <kmalloc.h>
+#include <kstring.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
 
@@ -173,4 +175,35 @@ void fs_vnode_cleanup(vnode_t * vnode)
             brelse(var);
         }
    }
+}
+
+void fs_parse_parm(char * parm, const char * names[],
+                   void * parsed, size_t parsed_size)
+{
+    const size_t max_name = 80;
+    char * s = parm;
+    char * w = ";";
+    char * lasts;
+    char ** pa = (char **)parsed;
+
+    memset(parsed, 0, parsed_size);
+
+    for (s = kstrtok(s, w, &lasts); s; s = kstrtok(0, w, &lasts)) {
+        const char * cut = strstr(s, "=");
+        const ssize_t end = (ptrdiff_t)cut - (ptrdiff_t)(s);
+        const char ** name_p = names;
+        size_t i;
+
+        for (i = 0; *name_p && i < parsed_size / sizeof(void *); i++) {
+            if (!strncmp(*name_p, s, end > 0 ? end : max_name)) {
+                if (end > 0) {
+                    pa[i] = s + end + 1;
+                } else {
+                    pa[i] = "y";
+                }
+            }
+
+            name_p++;
+        }
+    }
 }
