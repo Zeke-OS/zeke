@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system utils.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -101,5 +102,37 @@ void fs_vnode_init(struct vnode * vnode, ino_t vn_num,
  * - Release and write out buffers
  */
 void fs_vnode_cleanup(struct vnode * vnode);
+
+
+/**
+ * **Usage:**
+ *
+ * ```
+ * struct my_parm {
+ *     char *val;
+ *     char *bool1;
+ *     char *bool2;
+ * };
+ * ...
+ * char parm[] = "val=text;bool1";
+ * struct my_parm my_parm;
+ * fs_parse_parm(parm, (const char*[]){ "val", "bool1", "bool2" },
+ *               &parsed, sizeof(parsed));
+ * ```
+ *
+ * `my_parm.val` will no contain a pointer to `"text"` of `parm` while `;` has
+ * been replaced with `'\0'`. Since `bool1` doesn't have a value `my_parm.bool1`
+ * now points to a const string `"y"` and `my_parm.bool2` points to `NULL`.
+ *
+ * @param parm  is a pointer to a writable copy of a null-terminated mount
+ *              parameter string. The expected parameter format:
+ *              `parm=value;boolp;parm2=val`
+ * @param names a NULL-terminated array of pointers to strings of expected
+ *              parameter names (argv-, envp-like).
+ * @param parsed is a pointer to a struct which has pointers to strings in
+ *              the same order as `names` has them.
+ * @param parse_size is the size of `parsed` in bytes.
+ */
+void fs_parse_parm(char * parm, const char * names[], void * parsed, size_t parsed_size);
 
 #endif /* FS_UTIL_H */

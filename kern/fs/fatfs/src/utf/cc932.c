@@ -3715,7 +3715,8 @@ const WCHAR sjis2uni[] = {
 };
 #endif
 
-WCHAR fatfs_cc932_convert(    /* Converted code, 0 means conversion error */
+/* TODO Split into two functions */
+static WCHAR fatfs_cc932_convert(    /* Converted code, 0 means conversion error */
     WCHAR   chr,     /* Character code to be converted */
     unsigned int dir /* 0: Unicode to OEMCP, 1: OEMCP to Unicode */
 )
@@ -3770,6 +3771,16 @@ WCHAR fatfs_cc932_convert(    /* Converted code, 0 means conversion error */
 #endif
 
     return c;
+}
+
+WCHAR fatfs_cc932_convert2uni(const WCHAR * tbl, WCHAR chr)
+{
+    return fatfs_cc932_convert(chr, 1);
+}
+
+WCHAR fatfs_cc932_convert2oem(const WCHAR * tbl, WCHAR chr)
+{
+    return fatfs_cc932_convert(chr, 0);
 }
 
 WCHAR fatfs_cc932_wtoupper( /* Upper converted character */

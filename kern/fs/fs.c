@@ -188,9 +188,9 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     istate_t s;
     int err;
 
-     KERROR_DBG("%s(target \"%p\", source \"%s\", fsname \"%s\", "
-                "flags %x, parm \"%s\", parm_len %d)\n",
-                __func__, target, source, fsname, flags, parm, parm_len);
+    KERROR_DBG("%s(target \"%p\", source \"%s\", fsname \"%s\", "
+               "flags %x, parm \"%s\", parm_len %d)\n",
+               __func__, target, source, fsname, flags, parm, parm_len);
     KASSERT(target, "target must be set");
 
     if (fsname) {

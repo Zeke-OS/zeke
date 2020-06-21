@@ -8541,9 +8541,7 @@ const WCHAR oem2uni[] = {
     0, 0
 };
 
-
-
-WCHAR fatfs_cc949_convert(  /* Converted code, 0 means conversion error */
+static WCHAR fatfs_cc949_convert(  /* Converted code, 0 means conversion error */
     WCHAR   chr,    /* Character code to be converted */
     unsigned int dir /* 0: Unicode to OEMCP, 1: OEMCP to Unicode */
 )
@@ -8575,6 +8573,16 @@ WCHAR fatfs_cc949_convert(  /* Converted code, 0 means conversion error */
     c = n ? p[i * 2 + 1] : 0;
 
     return c;
+}
+
+WCHAR fatfs_cc949_convert2uni(const WCHAR * tbl, WCHAR chr)
+{
+    return fatfs_cc949_convert(chr, 1);
+}
+
+WCHAR fatfs_cc949_convert2oem(const WCHAR * tbl, WCHAR chr)
+{
+    return fatfs_cc949_convert(chr, 0);
 }
 
 WCHAR fatfs_cc949_wtoupper( /* Upper converted character */

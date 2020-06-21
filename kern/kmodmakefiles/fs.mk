@@ -8,6 +8,8 @@ fs-SRC-$(configFS_DEHTABLE) += fs/libfs/dehtable.c
 fs-SRC-$(configVFS_HASH) += fs/libfs/vfs_hash.c
 # FS queue
 fs-SRC-y += fs/libfs/fs_queue.c
+# FS parse parms
+fs-SRC-y += fs/libfs/fs_parm.c
 
 # mbr
 fs-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
