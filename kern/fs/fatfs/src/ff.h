@@ -33,9 +33,6 @@ __BEGIN_DECLS
  * Type of path name strings on FatFs API
  */
 #if _LFN_UNICODE            /* Unicode string */
-#ifndef configFATFS_LFN
-#error _LFN_UNICODE must be 0 at non-LFN cfg.
-#endif
 #ifndef _INC_TCHAR
 typedef WCHAR TCHAR;
 #define _T(x) L ## x
@@ -75,9 +72,7 @@ typedef struct {
     WORD    ssize;          /* uint8_ts per sector (512, 1024, 2048 or 4096) */
     mtx_t   sobj;           /* Identifier of sync object */
     unsigned opt;           /* fs mount options */
-#ifdef configFATFS_LFN
     const struct fatfs_cp *cp; /* Fs codepage. */
-#endif
     DWORD   last_clust;     /* Last allocated cluster */
     DWORD   free_clust;     /* Number of free clusters */
     DWORD   n_fatent;       /* Number of FAT entries, = number of clusters + 2 */
@@ -125,10 +120,8 @@ typedef struct {
     DWORD   sect;           /* Current sector */
     uint8_t * dir;          /* Pointer to the current SFN entry in the win[] */
     uint8_t * fn;           /* Pointer to the SFN (in/out) {file[8],ext[3],status[1]} */
-#if configFATFS_LFN
     WCHAR * lfn;            /* Pointer to the LFN working buffer */
     WORD    lfn_idx;        /* Last matched LFN index number (0xFFFF:No LFN) */
-#endif
 } FF_DIR;
 
 
@@ -148,9 +141,7 @@ typedef struct {
     gid_t gid;              /*!< Group ID of the file owner. */
 #endif
     TCHAR   fname[13];      /*!< Short file name (8.3 format) */
-#if configFATFS_LFN
     TCHAR * lfname;         /*!< Pointer to the LFN buffer */
-#endif
 } FILINFO;
 
 
@@ -228,8 +219,6 @@ void fatfs_time_fat2unix(struct timespec * ts, uint32_t dt, int tenth);
 uint32_t fatfs_time_unix2fat(const struct timespec * ts);
 uint32_t fatfs_time_get_time(void);
 
-/* Unicode support functions */
-#if configFATFS_LFN                     /* Unicode - OEM code conversion */
 struct fatfs_dbcs;
 struct fatfs_cp {
     const char cp_id[6];
@@ -267,7 +256,6 @@ WCHAR fatfs_ccsbcs_wtoupper(WCHAR chr);
                                         /* Memory functions */
 void * ff_memalloc(unsigned int msize); /* Allocate memory block */
 void ff_memfree(void* mblock);          /* Free memory block */
-#endif
 
 
 /*--------------------------------------------------------------*/

@@ -19,14 +19,6 @@ config configFATFS_CODEPAGE
     ---help---
     This option sets the code page used for FAT file systems.
 
-config configFATFS_LFN
-    bool "LFN option"
-    default n
-    ---help---
-    Long Filename support.
-
-    WARNING: There might be enforceable patents related to this functionality.
-
 config configFATFS_UNICODE
     bool "FAT Unicode support"
     default n

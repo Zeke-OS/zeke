@@ -10,7 +10,6 @@ configKASSERT=y
 configLOCK_DEBUG=y
 configDEBUG_DEBUG=y
 configFATFS=y
-configFATFS_LFN=y
 configPROCCAP=y
 configKUNIT=y
 configKUNIT_REPORT_ORIENTED=y

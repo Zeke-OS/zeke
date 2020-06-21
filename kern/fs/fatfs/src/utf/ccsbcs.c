@@ -492,7 +492,7 @@ const WCHAR Tbl[] = {   /*  CP1258(0x80-0xFF) to Unicode conversion table */
 
 #endif
 
-WCHAR fatfs_ccsbcs_convert (  /* Converted character, Returns zero on error */
+WCHAR fatfs_ccsbcs_convert(  /* Converted character, Returns zero on error */
     WCHAR   chr,    /* Character code to be converted */
     unsigned int dir /* 0: Unicode to OEMCP, 1: OEMCP to Unicode */
 )
