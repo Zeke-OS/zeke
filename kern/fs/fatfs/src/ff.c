@@ -1229,6 +1229,7 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
 #if _LFN_UNICODE
     __typeof(cp->cp_isDBCS1) isDBCS1 = cp->cp_isDBCS1;
     __typeof(cp->cp_isDBCS2) isDBCS2 = cp->cp_isDBCS2;
+    __typeof(cp->cp_convert2uni) cp_convert2uni = cp->cp_convert2uni;
 #endif
 
     p = fno->fname;
@@ -1249,7 +1250,7 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
 #if _LFN_UNICODE
             if (isDBCS1(cp, c) && i != 8 && i != 11 && isDBCS2(cp, dir[i]))
                 c = c << 8 | dir[i++];
-            c = ff_convert(c, 1);   /* OEM -> Unicode */
+            c = cp_convert2uni(cp->cp_conv_tbl, c); /* OEM -> Unicode */
             if (!c)
                 c = '?';
 #endif
@@ -1324,9 +1325,9 @@ static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
     unsigned int di;
     const TCHAR * p;
     const struct fatfs_cp * cp = dp->fs->cp;
+#if !_LFN_UNICODE
     __typeof(cp->cp_isDBCS1) isDBCS1 = cp->cp_isDBCS1;
     __typeof(cp->cp_isDBCS2) isDBCS2 = cp->cp_isDBCS2;
-#if !_LFN_UNICODE
     __typeof(cp->cp_convert2uni) cp_convert2uni = cp->cp_convert2uni;
 #endif
     __typeof(cp->cp_convert2oem) cp_convert2oem = cp->cp_convert2oem;
@@ -3042,6 +3043,7 @@ FRESULT f_getlabel(FATFS * fs, TCHAR * label, DWORD * vsn)
     const struct fatfs_cp * cp = fs->cp;
     __typeof(cp->cp_isDBCS1) isDBCS1 = cp->cp_isDBCS1;
     __typeof(cp->cp_isDBCS2) isDBCS2 = cp->cp_isDBCS2;
+    __typeof(cp->cp_convert2uni) cp_convert2uni = cp->cp_convert2uni;
 #endif
 
     if (lock_fs(dj.fs))
@@ -3063,7 +3065,9 @@ FRESULT f_getlabel(FATFS * fs, TCHAR * label, DWORD * vsn)
                     w = (i < 11) ? dj.dir[i++] : ' ';
                     if (isDBCS1(cp, w) && i < 11 && isDBCS2(cp, dj.dir[i]))
                         w = w << 8 | dj.dir[i++];
-                    label[j++] = ff_convert(w, 1);  /* OEM -> Unicode */
+
+                    /* OEM -> Unicode */
+                    label[j++] = cp_convert2uni(cp->cp_conv_tbl, w);
                 } while (j < 11);
 #else
                 memcpy(label, dj.dir, 11);
@@ -3110,9 +3114,11 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
     WCHAR w;
     DWORD tm;
     const struct fatfs_cp * cp = fs->cp;
+#if !_LFN_UNICODE
     __typeof(cp->cp_isDBCS1) isDBCS1 = cp->cp_isDBCS1;
     __typeof(cp->cp_isDBCS2) isDBCS2 = cp->cp_isDBCS2;
     __typeof(cp->cp_convert2uni) cp_convert2uni = cp->cp_convert2uni;
+#endif
     __typeof(cp->cp_convert2oem) cp_convert2oem = cp->cp_convert2oem;
     __typeof(cp->cp_wtoupper) cp_wtoupper = cp->cp_wtoupper;
 
