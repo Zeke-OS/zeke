@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   strcmp (part of string.h)
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -30,6 +31,7 @@
  *******************************************************************************
  */
 
+#include <stddef.h>
 #include <kstring.h>
 
 /**
@@ -45,6 +47,7 @@ const char * strstr(const char * str1, const char * str2)
     size_t n = 0, i = 0;
 
     while (str2[n++] != '\0') ;
+    n--;
 
     while (str1[i++] != '\0') {
         if (strncmp(str1 + i, str2, n) == 0) {
@@ -52,5 +55,5 @@ const char * strstr(const char * str1, const char * str2)
         }
     }
 
-    return 0;
+    return NULL;
 }
