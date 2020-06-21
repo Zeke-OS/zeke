@@ -145,10 +145,10 @@
  * linker or start-up routine is out of ANSI-C standard.
  */
 
-#if configFATFS_LFN     /*
-                         * LFN feature with dynamic working buffer on
-                         * the heap.
-                         */
+/*
+ * LFN feature with dynamic working buffer on
+ * the heap.
+ */
 #define DEF_NAMEBUF     uint8_t sfn[12]; WCHAR * lfn = NULL
 #define INIT_NAMEBUF(dobj)  \
     { lfn = kmalloc((_MAX_LFN + 1) * 2); \
@@ -158,18 +158,6 @@
     kfree(lfn); \
     lfn = NULL; \
 } while (0)
-
-#else                   /* No LFN feature */
-#define DEF_NAMEBUF     uint8_t sfn[12]
-#define INIT_NAMEBUF(dobj)  (dobj).fn = sfn
-#define FREE_BUF()
-#endif
-
-
-#ifdef _EXCVT
-/* Upper conversion table for extended characters */
-static const uint8_t ExCvt[] = _EXCVT;
-#endif
 
 #ifdef configFATFS_OWNER_ID
 /**
@@ -790,7 +778,6 @@ static inline DWORD get_ino(FF_DIR * dp)
 /*-----------------------------------------------------------------------*/
 /* LFN handling - Test/Pick/Fit an LFN segment from/to directory entry   */
 /*-----------------------------------------------------------------------*/
-#if configFATFS_LFN
 /**
  * Offset of LFN characters in the directory entry.
  */
@@ -906,9 +893,6 @@ static void fit_lfn(const WCHAR * lfnbuf, uint8_t * dir, uint8_t ord,
     dir[LDIR_Ord] = ord;            /* Set the LFN order */
 }
 
-#endif /* configFATFS_LFN */
-
-#if configFATFS_LFN
 /**
  * Generate a numbered name.
  * @param cp  A pointer to the codepage.
@@ -973,9 +957,7 @@ static void gen_numname(const struct fatfs_cp * cp, uint8_t * dst,
         dst[j++] = (i < 8) ? ns[i++] : ' ';
     } while (j < 8);
 }
-#endif
 
-#if configFATFS_LFN
 /**
  * Calculate sum of an SFN.
  * @param dir Pointer to the SFN entry.
@@ -991,7 +973,6 @@ static uint8_t sum_sfn(const uint8_t * dir)
 
     return sum;
 }
-#endif
 
 /**
  * Directory handling - Find an object in the directory.
@@ -1002,20 +983,16 @@ static FRESULT dir_find(FF_DIR * dp)
     FRESULT res;
     uint8_t c;
     uint8_t * dir;
-#if configFATFS_LFN
     uint8_t a;
     uint8_t ord;
     uint8_t sum;
     const struct fatfs_cp * cp = dp->fs->cp;
-#endif
 
     res = dir_sdi(dp, 0);           /* Rewind directory object */
     if (res != FR_OK)
         return res;
 
-#if configFATFS_LFN
     ord = sum = 0xFF; dp->lfn_idx = 0xFFFF; /* Reset LFN sequence */
-#endif
     do {
         res = move_window(dp->fs, dp->sect);
         if (res != FR_OK)
@@ -1027,7 +1004,7 @@ static FRESULT dir_find(FF_DIR * dp)
             res = FR_NO_FILE;
             break;
         }
-#if configFATFS_LFN    /* LFN configuration */
+        /* LFN configuration */
         a = dir[DIR_Attr] & AM_MASK;
         if (c == DDE || ((a & AM_VOL) && a != AM_LFN)) {
             /* An entry without valid data */
@@ -1055,12 +1032,6 @@ static FRESULT dir_find(FF_DIR * dp)
                 ord = 0xFF; dp->lfn_idx = 0xFFFF;   /* Reset LFN sequence */
             }
         }
-#else       /* Non LFN configuration */
-        if (!(dir[DIR_Attr] & AM_VOL) && !memcmp(dir, dp->fn, 11)) {
-            /* It's a valid entry? */
-            break;
-        }
-#endif
         res = dir_next(dp, 0);      /* Next entry */
     } while (res == FR_OK);
 
@@ -1078,9 +1049,7 @@ static FRESULT dir_read(FF_DIR * dp, int vol)
     uint8_t a;
     uint8_t c;
     uint8_t * dir;
-#if configFATFS_LFN
     uint8_t ord = 0xFF, sum = 0xFF;
-#endif
 
     res = FR_NO_FILE;
     while (dp->sect) {
@@ -1094,7 +1063,7 @@ static FRESULT dir_read(FF_DIR * dp, int vol)
             break;
         }    /* Reached to end of table */
         a = dir[DIR_Attr] & AM_MASK;
-#if configFATFS_LFN    /* LFN configuration */
+        /* LFN configuration */
         if (c == DDE || c == '.' || (int)(a == AM_VOL) != vol) {
             /* An entry without valid data */
             ord = 0xFF;
@@ -1114,13 +1083,6 @@ static FRESULT dir_read(FF_DIR * dp, int vol)
                 break;
             }
         }
-#else       /*
-             * Non LFN configuration.
-             * Is it a valid entry?
-             */
-        if (c != DDE && c != '.' && a != AM_LFN && (int)(a == AM_VOL) == vol)
-            break;
-#endif
         res = dir_next(dp, 0);              /* Next entry */
         if (res != FR_OK)
             break;
@@ -1142,7 +1104,6 @@ static FRESULT dir_read(FF_DIR * dp, int vol)
 static FRESULT dir_register(FF_DIR * dp)
 {
     FRESULT res;
-#if configFATFS_LFN    /* LFN configuration */
     unsigned int n;
     unsigned int nent;
     uint8_t sn[12];
@@ -1198,19 +1159,16 @@ static FRESULT dir_register(FF_DIR * dp)
             } while (res == FR_OK && --nent);
         }
     }
-#else   /* Non LFN configuration */
-    res = dir_alloc(dp, 1);     /* Allocate an entry for SFN */
-#endif
 
     if (res == FR_OK) {             /* Set SFN entry */
         res = move_window(dp->fs, dp->sect);
         if (res == FR_OK) {
             memset(dp->dir, 0, SZ_DIR);    /* Clean the entry */
             memcpy(dp->dir, dp->fn, 11);   /* Put SFN */
-#if configFATFS_LFN
+
             /* Put NT flag */
             dp->dir[DIR_NTres] = dp->fn[NS] & (NS_BODY | NS_EXT);
-#endif
+
             dp->fs->wflag = 1;
         }
     }
@@ -1226,7 +1184,6 @@ static FRESULT dir_register(FF_DIR * dp)
 static FRESULT dir_remove(FF_DIR * dp)
 {
     FRESULT res;
-#if configFATFS_LFN    /* LFN configuration */
     unsigned int i;
 
     i = dp->index;  /* SFN index */
@@ -1253,19 +1210,6 @@ static FRESULT dir_remove(FF_DIR * dp)
     } while (res == FR_OK);
     if (res == FR_NO_FILE)
         res = FR_INT_ERR;
-
-#else           /* Non LFN configuration */
-    res = dir_sdi(dp, dp->index);
-    if (res != FR_OK)
-        goto fail;
-
-    res = move_window(dp->fs, dp->sect);
-    if (res == FR_OK) {
-        memset(dp->dir, 0, SZ_DIR); /* Clear and mark the entry "deleted" */
-        *dp->dir = DDE;
-        dp->fs->wflag = 1;
-    }
-#endif
 
 fail:
     return res;
@@ -1300,7 +1244,6 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
                 c = (TCHAR)DDE;  /* Restore replaced DDE character */
             if (i == 9)
                 *p++ = '.';         /* Insert a . if extension is exist */
-#if configFATFS_LFN
             if (ka_isupper(c) && (dir[DIR_NTres] & (i >= 9 ? NS_EXT : NS_BODY)))
                 c += 0x20;          /* To lower */
 #if _LFN_UNICODE
@@ -1309,7 +1252,6 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
             c = ff_convert(c, 1);   /* OEM -> Unicode */
             if (!c)
                 c = '?';
-#endif
 #endif
             *p++ = c;
         }
@@ -1335,7 +1277,6 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
     }
     *p = '\0';     /* Terminate SFN string by a \0 */
 
-#if configFATFS_LFN
     if (fno->lfname) {
         WCHAR w, *lfn;
 
@@ -1364,7 +1305,6 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
         }
         p[i] = 0;   /* Terminate LFN string by a \0 */
     }
-#endif
 }
 
 /**
@@ -1374,7 +1314,6 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
  */
 static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
 {
-#if configFATFS_LFN    /* LFN configuration */
     uint8_t b;
     uint8_t cf;
     WCHAR w;
@@ -1540,92 +1479,6 @@ static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
     dp->fn[NS] = cf;    /* SFN is created */
 
     return FR_OK;
-
-
-#else   /* Non-LFN configuration */
-    uint8_t b;
-    uint8_t c;
-    uint8_t d;
-    uint8_t *sfn;
-    unsigned int ni;
-    unsigned int si;
-    unsigned int i;
-    const char *p;
-    const struct fatfs_cp * cp = fs->cp;
-    __typeof(cp->cp_isDBCS1) isDBCS1 = cp->cp_isDBCS1;
-    __typeof(cp->cp_isDBCS2) isDBCS2 = cp->cp_isDBCS2;
-
-    /*
-     * Create file name in directory form
-     */
-    /* Strip duplicated separator */
-    for (p = *path; *p == '/' || *p == '\\'; p++);
-    sfn = dp->fn;
-    memset(sfn, ' ', 11);
-    si = i = b = 0; ni = 8;
-
-    for (;;) {
-        c = (uint8_t)p[si++];
-        if (c <= ' ' || c == '/' || c == '\\')
-            break;   /* Break on end of segment */
-        if (c == '.' || i >= ni) {
-            if (ni != 8 || c != '.')
-                return FR_INVALID_NAME;
-            i = 8; ni = 11;
-            b <<= 2;
-            continue;
-        }
-        if (c >= 0x80) {                /* Extended character? */
-            b |= 3;                     /* Eliminate NT flag */
-#ifdef _EXCVT
-            c = ExCvt[c - 0x80]; /* To upper extended characters (SBCS cfg) */
-#else
-#if !_DF1S
-            return FR_INVALID_NAME; /* Reject extended characters (ASCII cfg) */
-#endif
-#endif
-        }
-        if (isDBCS1(cp, c)) {
-            /* Check if it is a DBC 1st byte (always false on SBCS cfg) */
-            d = (uint8_t)p[si++];          /* Get 2nd byte */
-            if (!isDBCS2(cp, d) || i >= ni - 1) /* Reject invalid DBC */
-                return FR_INVALID_NAME;
-            sfn[i++] = c;
-            sfn[i++] = d;
-        } else {                        /* Single byte code */
-            if (kstrchr("\"*+,:;<=>\?[]|\x7F", c))  {
-                /* Reject illegal chrs for SFN */
-                return FR_INVALID_NAME;
-            }
-            if (ka_isupper(c)) {           /* ASCII large capital? */
-                b |= 2;
-            } else {
-                if (ka_islower(c)) {       /* ASCII small capital? */
-                    b |= 1; c -= 0x20;
-                }
-            }
-            sfn[i++] = c;
-        }
-    }
-    *path = &p[si];               /* Return pointer to the next segment */
-    c = (c <= ' ') ? NS_LAST : 0; /* Set last segment flag if end of path */
-
-    if (!i)
-        return FR_INVALID_NAME;     /* Reject nul string */
-    if (sfn[0] == DDE) /* When first character collides with DDE, */
-        sfn[0] = NDDE; /* replace it with 0x05 */
-
-    if (ni == 8)
-        b <<= 2;
-    if ((b & 0x03) == 0x01)
-        c |= NS_EXT;    /* NT flag (Name extension has only small capital) */
-    if ((b & 0x0C) == 0x04)
-        c |= NS_BODY;   /* NT flag (Name body has only small capital) */
-
-    sfn[NS] = c;        /* Store NT flag, File name is created */
-
-    return FR_OK;
-#endif
 }
 
 /**
@@ -3198,7 +3051,7 @@ FRESULT f_getlabel(FATFS * fs, TCHAR * label, DWORD * vsn)
         if (res == FR_OK) {
             res = dir_read(&dj, 1);     /* Get an entry with AM_VOL */
             if (res == FR_OK) {         /* A volume label is exist */
-#if configFATFS_LFN && _LFN_UNICODE
+#if _LFN_UNICODE
                 WCHAR w;
                 i = j = 0;
                 do {
@@ -3270,28 +3123,14 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
     if (sl) {   /* Create volume label in directory form */
         i = j = 0;
         do {
-#if configFATFS_LFN && _LFN_UNICODE
+#if _LFN_UNICODE
             w = cp_convert(cp_wtoupper(label[i++]), 0);
 #else
             w = (uint8_t)label[i++];
             if (isDBCS1(cp, w))
                 w = (j < 10 && i < sl && isDBCS2(cp, label[i])) ?
                     w << 8 | (uint8_t)label[i++] : 0;
-#if configFATFS_LFN
             w = cp_convert(cp_wtoupper(cp_convert(w, 1)), 0);
-#else
-            if (ka_islower(w))
-                w -= 0x20; /* To upper ASCII characters */
-#ifdef _EXCVT
-            if (w >= 0x80) {
-                /* To upper extended characters (SBCS cfg) */
-                w = ExCvt[w - 0x80];
-            }
-#else
-            if (!_DF1S && w >= 0x80)
-                w = 0; /* Reject extended characters (ASCII cfg) */
-#endif
-#endif
 #endif
             if (!w || kstrchr("\"*+,.:;<=>\?[]|\x7F", w) ||
                 j >= (unsigned int)((w >= 0x100) ? 10 : 11)) {

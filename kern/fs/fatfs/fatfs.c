@@ -916,9 +916,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     } else { /* Normal dir entry */
         int err;
 
-#if configFATFS_LFN
         fno.lfname = d->d_name;
-#endif
 
         err = f_readdir(&in->dp, &fno);
         if (err)
@@ -929,9 +927,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 
         d->d_ino = fno.ino;
         d->d_type = (fno.fattrib & AM_DIR) ? DT_DIR : DT_REG;
-#if configFATFS_LFN
         if (!*fno.lfname)
-#endif
             strlcpy(d->d_name, fno.fname, sizeof(d->d_name));
     }
 

@@ -13,7 +13,6 @@ configKASSERT=y
 configLOCK_DEBUG=y
 configDEBUG_DEBUG=y
 configFATFS=y
-configFATFS_LFN=y
 configPROCCAP=y
 # configBUNDLE_STATIC is not set
 configUSR_EXAMPLES=y
