@@ -22,39 +22,6 @@
 / Locale and Namespace Configurations
 /---------------------------------------------------------------------------*/
 
-/**
- * The _CODE_PAGE specifies the OEM code page to be used on the target system.
- * Incorrect setting of the code page can cause a file open failure.
- *
- *  932  - Japanese Shift_JIS (DBCS, OEM, Windows)
- *  936  - Simplified Chinese GBK (DBCS, OEM, Windows)
- *  949  - Korean (DBCS, OEM, Windows)
- *  950  - Traditional Chinese Big5 (DBCS, OEM, Windows)
- *  1250 - Central Europe (Windows)
- *  1251 - Cyrillic (Windows)
- *  1252 - Latin 1 (Windows)
- *  1253 - Greek (Windows)
- *  1254 - Turkish (Windows)
- *  1255 - Hebrew (Windows)
- *  1256 - Arabic (Windows)
- *  1257 - Baltic (Windows)
- *  1258 - Vietnam (OEM, Windows)
- *  437  - U.S. (OEM)
- *  720  - Arabic (OEM)
- *  737  - Greek (OEM)
- *  775  - Baltic (OEM)
- *  850  - Multilingual Latin 1 (OEM)
- *  858  - Multilingual Latin 1 + Euro (OEM)
- *  852  - Latin 2 (OEM)
- *  855  - Cyrillic (OEM)
- *  866  - Russian (OEM)
- *  857  - Turkish (OEM)
- *  862  - Hebrew (OEM)
- *  874  - Thai (OEM, Windows)
- *  1    - ASCII (Valid for only non-LFN configuration)
- */
-#define _CODE_PAGE configFATFS_CODEPAGE
-
 
 /**
  * Maximum LFN length to handle (12 to 255)
@@ -78,29 +45,9 @@
 #endif
 
 
-/**
- * When Unicode API is enabled by _LFN_UNICODE option, this option selects the
- * character encoding on the file to be read/written via string I/O functions,
- * f_gets(), f_putc(), f_puts and f_printf(). This option has no effect when
- * _LFN_UNICODE == 0. Note that FatFs supports only BMP.
- * 0:ANSI/OEM, 1:UTF-16LE, 2:UTF-16BE, 3:UTF-8
- */
-#define _STRF_ENCODE    3
-
-
 /*---------------------------------------------------------------------------/
  * Drive/Volume Configurations
  *--------------------------------------------------------------------------*/
-
-/**
- * By default(0), each logical drive number is bound to the same physical drive
- * number and only a FAT volume found on the physical drive is mounted. When it
- * is set to 1,
- * each logical drive number is bound to arbitrary drive/partition listed in
- * VolToPart[].
- * 0:Single partition, 1:Enable multiple partition
- */
-#define _MULTI_PARTITION 0
 
 /**
  * To enable sector erase feature, set _USE_ERASE to 1. Also CTRL_ERASE_SECTOR

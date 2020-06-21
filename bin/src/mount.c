@@ -104,6 +104,7 @@ int main(int argc, char * argv[])
     if (!options)
         options = "";
 
+    /* TODO Remove this */
     printf("mount: flags: %d, options: \"%s\", vfstype: \"%s\" "
            "src: \"%s\", dst: \"%s\"\n",
            flags, options, vfstype, src, dst);

@@ -198,7 +198,7 @@ FRESULT f_chdrive(const TCHAR * path);
 FRESULT f_getfree(FATFS * fs, DWORD * nclst);
 FRESULT f_getlabel(FATFS * fs, TCHAR * label, DWORD * vsn);
 FRESULT f_setlabel(FATFS * fs, const TCHAR * label);
-FRESULT f_mount(FATFS * fs, uint8_t opt, char *codepage_id);
+FRESULT f_mount(FATFS * fs, uint8_t opt, int codepage_id);
 FRESULT f_umount(FATFS * fs);
 
 #define f_eof(fp) (((fp)->fptr == (fp)->fsize) ? 1 : 0)
@@ -220,19 +220,35 @@ uint32_t fatfs_time_unix2fat(const struct timespec * ts);
 uint32_t fatfs_time_get_time(void);
 
 struct fatfs_dbcs;
+
+/**
+ * Code page descriptor.
+ */
 struct fatfs_cp {
-    const char cp_id[6];
-    const char cp_name[36];
-    struct fatfs_dbcs *cp_dbcs;
-    const uint8_t *cp_ExCvt;
+    const uint16_t cp_id;
+    const char cp_name[40];
+    struct fatfs_dbcs * cp_dbcs;
+    const uint8_t * cp_ExCvt;
+    const WCHAR * cp_conv_tbl; /* Currentlu only rquired by CCSBCS */
 
     int (*cp_isDBCS1)(const struct fatfs_cp * restrict cp, int c);
     int (*cp_isDBCS2)(const struct fatfs_cp * restrict cp, int c);
 
     /**
-     * OEM-Unicode bidirectional conversion.
+     * OEM to Unicode conversion.
+     * @param is a pointer to cp_ccsbcs_conv_tbl.
+     * @param is the character code to be converted.
+     * @return Converted character, Returns zero on error.
      */
-    WCHAR (*cp_convert)(WCHAR chr, unsigned int dir);
+    WCHAR (*cp_convert2uni)(const WCHAR * tbl, WCHAR chr);
+
+    /**
+     * Unicode to OEM conversion.
+     * @param is a pointer to cp_ccsbcs_conv_tbl.
+     * @param is the character code to be converted.
+     * @return Converted character, Returns zero on error.
+     */
+    WCHAR (*cp_convert2oem)(const WCHAR * tbl, WCHAR chr);
 
     /**
      * Unicode upper-case conversion.
@@ -240,18 +256,25 @@ struct fatfs_cp {
     WCHAR (*cp_wtoupper)(WCHAR chr);
 };
 
-const struct fatfs_cp * fatfs_cp_get(const char * cp_id);
+const struct fatfs_cp * fatfs_cp_get(int cp_id);
 /* OEM-Unicode bidirectional conversion */
-WCHAR fatfs_cc932_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_cc932_convert2uni(const WCHAR * tbl, WCHAR chr);
+WCHAR fatfs_cc932_convert2oem(const WCHAR * tbl, WCHAR chr);
  /* Unicode upper-case conversion */
 WCHAR fatfs_cc932_wtoupper(WCHAR chr);
-WCHAR fatfs_cc936_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_cc932_convert2uni(const WCHAR * tbl, WCHAR chr);
+WCHAR fatfs_cc932_convert2oem(const WCHAR * tbl, WCHAR chr);
 WCHAR fatfs_cc936_wtoupper(WCHAR chr);
-WCHAR fatfs_cc949_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_cc936_convert2uni(const WCHAR * tbl, WCHAR chr);
+WCHAR fatfs_cc936_convert2oem(const WCHAR * tbl, WCHAR chr);
+WCHAR fatfs_cc949_convert2uni(const WCHAR * tbl, WCHAR chr);
+WCHAR fatfs_cc949_convert2oem(const WCHAR * tbl, WCHAR chr);
 WCHAR fatfs_cc949_wtoupper(WCHAR chr);
-WCHAR fatfs_cc950_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_cc950_convert2uni(const WCHAR * tbl, WCHAR chr);
+WCHAR fatfs_cc950_convert2oem(const WCHAR * tbl, WCHAR chr);
 WCHAR fatfs_cc950_wtoupper(WCHAR chr);
-WCHAR fatfs_ccsbcs_convert(WCHAR chr, unsigned int dir);
+WCHAR fatfs_ccsbcs_convert2uni(const WCHAR * tbl, WCHAR chr);
+WCHAR fatfs_ccsbcs_convert2oem(const WCHAR * tbl, WCHAR chr);
 WCHAR fatfs_ccsbcs_wtoupper(WCHAR chr);
                                         /* Memory functions */
 void * ff_memalloc(unsigned int msize); /* Allocate memory block */

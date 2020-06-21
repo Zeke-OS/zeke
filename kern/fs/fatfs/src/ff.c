@@ -895,7 +895,7 @@ static void fit_lfn(const WCHAR * lfnbuf, uint8_t * dir, uint8_t ord,
 
 /**
  * Generate a numbered name.
- * @param cp  A pointer to the codepage.
+ * @param cp  A pointer to the code page.
  * @param dst Pointer to the buffer to store numbered SFN.
  * @param src Pointer to SFN.
  * @param lfn Pointer to LFN.
@@ -1286,7 +1286,7 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
             lfn = dp->lfn;
             while ((w = *lfn++) != 0) { /* Get an LFN character */
 #if !_LFN_UNICODE
-                w = cp->cp_convert(w, 0); /* Unicode -> OEM */
+                w = cp->cp_convert2oem(cp->cp_conv_tbl, w); /* Unicode -> OEM */
                 if (!w) {
                     i = 0;
                     break;
@@ -1326,7 +1326,10 @@ static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
     const struct fatfs_cp * cp = dp->fs->cp;
     __typeof(cp->cp_isDBCS1) isDBCS1 = cp->cp_isDBCS1;
     __typeof(cp->cp_isDBCS2) isDBCS2 = cp->cp_isDBCS2;
-    __typeof(cp->cp_convert) cp_convert = cp->cp_convert;
+#if !_LFN_UNICODE
+    __typeof(cp->cp_convert2uni) cp_convert2uni = cp->cp_convert2uni;
+#endif
+    __typeof(cp->cp_convert2oem) cp_convert2oem = cp->cp_convert2oem;
     __typeof(cp->cp_wtoupper) cp_wtoupper = cp->cp_wtoupper;
 
     /*
@@ -1353,7 +1356,9 @@ static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
                 return FR_INVALID_NAME; /* Reject invalid sequence */
             w = (w << 8) + b;           /* Create a DBC */
         }
-        w = cp->cp_convert(w, 1);       /* Convert ANSI/OEM to Unicode */
+
+        /* Convert ANSI/OEM to Unicode */
+        w = cp_convert2uni(cp->cp_conv_tbl, w);
         if (!w)
             return FR_INVALID_NAME; /* Reject invalid code */
 #endif
@@ -1419,7 +1424,7 @@ static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
                 w = ExCvt[w - 0x80];
 #else
             /* Upper converted Unicode -> OEM code */
-            w = cp_convert(cp_wtoupper(w), 0);
+            w = cp_convert2oem(cp->cp_conv_tbl, cp_wtoupper(w));
 #endif
             cf |= NS_LFN;               /* Force create LFN entry */
         }
@@ -1735,7 +1740,7 @@ static FRESULT prepare_volume(FATFS * fs)
 /**
  * Mount a Logical Drive
  */
-FRESULT f_mount(FATFS * fs, uint8_t opt, char *codepage_id)
+FRESULT f_mount(FATFS * fs, uint8_t opt, int codepage_id)
 {
     FRESULT res;
 
@@ -3107,7 +3112,8 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
     const struct fatfs_cp * cp = fs->cp;
     __typeof(cp->cp_isDBCS1) isDBCS1 = cp->cp_isDBCS1;
     __typeof(cp->cp_isDBCS2) isDBCS2 = cp->cp_isDBCS2;
-    __typeof(cp->cp_convert) cp_convert = cp->cp_convert;
+    __typeof(cp->cp_convert2uni) cp_convert2uni = cp->cp_convert2uni;
+    __typeof(cp->cp_convert2oem) cp_convert2oem = cp->cp_convert2oem;
     __typeof(cp->cp_wtoupper) cp_wtoupper = cp->cp_wtoupper;
 
     if (lock_fs(dj.fs))
@@ -3124,13 +3130,13 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
         i = j = 0;
         do {
 #if _LFN_UNICODE
-            w = cp_convert(cp_wtoupper(label[i++]), 0);
+            w = cp_convert2oem(cp->cp_conv_tbl, cp_wtoupper(label[i++]));
 #else
             w = (uint8_t)label[i++];
             if (isDBCS1(cp, w))
                 w = (j < 10 && i < sl && isDBCS2(cp, label[i])) ?
                     w << 8 | (uint8_t)label[i++] : 0;
-            w = cp_convert(cp_wtoupper(cp_convert(w, 1)), 0);
+            w = cp_convert2oem(cp->cp_conv_tbl, cp_wtoupper(cp_convert2uni(cp->cp_conv_tbl, w)));
 #endif
             if (!w || kstrchr("\"*+,.:;<=>\?[]|\x7F", w) ||
                 j >= (unsigned int)((w >= 0x100) ? 10 : 11)) {

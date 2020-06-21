@@ -171,6 +171,10 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
                        const char * parm, int parm_len,
                        struct fs_superblock ** sb)
 {
+    kmalloc_autofree char * parm_work = NULL;
+    struct {
+        char *codepage;
+    } fatfs_parm;
     static dev_t fatfs_vdev_minor;
     struct fatfs_sb * fatfs_sb = NULL;
     vnode_t * vndev;
@@ -197,6 +201,22 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
         goto fail;
     }
 
+    if (parm && parm_len > 0) {
+        const char *supported_parm[] = {
+            "codepage"
+        };
+
+        parm_work = kstrdup(parm, parm_len);
+
+        /*
+         * The fs API doesn't guarantee parm to be a C-string, therefore let's
+         * make sure to terminate it.
+         * */
+        parm_work[parm_len] = '\0';
+        fs_parse_parm(parm_work, supported_parm,
+                      &fatfs_parm, sizeof(fatfs_parm));
+    }
+
     /* Allocate the superblock */
     fatfs_sb = kzalloc(sizeof(struct fatfs_sb));
     if (!fatfs_sb) {
@@ -220,8 +240,10 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     }
 
     /* Mount */
-    /* TODO Select code page */
-    err = f_mount(&fatfs_sb->ff_fs, 0, "437");
+    int cp = fatfs_parm.codepage
+        ? atoi(fatfs_parm.codepage)
+        : configFATFS_DEFAULT_CODEPAGE;
+    err = f_mount(&fatfs_sb->ff_fs, 0, cp);
     if (err) {
         retval = fresult2errno(err);
         KERROR_DBG("Can't init a work area for FAT (%d)\n", retval);
