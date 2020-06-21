@@ -3,26 +3,17 @@ FatFs - Generic FAT File System Module
 
 ![layer](img/layers.png)
 
-FatFs is a generic FAT file system module for small embedded systems.
-The FatFs is written in compliance with ANSI C and completely separated
-from the disk I/O layer. Therefore it is independent of hardware
-architecture. It can be incorporated into small microcontrollers with
-limited resource, such as AVR, 8051, PIC, ARM, Z80, 68k and etc. Also
-Petit FatFs module for tiny microcontrollers is available
-[here](http://elm-chan.org/fsw/ff/00index_p.html).
+Fatfs is a FAT file system implementation for Zeke.
 
 **Features**
 
   - Windows compatible FAT file system.
-  - Platform independent. Easy to port.
   - Very small footprint for code and work area.
-  - Various configuration options:
-      - Multiple volumes (physical drives and partitions).
-      - Multiple ANSI/OEM code pages including DBCS.
-      - Long file name support in ANSI/OEM or Unicode.
-      - RTOS support.
-      - Multiple sector size support.
-      - Read-only, minimized API, I/O buffer and etc...
+  - Multiple volumes (physical drives and partitions).
+  - Multiple ANSI/OEM code pages including DBCS.
+  - Long file name support in ANSI/OEM or Unicode.
+  - Multiple sector size support.
+  - Owner ID option.
 
 Application Interface
 ---------------------
