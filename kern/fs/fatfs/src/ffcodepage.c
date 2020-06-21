@@ -23,7 +23,7 @@
 #include "ff.h"
 
 /*
- * The following arrays are defined in utf/ccsbcs.c
+ * The following arrays are defined in ucs/ccsbcs.c
  */
 extern const WCHAR fatfs_ccsbcs_tbl_437[];
 extern const WCHAR fatfs_ccsbcs_tbl_720[];

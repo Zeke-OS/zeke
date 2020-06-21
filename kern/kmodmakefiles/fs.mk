@@ -20,8 +20,7 @@ fs-SRC-$(configDEVFS) += $(wildcard fs/devfs/*.c)
 # procfs
 fs-SRC-$(configPROCFS) += $(wildcard fs/procfs/*.c)
 
-
 # fatfs
 fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/*.c)
 fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/src/*.c)
-fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/src/utf/*.c)
+fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/src/ucs/*.c)
