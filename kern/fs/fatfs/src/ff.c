@@ -1419,14 +1419,14 @@ static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
         }
 
         if (w >= 0x80) {                /* Non ASCII character */
-#ifdef _EXCVT
-            w = ff_convert(w, 0);       /* Unicode -> OEM code */
-            if (w) /* Convert extended character to upper (SBCS) */
-                w = ExCvt[w - 0x80];
-#else
-            /* Upper converted Unicode -> OEM code */
-            w = cp_convert2oem(cp->cp_conv_tbl, cp_wtoupper(w));
-#endif
+            if (cp->cp_ExCvt) {
+                w = cp_convert2oem(cp->cp_conv_tbl, w); /* Unicode -> OEM code */
+                if (w) /* Convert extended character to upper (SBCS) */
+                    w = cp->cp_ExCvt[w - 0x80]; /* TODO Shouldn't we use the function? */
+            } else {
+                /* Upper converted Unicode -> OEM code */
+                w = cp_convert2oem(cp->cp_conv_tbl, cp_wtoupper(w));
+            }
             cf |= NS_LFN;               /* Force create LFN entry */
         }
 
