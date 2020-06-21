@@ -6,7 +6,7 @@
  * This is a free software that opened for education, research and commercial
  * developments under license policy of following terms.
  *
- * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ *  Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  *  Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  *  Copyright (C) 2014, ChaN, all right reserved.
  *
