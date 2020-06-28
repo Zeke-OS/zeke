@@ -110,14 +110,11 @@
 #define DIR_CrtTimeTenth    13      /*!< Created time sub-second (1) */
 #define DIR_CrtTime         14      /*!< Created time (2) */
 #define DIR_CrtDate         16      /*!< Created date (2) */
-#if defined(configFATFS_ACCDATE)
+/* DIR_LstAccDate is only valid if ff_fs.opt & FATFS_OWNER_ID is not set. */
 #define DIR_LstAccDate      18      /*!< Last accessed date (2) */
-#elif defined(configFATFS_OWNER_ID)
+/* DIR_UID and DIR_GID are only valid if ff_fs.opt & FATFS_OWNER_ID is set. */
 #define DIR_UID             18      /*!< User ID (1) */
 #define DIR_GID             19      /*!< Group ID (1) */
-#else
-#error FAT offset 0x12 behaviour not selected
-#endif
 #define DIR_FstClusHI       20      /*!< Higher 16-bit of first cluster (2) */
 #define DIR_WrtTime         22      /*!< Modified time (2) */
 #define DIR_WrtDate         24      /*!< Modified date (2) */
@@ -159,9 +156,10 @@
     lfn = NULL; \
 } while (0)
 
-#ifdef configFATFS_OWNER_ID
 /**
  * Pack uid or gid into 8 bits.
+ * This function is used to for storing the owner IDs when
+ * ff_fs.opt & FATFS_OWNER_ID is set.
  * Ranges:
  * - 0 - 63         => 0x00 - 0x3f
  * - 100 - 163      => 0x40 - 0x7f
@@ -201,7 +199,6 @@ static id_t f_idunpack(uint8_t id)
 
     return o;
 }
-#endif
 
 /*
  * Request/Release grant to access the volume
@@ -1258,10 +1255,6 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
         }
         fno->fattrib = dir[DIR_Attr];               /* Attribute */
         fno->fsize = LD_DWORD(dir + DIR_FileSize);  /* Size */
-#ifdef configFATFS_ACCDATE
-        fatfs_time_fat2unix(&fno->fatime,
-                            LD_WORD(dir + DIR_LstAccDate) << 16, 0);
-#endif
         fatfs_time_fat2unix(&fno->fmtime,
                             (LD_WORD(dir + DIR_WrtDate) << 16) |
                             LD_WORD(dir + DIR_WrtTime), 0);
@@ -1270,11 +1263,17 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
                             LD_WORD(dir + DIR_CrtTime), 0);
         fno->ino = get_ino(dp);
 
-#ifdef configFATFS_OWNER_ID
-        memcpy(&fno->fatime, &fno->fmtime, sizeof(fno->fatime));
-        fno->uid = f_idunpack(dir[DIR_UID]);
-        fno->gid = f_idunpack(dir[DIR_GID]);
-#endif
+        /*
+         * Store owner IDs in place of atime.
+         */
+        if (dp->fs->opt & FATFS_OWNER_ID) {
+            memcpy(&fno->fatime, &fno->fmtime, sizeof(fno->fatime));
+            fno->uid = f_idunpack(dir[DIR_UID]);
+            fno->gid = f_idunpack(dir[DIR_GID]);
+        } else {
+            fatfs_time_fat2unix(&fno->fatime,
+                                LD_WORD(dir + DIR_LstAccDate) << 16, 0);
+        }
     }
     *p = '\0';     /* Terminate SFN string by a \0 */
 
@@ -2146,6 +2145,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
 FRESULT f_sync(FF_FIL * fp)
 {
     FRESULT res = FR_OK;
+    FATFS *fs = fp->fs;
     DWORD tm;
     uint8_t * dir;
 
@@ -2153,15 +2153,15 @@ FRESULT f_sync(FF_FIL * fp)
     KERROR(KERROR_DEBUG, "%s(fp %p)\n", __func__, fp);
 #endif
 
-    KASSERT(fp->fs, "fs should be set");
+    KASSERT(fs, "fs should be set");
     if (lock_fs(fp->fs))
         return FR_TIMEOUT;
 
     if (fp->flag & FA__WRITTEN) { /* Has the file been written? */
         /* Write-back dirty buffer */
         if (fp->flag & FA__DIRTY) {
-            if (fatfs_disk_write(fp->fs, fp->buf, fp->dsect,
-                                 fp->fs->ssize)) {
+            if (fatfs_disk_write(fs, fp->buf, fp->dsect,
+                                 fs->ssize)) {
                 res = FR_DISK_ERR;
                 goto fail;
             }
@@ -2169,7 +2169,7 @@ FRESULT f_sync(FF_FIL * fp)
         }
 
         /* Update the directory entry */
-        res = move_window(fp->fs, fp->dir_sect);
+        res = move_window(fs, fp->dir_sect);
         if (res != FR_OK)
             goto fail;
 
@@ -2180,16 +2180,18 @@ FRESULT f_sync(FF_FIL * fp)
         tm = fatfs_time_get_time();                 /* Update updated time */
         ST_WORD(dir + DIR_WrtTime, tm & 0xffff);
         ST_WORD(dir + DIR_WrtDate, tm >> 16);
-#ifdef configFATFS_ACCDATE
-        ST_WORD(dir + DIR_LstAccDate, 0);
-#endif
+
+        if (!(fs->opt & FATFS_OWNER_ID)) {
+            ST_WORD(dir + DIR_LstAccDate, 0);
+        }
+
         fp->flag &= ~FA__WRITTEN;
-        fp->fs->wflag = 1;
-        res = sync_fs(fp->fs);
+        fs->wflag = 1;
+        res = sync_fs(fs);
     }
 
 fail:
-    return LEAVE_FF(fp->fs, res);
+    return LEAVE_FF(fs, res);
 }
 
 /**
@@ -2849,7 +2851,6 @@ fail:
     return LEAVE_FF(dj.fs, res);
 }
 
-#ifdef configFATFS_OWNER_ID
 /**
  * Change owner.
  */
@@ -2859,6 +2860,10 @@ FRESULT f_chown(FATFS * fs, const TCHAR * path, uid_t uid, gid_t gid)
     FF_DIR dj = { .fs = fs };
     uint8_t * dir;
     DEF_NAMEBUF;
+
+    if (!(fs->opt & FATFS_OWNER_ID)) {
+        return FR_INT_ERR;
+    }
 
     if (uid < 0 && gid < 0) {
         /* No changes */
@@ -2897,7 +2902,6 @@ FRESULT f_chown(FATFS * fs, const TCHAR * path, uid_t uid, gid_t gid)
 fail:
     return LEAVE_FF(dj.fs, res);
 }
-#endif
 
 /**
  * Change Timestamp.

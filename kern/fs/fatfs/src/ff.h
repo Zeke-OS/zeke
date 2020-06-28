@@ -50,6 +50,11 @@ typedef char TCHAR;
 
 #define FATFS_READONLY  0x01
 
+/**
+ * Store owner ID in place of atime.
+ */
+#define FATFS_OWNER_ID  0x02
+
 #define LFN_SIZE        (NAME_MAX + 1)
 
 /**
@@ -136,10 +141,8 @@ typedef struct {
     struct timespec fbtime; /*!< Creation time. */
     uint8_t fattrib;        /*!< Attribute */
     uint64_t ino;           /*!< Emulated ino */
-#ifdef configFATFS_OWNER_ID
     uid_t uid;              /*!< User ID of the file owner. */
     gid_t gid;              /*!< Group ID of the file owner. */
-#endif
     TCHAR   fname[13];      /*!< Short file name (8.3 format) */
     TCHAR * lfname;         /*!< Pointer to the LFN buffer */
 } FILINFO;
@@ -189,9 +192,7 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path);
 FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new);
 FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno);
 FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask);
-#ifdef configFATFS_OWNER_ID
 FRESULT f_chown(FATFS * fs, const TCHAR * path, uid_t uid, gid_t gid);
-#endif
 FRESULT f_utime(FATFS * fs, const TCHAR * path, const struct timespec * ts);
 FRESULT f_chdir(const TCHAR * path);
 FRESULT f_chdrive(const TCHAR * path);

@@ -175,7 +175,7 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     static dev_t fatfs_vdev_minor;
     struct fatfs_sb * fatfs_sb = NULL;
     vnode_t * vndev;
-    int err, retval = 0;
+    int err, opt = 0, retval = 0;
 
     /* Get device vnode */
     err = lookup_vnode(&vndev, curproc->croot, source, 0);
@@ -198,14 +198,20 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
         goto fail;
     }
 
+    if ((mode & MNT_RDONLY) == MNT_RDONLY) {
+        opt |= FATFS_READONLY;
+    }
+
     if (parm && parm_len > 0) {
         const char *supported_parm[] = {
             "codepage",
+            "ownerid",
             NULL
         };
         kmalloc_autofree char * parm_work = NULL;
         struct {
             char *codepage;
+            char *ownerid;
         } fatfs_parm;
 
         parm_work = kstrdup(parm, parm_len);
@@ -220,6 +226,18 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
 
         if (fatfs_parm.codepage)
             codepage = atoi(fatfs_parm.codepage);
+
+        if (fatfs_parm.ownerid) {
+            if ((mode & MNT_NOATIME) != MNT_NOATIME) {
+                /*
+                 * ownerid mode can be only enabled if noatime is used as well.
+                 */
+                retval = -EINVAL;
+                goto fail;
+            }
+
+            opt |= FATFS_OWNER_ID;
+        }
     }
 
     /* Allocate the superblock */
@@ -245,7 +263,7 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     }
 
     /* Mount */
-    err = f_mount(&fatfs_sb->ff_fs, 0, codepage);
+    err = f_mount(&fatfs_sb->ff_fs, opt, codepage);
     if (err) {
         retval = fresult2errno(err);
         KERROR_DBG("Can't init a work area for FAT (%d)\n", retval);
@@ -804,6 +822,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
                 vnode_t ** result)
 {
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
+    struct fatfs_sb * sb = get_ffsb_of_sb(dir->sb);
     struct fatfs_inode * res = NULL;
     char * in_fpath;
     size_t in_fpath_len;
@@ -826,7 +845,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
         return -ENOMEM;
 
     in_fpath_len = strlenn(in_fpath, NAME_MAX + 1);
-    err = create_inode(&res, get_ffsb_of_sb(dir->sb), in_fpath,
+    err = create_inode(&res, sb, in_fpath,
                        halfsiphash32(in_fpath, in_fpath_len, fatfs_siphash_key),
                        O_CREAT);
     if (err) {
@@ -839,10 +858,11 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
         *result = &res->in_vnode;
 
     fatfs_chmod(&res->in_vnode, mode);
-#ifdef configFATFS_OWNER_ID
-    /* RFE or to egid of the parent dir */
-    fatfs_chown(&res->in_vnode, curproc->cred.euid, curproc->cred.egid);
-#endif
+
+    if (sb->ff_fs.opt & FATFS_OWNER_ID) {
+        /* RFE or to egid of the parent dir */
+        fatfs_chown(&res->in_vnode, curproc->cred.euid, curproc->cred.egid);
+    }
 
 #ifdef configFATFS_DEBUG
     FS_KERROR_VNODE(KERROR_DEBUG, dir, "ok\n");
@@ -1020,13 +1040,15 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
         buf->st_ino = vnode->vn_num;
         buf->st_mode = vnode->vn_mode;
         buf->st_nlink = 1; /* Always one link on FAT. */
-#if defined(configFATFS_OWNER_ID)
-        buf->st_uid = fno.uid;
-        buf->st_gid = fno.gid;
-#else
-        buf->st_uid = mp_stat.st_uid;
-        buf->st_gid = mp_stat.st_gid;
-#endif
+
+        if (ffsb->ff_fs.opt & FATFS_OWNER_ID) {
+            buf->st_uid = fno.uid;
+            buf->st_gid = fno.gid;
+        } else {
+            buf->st_uid = mp_stat.st_uid;
+            buf->st_gid = mp_stat.st_gid;
+        }
+
         buf->st_size = fno.fsize;
         buf->st_atim = fno.fatime;
         buf->st_mtim = fno.fmtime;
@@ -1096,17 +1118,19 @@ int fatfs_chflags(vnode_t * vnode, fflags_t flags)
 
 int fatfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
 {
-#ifdef configFATFS_OWNER_ID
     struct fatfs_sb * ffsb = get_ffsb_of_sb(vnode->sb);
-    struct fatfs_inode * in = get_inode_of_vnode(vnode);
-    FRESULT fresult;
 
-    fresult = f_chown(&ffsb->ff_fs, in->in_fpath, owner, group);
+    if (ffsb->ff_fs.opt & FATFS_OWNER_ID) {
+        struct fatfs_sb * ffsb = get_ffsb_of_sb(vnode->sb);
+        struct fatfs_inode * in = get_inode_of_vnode(vnode);
+        FRESULT fresult;
 
-    return fresult2errno(fresult);
-#else
-    return -ENOTSUP;
-#endif
+        fresult = f_chown(&ffsb->ff_fs, in->in_fpath, owner, group);
+
+        return fresult2errno(fresult);
+    } else {
+        return -ENOTSUP;
+    }
 }
 
 /**
