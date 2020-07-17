@@ -375,6 +375,7 @@
 #define EPERM           67
 /**
  * Broken pipe.
+ * There is no process reading from the other end of a pipe.
  * @since POSIX.1-2017
  */
 #define EPIPE           68
@@ -400,6 +401,7 @@
 #define ERANGE          72
 /**
  * Read-only file system.
+ * An attempt to modify a read-only file system.
  * @since POSIX.1-2017
  */
 #define EROFS           73
@@ -415,6 +417,8 @@
 #define ESRCH           75
 /**
  * Stale file handle.
+ * Internal error of a file system where a file handle or descriptor exist but
+ * perhaps the data is gone.
  * Marked as reserved in POSIX.
  * @since POSIX.1-2017
  */
@@ -441,6 +445,8 @@
 #define EXDEV           80
 /**
  * Block device required.
+ * Typically returned when a regular file is attempted to mount as a file
+ * system.
  */
 #define ENOTBLK         81
 
