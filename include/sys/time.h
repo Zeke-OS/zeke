@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   time types.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -107,6 +108,18 @@ void mktimespec(struct timespec * ts, const struct tm * tm);
  * @param[in]   nsec    is the value in nano seconds.
  */
 void nsec2timespec(struct timespec * ts, int64_t nsec);
+
+/**
+ * Compare two timespec structs.
+ * @param[in]   left    is a pointer to the left value.
+ * @param[in]   right   is a pointer to the right value.
+ * @param[in]   cmp     is the operator (<, >, ==, <=, or >=).
+ * @returns a boolean value.
+ */
+#define	timespec_cmp(left_tsp, right_tsp, cmp)          \
+    (((elft_tsp)->tv_sec == (right_tsp)->tv_sec)        \
+     ? ((left_tsp)->tv_nsec cmp (right_tsp)->tv_nsec)   \
+     : ((left_tsp)->tv_sec cmp (right_tsp)->tv_sec))
 
 /**
  * Calculate the sum of two timespec structs.
