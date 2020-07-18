@@ -44,7 +44,7 @@ struct optarr {
     const char * optname;
 };
 
-char * catopt(char * s0, char * s1);
+char * catopt(char * s0, const char * s1);
 unsigned long opt2flags(struct optarr * optnames, size_t n_elem,
                         char ** options);
 

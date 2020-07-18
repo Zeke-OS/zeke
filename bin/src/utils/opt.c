@@ -3,22 +3,20 @@
 #include <stdlib.h>
 #include "../utils.h"
 
-char * catopt(char * s0, char * s1)
+char * catopt(char * s0, const char * s1)
 {
     char * cp;
+    size_t s0_len;
 
-    if (s0 && *s0) {
-        cp = malloc(strlen(s0) + strlen(s1) + 1 + 1);
-        if (!cp)
-            exit(1);
-
-        sprintf(cp, "%s,%s", s0, s1);
+    s0_len = s0 ? strlen(s0) : 0;
+    cp = realloc(s0, s0_len + strlen(s1) + 2);
+    if (s0_len > 0) {
+        cp[s0_len] = ',';
+        strcpy(cp + s0_len + 1, s1);
     } else {
-        cp = strdup(s1);
+        strcpy(cp, s1);
     }
 
-    if (s0)
-        free(s0);
     return cp;
 }
 
@@ -31,9 +29,7 @@ unsigned long opt2flags(struct optarr * optnames, size_t n_elem,
     char * remains = NULL;
     unsigned long flags = 0;
 
-    if (*options == NULL)
-        return 0;
-    if ((*options)[0] == '\0') {
+    if (*options == NULL || (*options)[0] == '\0') {
         *options = "";
         return 0;
     }

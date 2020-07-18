@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1980, 1989, 1993, 1994
  *  The Regents of the University of California.  All rights reserved.
@@ -67,7 +68,7 @@ int main(int argc, char * argv[])
         switch (ch) {
         case 'o':
             if (*optarg)
-                options = catopt(NULL, optarg);
+                options = catopt(options, optarg);
             break;
         case 'r':
             flags |= MNT_RDONLY;
@@ -101,8 +102,6 @@ int main(int argc, char * argv[])
     }
 
     flags |= opt2flags(optnames, num_elem(optnames), &options);
-    if (!options)
-        options = "";
 
     /* TODO Remove this */
     printf("mount: flags: %d, options: \"%s\", vfstype: \"%s\" "
