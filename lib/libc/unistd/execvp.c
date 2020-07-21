@@ -32,6 +32,7 @@
  *******************************************************************************
  */
 
+#include <ctype.h>
 #include <errno.h>
 #include <paths.h>
 #include <stdarg.h>
