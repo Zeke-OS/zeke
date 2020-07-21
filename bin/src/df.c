@@ -39,7 +39,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/statvfs.h>
+#include <sys/mount.h>
 #include <sys/types.h>
 #include <syscall.h>
 #include <sysexits.h>
@@ -76,9 +76,9 @@ static void usage(void)
     exit(EX_USAGE);
 }
 
-char cwd_buf[PATH_MAX];
 static void print_df(const struct statvfs * restrict st)
 {
+    static char cwd_buf[PATH_MAX];
     const unsigned k = (flags.k ? 1024 : 512);
     const int blocks = (st->f_blocks * st->f_frsize) / k;
     const int used = (st->f_blocks - st->f_bfree) * st->f_frsize / k;

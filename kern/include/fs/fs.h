@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system headers.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -44,8 +45,8 @@
 #include <dirent.h>
 #include <limits.h>
 #include <machine/atomic.h>
-#include <mount.h>
 #include <stdint.h>
+#include <sys/mount.h>
 #include <sys/queue.h>
 #include <sys/stat.h>
 #include <sys/tree.h>

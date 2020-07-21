@@ -1,11 +1,11 @@
 /**
  *******************************************************************************
- * @file    statvfs.h
+ * @file    mount.h
  * @author  Olli Vanhoja
- * @brief   File system information.
+ * @brief   Mount or dismount a file system.
  * @section LICENSE
  * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
- * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,15 +32,23 @@
  */
 
 /**
- * @addtogroup libc
+ * @addtogroup LIBC
  * @{
  */
 
-#ifndef STATVFS_H
-#define STATVFS_H
+#ifndef MOUNT_H
+#define MOUNT_H
 
 #include <sys/types/_fsblkcnt_t.h>
 #include <sys/types/_fsfilcnt_t.h>
+
+/* These must be in sync with ST_ macros defined in sys/statvfs.h */
+#define MNT_RDONLY      0x0001 /*!< Read only. */
+#define MNT_SYNCHRONOUS 0x0002 /*!< Synchronous writes. */
+#define MNT_ASYNC       0x0040 /*!< Asynchronous writes. */
+#define MNT_NOEXEC      0x0004 /*!< No exec for the file system. */
+#define MNT_NOSUID      0x0008 /*!< Set uid bits not honored. */
+#define MNT_NOATIME     0x0100 /*!< Don't update file access times. */
 
 struct statvfs {
     unsigned long   f_bsize;    /*!< File system block size. */
@@ -59,15 +67,32 @@ struct statvfs {
     char            fsname[8];  /*!< File system name. */
 };
 
-/* These must be in sync with MNT_ macros defined in mount.h */
-#define ST_RDONLY      0x0001 /*!< Read only. */
-#define ST_SYNCHRONOUS 0x0002 /*!< Synchronous writes. */
-#define ST_ASYNC       0x0040 /*!< Asynchronous writes. */
-#define ST_NOEXEC      0x0004 /*!< No exec for the file system. */
-#define ST_NOSUID      0x0008 /*!< Set uid bits not honored. */
-#define ST_NOATIME     0x0100 /*!< Don't update file access times. */
-
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
+#include <stddef.h>
+#include <stdint.h>
+
+/**
+ * Arguments struct for SYSCALL_FS_MOUNT
+ */
+struct _fs_mount_args {
+    const char * source;
+    size_t source_len; /*!< in bytes */
+    const char * target;
+    size_t target_len; /*!< in bytes */
+    const char fsname[8];
+    uint32_t flags;
+    const char * parm;
+    size_t parm_len; /*!< in bytes */
+};
+
+/**
+ * Arguments struct for SYSCALL_FS_UMOUNT
+ */
+struct _fs_umount_args {
+    const char * target;
+    size_t target_len; /*!< in bytes */
+};
+
 /** Arguments for SYSCALL_FS_STATFS */
 struct _fs_statfs_args {
     int fd;
@@ -83,10 +108,26 @@ struct _fs_getfsstat_args {
     size_t bufsize;
     unsigned flags;
 };
-#endif
+#endif /* __SYSCALL_DEFS__ */
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
+
+/**
+ * The mount() system call attaches the file system specified by source to the
+ * directory specified by target.
+ * @throws + EFAULT     One of the argument pointers is outside of the process's
+ *                      allocated address space.
+ *         + ENOMEM     Not enough memory available to mount a new file system.
+ *         + ENOENT     Mount target doesn't exist.
+ *         + ENOTSUP    File system type is not supported.
+ *         + ENODEV     Mount failed. TODO ??
+ */
+int mount(const char * source, const char * target, const char * type,
+          int flags, char * parms);
+
+int umount(const char * target);
+
 int fstatvfs(int fildes, struct statvfs * buf);
 int fstatvfsat(int fildes, const char * path, struct statvfs * buf);
 int statvfs(const char * restrict path, struct statvfs * restrict buf);
@@ -100,10 +141,11 @@ int statvfs(const char * restrict path, struct statvfs * restrict buf);
  *          Otherwise returns -1 and sets errno.
  */
 int getfsstat(struct statvfs * buf, long bufsize, int flags);
+
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
-#endif /* STATVFS_H */
+#endif /* MOUNT_H */
 
 /**
  * @}

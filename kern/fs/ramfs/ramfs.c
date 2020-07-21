@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ramfs - a temporary file system stored in RAM.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -36,7 +36,7 @@
 #include <machine/atomic.h>
 #include <stdint.h>
 #include <sys/dev_major.h>
-#include <sys/statvfs.h>
+#include <sys/mount.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>

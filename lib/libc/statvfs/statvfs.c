@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Filesystem status functions.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -33,7 +34,7 @@
 #define __SYSCALL_DEFS__
 #include <fcntl.h>
 #include <string.h>
-#include <sys/statvfs.h>
+#include <sys/mount.h>
 #include <syscall.h>
 
 int statvfs(const char * restrict path, struct statvfs * restrict buf)

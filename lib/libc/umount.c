@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Dismount a file system.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -31,9 +32,9 @@
 */
 
 #define __SYSCALL_DEFS__
-#include <syscall.h>
 #include <string.h>
-#include <mount.h>
+#include <sys/mount.h>
+#include <syscall.h>
 
 int umount(const char * target)
 {

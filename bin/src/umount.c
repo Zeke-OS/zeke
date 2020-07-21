@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1980, 1989, 1993, 1994
  *  The Regents of the University of California.  All rights reserved.
@@ -35,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <mount.h>
+#include <sys/mount.h>
 #include "utils.h"
 
 static void usage(void)

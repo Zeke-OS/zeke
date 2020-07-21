@@ -33,9 +33,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/statvfs.h>
+#include <sys/mount.h>
 #include <sys/types.h>
-#include <mount.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>

@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   System init for Zero Kernel.
  * @section LICENSE
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -31,11 +32,11 @@
  */
 
 #include <fcntl.h>
-#include <mount.h>
 #include <paths.h>
-#include <time.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sysexits.h>
+#include <time.h>
 #include <unistd.h>
 #include <kstring.h>
 #include <hal/core.h>

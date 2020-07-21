@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2005 Poul-Henning Kamp
  * All rights reserved.
@@ -26,15 +27,15 @@
  *
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <subr_hash.h>
-#include <mount.h>
 #include <errno.h>
 #include <fs/fs.h>
 #include <fs/vfs_hash.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <subr_hash.h>
+#include <sys/mount.h>
+#include <sys/param.h>
+#include <sys/queue.h>
 #include <kinit.h>
 #include <klocks.h>
 #include <kmalloc.h>

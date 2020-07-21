@@ -36,8 +36,8 @@
 #include <sys/dev_major.h>
 #include <sys/hash.h>
 #include <sys/ioctl.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
-#include <sys/statvfs.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <kstring.h>
