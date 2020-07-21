@@ -92,7 +92,6 @@
 
 struct cred;
 struct proc_info;
-struct statvfs;
 
 /*
  * Types for buffer pointer storage object in vnode.
@@ -258,7 +257,7 @@ struct fs_superblock {
      * @param[out]  st is a pointer to a destination buffer.
      * @return Returns 0 if no error; Otherwise value other than zero.
      */
-    int (*statfs)(struct fs_superblock * sb, struct statvfs * st);
+    int (*statfs)(struct fs_superblock * sb, struct statfs * st);
 
     /**
      * Delete a vnode reference.
