@@ -61,11 +61,11 @@ struct {
 struct format_str format_str[] = {
     { /* Default */
         .header = "%-14s %10s %10s %10s %8s %10s %10s %6s %s\n",
-        .entry = "%-14s %10d %10d %10d %7d%% %10d %10d %5d%% %s\n",
+        .entry = "%-14s %10u %10u %10u %7u%% %10u %10u %5u%% %s\n",
     },
     { /* P */
         .header = "%-14s %10s %10s %10s %8s %s\n",
-        .entry = "%-14s %10d %10d %10d %7d%% %s\n",
+        .entry = "%-14s %10u %10u %10u %7u%% %s\n",
     },
 };
 
@@ -80,22 +80,35 @@ static void print_df(const struct statfs * restrict st)
 {
     static char cwd_buf[PATH_MAX];
     const unsigned k = (flags.k ? 1024 : 512);
-    const int blocks = (st->f_blocks * st->f_frsize) / k;
-    const int used = (st->f_blocks - st->f_bfree) * st->f_frsize / k;
-    const int avail = st->f_bfree * st->f_frsize / k;
-    const int capacity = 100 * (st->f_blocks - st->f_bfree) / st->f_blocks;
+    const fsfilcnt_t blocks = (st->f_blocks * st->f_frsize) / k;
+    const fsfilcnt_t used = (st->f_blocks - st->f_bfree) * st->f_frsize / k;
+    const fsfilcnt_t avail = st->f_bfree * st->f_frsize / k;
+    const fsfilcnt_t capacity = 100 * (st->f_blocks - st->f_bfree) /
+                                st->f_blocks;
     char * cwd = getcwd(cwd_buf, sizeof(cwd_buf));
 
     if (flags.P) {
         printf(format_str[1].entry,
-               st->f_fsname, blocks, used, avail, capacity, cwd);
+               st->f_fsname,
+               (unsigned)blocks,
+               (unsigned)used,
+               (unsigned)avail,
+               (unsigned)capacity,
+               cwd);
     } else {
         int iused = st->f_files - st->f_ffree;
         int piused = 100 * iused / st->f_files;
 
         printf(format_str[0].entry,
-               st->f_fsname, blocks, used, avail, capacity, iused, st->f_ffree,
-               piused, cwd);
+               st->f_fsname,
+               (unsigned)blocks,
+               (unsigned)used,
+               (unsigned)avail,
+               (unsigned)capacity,
+               (unsigned)iused,
+               (unsigned)st->f_ffree,
+               (unsigned)piused,
+               cwd);
     }
 }
 
