@@ -42,7 +42,6 @@
 #include <sys/types/_fsblkcnt_t.h>
 #include <sys/types/_fsfilcnt_t.h>
 
-/* These must be in sync with ST_ macros defined in sys/statvfs.h */
 #define MNT_RDONLY      0x0001 /*!< Read only. */
 #define MNT_SYNCHRONOUS 0x0002 /*!< Synchronous writes. */
 #define MNT_ASYNC       0x0040 /*!< Asynchronous writes. */
