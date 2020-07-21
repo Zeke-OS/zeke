@@ -356,7 +356,7 @@ int ramfs_statfs(struct fs_superblock * sb, struct statfs * st)
         .f_flag = sb->mode_flags,
         .f_namemax = NAME_MAX + 1,
     };
-    strlcpy(st->fsname, sb->fs->fsname, sizeof(st->fsname));
+    strlcpy(st->f_fsname, sb->fs->fsname, sizeof(st->f_fsname));
 
     return 0;
 }

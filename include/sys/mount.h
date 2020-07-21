@@ -49,6 +49,8 @@
 #define MNT_NOSUID      0x0008 /*!< Set uid bits not honored. */
 #define MNT_NOATIME     0x0100 /*!< Don't update file access times. */
 
+#include <sys/types/_mfsnamelen.h>
+
 struct statfs {
     unsigned long   f_bsize;    /*!< File system block size. */
     unsigned long   f_frsize;   /*!< Fragment size. */
@@ -63,7 +65,7 @@ struct statfs {
     unsigned long   f_fsid;     /*!< Filesystem ID. */
     unsigned long   f_flag;     /*!< Mount flags. */
     unsigned long   f_namemax;  /*!< Maximum filename length. */
-    char            fsname[8];  /*!< File system name. */
+    char            f_fsname[MFSNAMELEN]; /*!< File system name. */
 };
 
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
@@ -78,7 +80,7 @@ struct _fs_mount_args {
     size_t source_len; /*!< in bytes */
     const char * target;
     size_t target_len; /*!< in bytes */
-    const char fsname[8];
+    const char fsname[MFSNAMELEN];
     uint32_t flags;
     const char * parm;
     size_t parm_len; /*!< in bytes */

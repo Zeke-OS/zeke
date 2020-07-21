@@ -88,13 +88,13 @@ static void print_df(const struct statfs * restrict st)
 
     if (flags.P) {
         printf(format_str[1].entry,
-               st->fsname, blocks, used, avail, capacity, cwd);
+               st->f_fsname, blocks, used, avail, capacity, cwd);
     } else {
         int iused = st->f_files - st->f_ffree;
         int piused = 100 * iused / st->f_files;
 
         printf(format_str[0].entry,
-               st->fsname, blocks, used, avail, capacity, iused, st->f_ffree,
+               st->f_fsname, blocks, used, avail, capacity, iused, st->f_ffree,
                piused, cwd);
     }
 }

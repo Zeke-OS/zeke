@@ -207,11 +207,13 @@ typedef struct files_struct {
 #define FS_GIANT_OPT     0
 #define FS_GIANT_INIT(_x_) mtx_init(_x_, FS_GIANT_TYPE, FS_GIANT_OPT)
 
+#include <sys/types/_mfsnamelen.h>
+
 /**
  * File system.
  */
 typedef struct fs {
-    char fsname[8];
+    char fsname[MFSNAMELEN];
     unsigned fs_majornum; /*!< Virtual major device number of the filesystem. */
     mtx_t fs_giant;
 
