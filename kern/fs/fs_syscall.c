@@ -735,7 +735,7 @@ static intptr_t sys_statfs(__user void * user_args)
     struct _fs_statfs_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
     struct fs_superblock * sb;
-    struct statvfs st;
+    struct statfs st;
     int err;
     int retval = -1;
 
@@ -772,7 +772,7 @@ static intptr_t sys_statfs(__user void * user_args)
     memset(&st, 0, sizeof(st));
     sb = vnode->sb;
     sb->statfs(sb, &st);
-    err = copyout(&st, (__user void *)args->buf, sizeof(struct statvfs));
+    err = copyout(&st, (__user void *)args->buf, sizeof(struct statfs));
     if (err) {
         set_errno(EFAULT);
         goto out;
@@ -796,7 +796,7 @@ static intptr_t sys_getfsstat(__user void * user_args)
     }
 
     if (args.bufsize > 0 &&
-        (args.bufsize < sizeof(struct statvfs) ||
+        (args.bufsize < sizeof(struct statfs) ||
         !useracc((__user void *)args.buf, args.bufsize, VM_PROT_WRITE))) {
         set_errno(EFAULT);
         return -1;
@@ -810,7 +810,7 @@ static intptr_t sys_getfsstat(__user void * user_args)
         while ((sb = fs_iterate_superblocks(fs, sb))) {
             if (args.bufsize != 0) {
                 int err;
-                struct statvfs st;
+                struct statfs st;
 
                 if (args.bufsize <= size) {
                     set_errno(EFAULT);
@@ -819,13 +819,13 @@ static intptr_t sys_getfsstat(__user void * user_args)
 
                 sb->statfs(sb, &st);
                 err = copyout(&st, (__user void *)((uintptr_t)args.buf + size),
-                              sizeof(struct statvfs));
+                              sizeof(struct statfs));
                 if (err) {
                     set_errno(EFAULT);
                     return -1;
                 }
             }
-            size += sizeof(struct statvfs);
+            size += sizeof(struct statfs);
         }
     }
 

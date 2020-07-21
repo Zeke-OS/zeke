@@ -19,6 +19,7 @@ $(wildcard libc/locale/*.c) \
 $(wildcard libc/malloc/*.c) \
 $(wildcard libc/math/*.c) \
 $(wildcard libc/mman/*.c) \
+$(wildcard libc/mount/*.c) \
 $(wildcard libc/priv/*.c) \
 $(wildcard libc/pthread/*.c) \
 $(wildcard libc/pwd/*.c) \
@@ -28,7 +29,6 @@ $(wildcard libc/sched/*.c) \
 $(wildcard libc/setjmp/*.c) \
 $(wildcard libc/signal/*.c) \
 $(wildcard libc/stat/*.c) \
-$(wildcard libc/statvfs/*.c) \
 $(wildcard libc/stdio/*.c) \
 $(wildcard libc/stdlib/*.c) \
 $(wildcard libc/string/*.c) \

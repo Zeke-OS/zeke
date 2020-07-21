@@ -1,11 +1,11 @@
 /**
  *******************************************************************************
- * @file    fstatvfsat.c
+ * @file    statfs.c
  * @author  Olli Vanhoja
  * @brief   Filesystem status functions.
  * @section LICENSE
  * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
- * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,10 @@
 #include <sys/mount.h>
 #include <syscall.h>
 
-int fstatvfsat(int fildes, const char * path, struct statvfs * buf)
+int statfs(const char * restrict path, struct statfs * restrict buf)
 {
     struct _fs_statfs_args args = {
-        .fd = fildes,
+        .fd = AT_FDCWD,
         .path = path,
         .path_len = strlen(path) + 1,
         .buf = buf,

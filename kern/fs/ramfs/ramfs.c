@@ -337,13 +337,13 @@ int ramfs_umount(struct fs_superblock * fs_sb)
     return 0;
 }
 
-int ramfs_statfs(struct fs_superblock * sb, struct statvfs * st)
+int ramfs_statfs(struct fs_superblock * sb, struct statfs * st)
 {
     ramfs_sb_t * rsb = get_rfsb_of_sb(sb);
     const fsfilcnt_t inodes_max = SIZE_MAX;
     const fsfilcnt_t inodes_free = inodes_max - atomic_read(&rsb->nr_inodes);
 
-    *st = (struct statvfs){
+    *st = (struct statfs){
         .f_bsize = MMU_PGSIZE_COARSE,
         .f_frsize = MMU_PGSIZE_COARSE,
         .f_blocks = 0,

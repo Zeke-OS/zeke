@@ -49,7 +49,7 @@
 #define MNT_NOSUID      0x0008 /*!< Set uid bits not honored. */
 #define MNT_NOATIME     0x0100 /*!< Don't update file access times. */
 
-struct statvfs {
+struct statfs {
     unsigned long   f_bsize;    /*!< File system block size. */
     unsigned long   f_frsize;   /*!< Fragment size. */
     fsblkcnt_t      f_blocks;   /*!< Size of fs in f_frsize units. */
@@ -97,13 +97,13 @@ struct _fs_statfs_args {
     int fd;
     const char * path;
     size_t path_len;
-    struct statvfs * buf;
+    struct statfs * buf;
     unsigned flags;
 };
 
 /** Arguments for SYSCALL_FS_GETFSSTAT */
 struct _fs_getfsstat_args {
-    struct statvfs * buf;
+    struct statfs * buf;
     size_t bufsize;
     unsigned flags;
 };
@@ -127,9 +127,9 @@ int mount(const char * source, const char * target, const char * type,
 
 int umount(const char * target);
 
-int fstatvfs(int fildes, struct statvfs * buf);
-int fstatvfsat(int fildes, const char * path, struct statvfs * buf);
-int statvfs(const char * restrict path, struct statvfs * restrict buf);
+int fstatfs(int fildes, struct statfs * buf);
+int fstatfsat(int fildes, const char * path, struct statfs * buf);
+int statfs(const char * restrict path, struct statfs * restrict buf);
 
 /**
  * Get list of all mounted file systems.
@@ -139,7 +139,7 @@ int statvfs(const char * restrict path, struct statvfs * restrict buf);
  * @returns Returns the size of stats written in bytes if successful;
  *          Otherwise returns -1 and sets errno.
  */
-int getfsstat(struct statvfs * buf, long bufsize, int flags);
+int getfsstat(struct statfs * buf, long bufsize, int flags);
 
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */

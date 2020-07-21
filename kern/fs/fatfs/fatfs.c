@@ -56,7 +56,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
                         char * fpath, size_t vn_hash, int oflags);
 static void finalize_inode(vnode_t * vnode);
 static void destroy_vnode(vnode_t * vnode);
-static int fatfs_statfs(struct fs_superblock * sb, struct statvfs * st);
+static int fatfs_statfs(struct fs_superblock * sb, struct statfs * st);
 static int fatfs_delete_vnode(vnode_t * vnode);
 static int fatfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 static void fatfs_event_file_closed(struct proc_info * p, file_t * file);
@@ -520,7 +520,7 @@ static void destroy_vnode(vnode_t * vnode)
 /**
  * Get fatfs statistics.
  */
-static int fatfs_statfs(struct fs_superblock * sb, struct statvfs * st)
+static int fatfs_statfs(struct fs_superblock * sb, struct statfs * st)
 {
     struct fatfs_sb * ffsb = get_ffsb_of_sb(sb);
     FATFS * fat = &ffsb->ff_fs;
@@ -537,7 +537,7 @@ static int fatfs_statfs(struct fs_superblock * sb, struct statvfs * st)
         return err;
     }
 
-    *st = (struct statvfs){
+    *st = (struct statfs){
         .f_bsize = fat->ssize,
         .f_frsize = fat->ssize * fat->csize,
         .f_blocks = fat->n_fatent,

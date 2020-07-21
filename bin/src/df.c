@@ -76,7 +76,7 @@ static void usage(void)
     exit(EX_USAGE);
 }
 
-static void print_df(const struct statvfs * restrict st)
+static void print_df(const struct statfs * restrict st)
 {
     static char cwd_buf[PATH_MAX];
     const unsigned k = (flags.k ? 1024 : 512);
@@ -132,12 +132,12 @@ int main(int argc, char * argv[], char * envp[])
     if (*argv) {
         /* TODO file arg support */
 #if 0
-        err = fstatvfs(fd, &st);
+        err = fstatfs(fd, &st);
 #endif
     } else {
         int size = 0;
-        struct statvfs * st = NULL;
-        struct statvfs * end;
+        struct statfs * st = NULL;
+        struct statfs * end;
 
         do {
 retry:
@@ -154,7 +154,7 @@ retry:
             }
         } while (!st);
 
-        end = st + size / sizeof(struct statvfs);
+        end = st + size / sizeof(struct statfs);
         while (st != end) {
             print_df(st);
             st++;

@@ -1,5 +1,9 @@
-LibC
+Libc
 ====
+
+Zeke libc is a partially BSD compatible C standard library tailored for Zeke.
+
+Header files for Zeke libc are located under `/include`.
 
 Standards Conformance
 ---------------------
