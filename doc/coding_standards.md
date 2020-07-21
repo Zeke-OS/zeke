@@ -77,8 +77,8 @@ Standard Data Types
 Typedefs were historically used in Zeke for most of the structs and portable
 types. New code should only use typedefs for portability where we may want
 or have to change the actual underlying type depending on the actual hardware
-platform. Usually there should be no need to use typedef for structs unles it's
-stated in POSIX or some other standard we wan't to follow.
+platform. Usually there should be no need to use typedef for structs unless it's
+stated in POSIX or some other standard we want to follow.
 
 Typedefs can be also used if the user of the data doesn't need to know the
 exact type information for the data, i.e. the user is only passing a pointer
