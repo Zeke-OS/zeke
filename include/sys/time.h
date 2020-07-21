@@ -116,7 +116,7 @@ void nsec2timespec(struct timespec * ts, int64_t nsec);
  * @param[in]   cmp     is the operator (<, >, ==, <=, or >=).
  * @returns a boolean value.
  */
-#define	timespec_cmp(left_tsp, right_tsp, cmp)          \
+#define timespec_cmp(left_tsp, right_tsp, cmp)          \
     (((elft_tsp)->tv_sec == (right_tsp)->tv_sec)        \
      ? ((left_tsp)->tv_nsec cmp (right_tsp)->tv_nsec)   \
      : ((left_tsp)->tv_sec cmp (right_tsp)->tv_sec))
