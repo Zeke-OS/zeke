@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Zeke Configuration",
+  "metaType": "menu",
+  "properties": {
+    "target": {
+      "title": "Target Config",
+      "metaType": "menu",
+      "properties": {
+        "arch": {
+          "title": "CPU Architecture",
+          "metaType": "boolChoice",
+          "choice": {
+            "ARM": "configARCH_ARM",
+            "MIPS": "configARCH_MIPS"
+          },
+          "default": "ARM"
+        },
+        "have64BitCPU": {
+          "metaType": "bool",
+          "config": "configHAVE_64_BIT_CPU",
+          "default": false
+        },
+        "haveHFP": {
+          "metaType": "bool",
+          "config": "configHAVE_HFP",
+          "default": false
+        },
+        "haveMP": {
+          "metaType": "bool",
+          "config": "configHAVE_MP_CAP",
+          "default": false
+        },
+        "useHFP": {
+          "title": "Use HW Floating Points",
+          "metaType": "bool",
+          "config": "configUSE_HFP",
+          "depends": "configHAVE_HFP",
+          "default": false
+        },
+        "use64bit": {
+          "title": "64-bit CPU",
+          "metaType": "bool",
+          "config": "config64_BIT_CPU",
+          "depends": "configHAVE_64_BIT_CPU",
+          "default": false
+        },
+        "qemuGuest": {
+          "title": "QEMU vm guest",
+          "metaType": "bool",
+          "config": "configQEMU_GUEST",
+          "default": false
+        },
+        "arm": {
+          "title": "ARM",
+          "metaType": "menu",
+          "$comment": "This needs to be disabled if !configARCH_ARM",
+          "properties": {
+            "profile": {
+              "metaType": "boolChoice",
+              "choice": {
+                "A": "configARM_PROFILE_A",
+                "R": "configARM_PROFILE_R",
+                "M": "configARM_PROFILE_M"
+              }
+            },
+            "clz": {
+              "metaType": "bool",
+              "config": "__ARM_FEATURE_CLZ",
+              "default": false
+            },
+            "armArch": {
+              "title": "ARM Architecture Version",
+              "metaType": "boolChoice",
+              "choice": {
+                "ARMv4T": "__ARM4T__",
+                "ARMv6": "__ARM6__",
+                "ARMv6k": "__ARM6K__",
+                "ARMv6M": "__ARM6M__",
+                "ARMv6SM" : "__ARM6SM__",
+                "ARMv7M": "__ARM7M__",
+                "ARMv7EM": "__ARM7EM__",
+                "ARMv7A": "__ARM7A__",
+                "ARMv7R": "__ARM7R__"
+              },
+              "select": [
+                { "knob": "configARM_PROFILE_A", "expression": "__ARM6M__ || __ARM6SM__ || __ARM7M__ || __ARM7EM__" },
+                { "knob": "configARM_PROFILE_R", "expression": "__ARM7A__" },
+                { "knob": "configARM_PROFILE_M", "expression": "__ARM7R__" },
+                { "knob": "__ARM_FEATURE_CLZ", "expression": "__ARM6__ || __ARM6K__ || __ARM7A__" },
+                { "knob": "configHAVE_MP_CAP", "expression": "__ARM6K__" }
+              ]
+            }
+          }
+        }
+      },
+      "default": {}
+    },
+    "build": {
+      "title": "Build Config",
+      "metaType": "menu",
+      "description": "Configures the build environment",
+      "properties": {
+        "ccflags": {
+          "title": "CCFLAGS common to all build targets",
+          "metaType": "str",
+          "config": "CCFLAGS",
+          "makeOnly": true,
+          "default": "-Wall -O2 -ggdb -Wundef -Wextra -Wno-unused-parameter"
+        }
+      },
+      "default": {}
+    },
+    "modules": {
+      "title": "Modules",
+      "metaType": "menu",
+      "description": "Select modules and their config",
+      "properties": {
+      },
+      "additionalProperties": false,
+      "default": {}
+    }
+  },
+  "required": ["build", "modules"],
+  "additionalProperties": false
+}
