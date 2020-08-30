@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Kernel Config",
+  "metaType": "menu",
+  "description": "This is an example of a config schema for a kernel",
+  "properties": {
+    "build": {
+      "title": "Build Config",
+      "metaType": "menu",
+      "description": "Configures the build environment",
+      "properties": {
+        "ccflags": {
+          "title": "CCFLAGS common to all build targets",
+          "metaType": "str",
+          "config": "CCFLAGS",
+          "makeOnly": true,
+          "default": "-Wall -O2 -ggdb -Wundef -Wextra -Wno-unused-parameter"
+        }
+      },
+      "default": {}
+    },
+    "modules": {
+      "title": "Modules",
+      "metaType": "menu",
+      "description": "Select modules and their config",
+      "properties": {
+        "moduleX": {
+          "$ref": "examples/kernel/module/moduleX.json",
+          "default": {}
+        },
+        "moduleY": {
+          "$ref": "examples/kernel/module/moduleY.json",
+          "default": {}
+        },
+        "moduleZ": {
+          "$ref": "examples/kernel/module/moduleZ.json"
+        }
+      },
+      "additionalProperties": false,
+      "default": {}
+    }
+  },
+  "required": ["build", "modules"],
+  "additionalProperties": false
+}

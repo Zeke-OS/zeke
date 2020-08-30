@@ -1,0 +1,21 @@
+{
+  "title": "Module Y Config",
+  "metaType": "menuconfig",
+  "description": "A module handling Y subsystem",
+  "properties": {
+    "enabled": {
+      "title": "Enable Module Y",
+      "metaType": "tristate",
+      "config": "MODULE_Y",
+      "depends": "MODULE_X && !MODULE_Z",
+      "default": "y"
+    },
+    "optionXyz": {
+      "title": "Enable option XYZ",
+      "metaType": "bool",
+      "config": "MODULE_Y_OPT_XYZ",
+      "default": false
+    }
+  },
+  "additionalProperties": false
+}

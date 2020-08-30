@@ -1,0 +1,17 @@
+{
+  "name": "jsconfig",
+  "version": "1.0.0",
+  "description": "KConfig but with JSON.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "config"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ajv": "^6.12.4"
+  }
+}

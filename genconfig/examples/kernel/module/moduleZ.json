@@ -1,0 +1,20 @@
+{
+  "title": "Module Z Config",
+  "metaType": "menuconfig",
+  "description": "A module handling Z subsystem",
+  "properties": {
+    "enabled": {
+      "title": "Enable Module Z",
+      "metaType": "tristate",
+      "config": "MODULE_Z",
+      "default": "n"
+    },
+    "optionXyz": {
+      "title": "Enable option XYZ",
+      "metaType": "bool",
+      "config": "MODULE_Z_OPT_XYZ",
+      "default": true
+    }
+  },
+  "additionalProperties": false
+}

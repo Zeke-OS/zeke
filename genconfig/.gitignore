@@ -1,6 +1,1 @@
-# Autoconf
-autoconf.h
-
-# User config
-buildconf.mk
-dist.mk
+node_modules
