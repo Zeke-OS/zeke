@@ -3,6 +3,62 @@
   "title": "Zeke Configuration",
   "metaType": "menu",
   "properties": {
+    "build": {
+      "title": "Build Config",
+      "metaType": "menu",
+      "description": "Configures the build environment",
+      "properties": {
+        "cc": {
+          "title": "C Compiler",
+          "metaType": "str",
+          "config": "CC",
+          "makeOnly": true,
+          "default": "clang"
+        },
+        "ccflags": {
+          "title": "CCFLAGS common to all build targets",
+          "metaType": "str",
+          "config": "CCFLAGS",
+          "makeOnly": true,
+          "default": "-MD -MP -std=c99 -include sys/cdefs.h -Wall -O2"
+        },
+        "opt": {
+          "title": "opt",
+          "metaType": "str",
+          "config": "OPT",
+          "makeOnly": true,
+          "default": "opt-3.4"
+        },
+        "oflags": {
+          "title": "opt flags",
+          "metaType": "str",
+          "config": "OFLAGS",
+          "makeOnly": true,
+          "default": ""
+        },
+        "llc": {
+          "title": "llc",
+          "metaType": "str",
+          "config": "LLC",
+          "makeOnly": true,
+          "default": "llc-3.4"
+        },
+        "llcflags": {
+          "title": "llc flags",
+          "metaType": "str",
+          "config": "LLCFLAGS",
+          "makeOnly": true,
+          "default": ""
+        },
+        "gnuarch": {
+          "metaType": "str",
+          "config": "GNUARCH",
+          "makeOnly": true,
+          "default": "invalid-target"
+        }
+      },
+      "default": {}
+    },
     "target": {
       "title": "Target Config",
       "metaType": "menu",
@@ -14,7 +70,11 @@
             "ARM": "configARCH_ARM",
             "MIPS": "configARCH_MIPS"
           },
-          "default": "ARM"
+          "default": "ARM",
+          "select": [
+              { "knob": "GNUARCH", "value": "arm-none-eabi", "expression": "configARCH_ARM" },
+              { "knob": "GNUARCH", "value": "mipsel-sde-eld", "expression": "configARCH_MIPS" }
+          ]
         },
         "have64BitCPU": {
           "metaType": "bool",
@@ -92,21 +152,6 @@
               ]
             }
           }
-        }
-      },
-      "default": {}
-    },
-    "build": {
-      "title": "Build Config",
-      "metaType": "menu",
-      "description": "Configures the build environment",
-      "properties": {
-        "ccflags": {
-          "title": "CCFLAGS common to all build targets",
-          "metaType": "str",
-          "config": "CCFLAGS",
-          "makeOnly": true,
-          "default": "-Wall -O2 -ggdb -Wundef -Wextra -Wno-unused-parameter"
         }
       },
       "default": {}

@@ -17,7 +17,6 @@ const ajv = new Ajv({
 const configKnobMap = {};
 const configMap = {};
 const dependencies = [];
-const selects = [];
 
 async function loadSchema(uri) {
     return JSON.parse(await fs.readFile(uri));
@@ -49,6 +48,7 @@ ajv.addKeyword('metaType', {
                 configKnobMap[choice[k]] = {
                     path: errorPathToPath(obj.errorPath),
                     type: parentSchema.metaType,
+                    choice: k,
                     makeOnly: parentSchema.makeOnly
                 };
             }
@@ -171,8 +171,6 @@ ajv.addKeyword('select', {
         const val = args[1];
         const data = args[6];
 
-        // TODO Remove
-        console.log('val', val);
         if (!val) return true;
 
         if (typeof sel === 'string') {
@@ -183,10 +181,14 @@ ajv.addKeyword('select', {
             sel = [sel];
         }
 
-        for (const { knob, expression } of sel) {
+        for (const { knob, value, expression } of sel) {
             if (evalExpression(data, expression)) {
+                if (!configKnobMap[knob]) {
+                    return false;
+                }
+
                 const { path } = configKnobMap[knob];
-                setBool(data, path);
+                setValue(data, path, value || true);
             }
         }
 
@@ -204,8 +206,10 @@ ajv.addKeyword('select', {
                 type: 'object',
                 properties: {
                     knob: { type: 'string' },
-                    expression: { type: 'string' }
+                    value: { not: { type: 'array' } },
+                    expression: { type: 'string' },
                 },
+                required: ['knob'],
                 additionalProperties: false
             },
             {
@@ -215,8 +219,10 @@ ajv.addKeyword('select', {
                     type: 'object',
                     properties: {
                         knob: { type: 'string' },
+                        value: { not: { type: 'array' } },
                         expression: { type: 'string' }
                     },
+                    required: ['knob'],
                     additionalProperties: false
                 }
             }
@@ -234,7 +240,7 @@ function getValue(obj, path) {
     return obj;
 };
 
-function setBool(obj, path) {
+function setValue(obj, path, value) {
     path = path.split('.');
     let i;
     for (i = 0; i < path.length - 1; i++) {
@@ -246,31 +252,21 @@ function setBool(obj, path) {
         obj = tmp;
     };
 
-    obj[path[i]] = true;
+    obj[path[i]] = value;
 }
 
 function prepareSandbox(data) {
     const sandbox = {};
     for (const name in configKnobMap) {
-        const { path, type } = configKnobMap[name];
+        const { path, type, choice } = configKnobMap[name];
 
-        sandbox[name] = {
-            value: getValue(data, path),
-            type
-        };
-    }
-
-    // Parse values into variables that will work nicely for simple expressions.
-    for (k in sandbox) {
-        const o = sandbox[k];
-        if (!o) continue;
-        const value = o.value;
-        const type = o.type;
-
+        const value = getValue(data, path);
         if (type === 'tristate') {
-            sandbox[k] = value === 'n' ? false : value;
+            sandbox[name] = value === 'n' ? false : value;
+        } else if (type === 'boolChoice') {
+            sandbox[name] = value === choice;
         } else {
-            sandbox[k] = value;
+            sandbox[name] = value;
         }
     }
 

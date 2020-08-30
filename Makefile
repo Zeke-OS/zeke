@@ -83,7 +83,7 @@ bin: lib
 etc:
 	$(MAKE) -C etc all
 
-# For compiling invidual libraries
+# For compiling individual libraries
 $(ALL_LIBS): $(AUTOCONF_H)
 	$(if $(filter $@,libc),$(eval export LIBS := crt0 libc),$(eval export LIBS := $@))
 	@$(MAKE) -C lib
