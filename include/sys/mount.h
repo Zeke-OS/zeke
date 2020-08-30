@@ -50,6 +50,7 @@
 #define MNT_NOATIME     0x0100 /*!< Don't update file access times. */
 
 #include <sys/types/_mfsnamelen.h>
+#define MNAMELEN        1024
 
 struct statfs {
     unsigned long   f_bsize;    /*!< File system block size. */
@@ -66,6 +67,7 @@ struct statfs {
     unsigned long   f_flag;     /*!< Mount flags. */
     unsigned long   f_namemax;  /*!< Maximum filename length. */
     char            f_fsname[MFSNAMELEN]; /*!< File system name. */
+    char            f_mntonname[MNAMELEN]; /*!< directory on which mounted. */
 };
 
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
