@@ -154,7 +154,7 @@ ajv.addKeyword('config', {
     }
 });
 ajv.addKeyword('depends', {
-    dependencies: ['config'],
+    //dependencies: ['config'],
     validate: (...args) => {
         dependencies.push([args[2].config, args[0]]);
         return true;

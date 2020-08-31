@@ -129,6 +129,11 @@
           "config": "configHAVE_HFP",
           "default": false
         },
+        "haveMMU": {
+          "metaType": "bool",
+          "config": "configHAVE_MMU",
+          "default": false
+        },
         "haveMP": {
           "metaType": "bool",
           "config": "configHAVE_MP_CAP",
@@ -193,6 +198,33 @@
                 { "knob": "__ARM_FEATURE_CLZ", "expression": "__ARM6__ || __ARM6K__ || __ARM7A__" },
                 { "knob": "configHAVE_MP_CAP", "expression": "__ARM6K__" }
               ]
+            },
+            "cpu": {
+              "title": "CPU/MCU Model",
+              "metaType": "boolChoice",
+              "choice": {
+                "BCM2835": "configBCM2835"
+              },
+              "depends": "((configBCM2835 && __ARM6K__) || !configBCM2835)",
+              "select": [
+                { "knob": "configHAVE_HFP", "expression": "configBCM2835" },
+                { "knob": "configHAVE_MMU", "expression": "configBCM2835" }
+              ]
+            }
+          }
+        },
+        "mips": {
+          "title": "MIPS",
+          "metaType": "menu",
+          "$comment": "This needs to be disabled if !configARCH_ARM",
+          "properties": {
+            "cpu": {
+              "title": "CPU/MCU Model",
+              "metaType": "boolChoice",
+              "choice": {
+                "Ingenic JZ4780": "configJZ4780"
+              },
+              "depends": "((configJZ4780 && configARCH_MIPS) || !configJZ4780)"
             }
           }
         }
