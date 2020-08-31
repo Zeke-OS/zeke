@@ -55,6 +55,49 @@
           "config": "GNUARCH",
           "makeOnly": true,
           "default": "invalid-target"
+        },
+        "dist": {
+          "title": "dist",
+          "metaType": "menu",
+          "description": "Distribution user space configuration",
+          "properties": {
+            "ccflags": {
+              "title": "CCFLAGS common to all build targets",
+              "metaType": "str",
+              "config": "USER_CCFLAGS",
+              "makeOnly": true,
+              "default": "-emit-llvm -ffreestanding -nostdlib -nostdinc"
+            },
+            "oflags": {
+              "title": "opt flags",
+              "metaType": "str",
+              "config": "USER_OFLAGS",
+              "makeOnly": true,
+              "default": "-std-compile-opts"
+            },
+            "llcflags": {
+              "title": "llc flags",
+              "metaType": "str",
+              "config": "USER_LLCFLAGS",
+              "makeOnly": true,
+              "default": "-mtriple=$(GNUARCH)"
+            },
+            "asflags": {
+              "title": "as flags",
+              "metaType": "str",
+              "config": "USER_ASFLAGS",
+              "makeOnly": true,
+              "default": ""
+            },
+            "ldflags": {
+              "title": "ld flags",
+              "metaType": "str",
+              "config": "USER_LDFLAGS",
+              "makeOnly": true,
+              "default": ""
+            }
+          },
+          "default": {}
         }
       },
       "default": {}

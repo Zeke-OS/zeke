@@ -25,8 +25,8 @@
 
 # Configuration files ##########################################################
 # Generic config
-include $(ROOT_DIR)/genconfig/buildconf.mk
-include $(ROOT_DIR)/genconfig/dist.mk
+include $(ROOT_DIR)/makefiles/buildconf.mk
+include $(ROOT_DIR)/makefiles/dist.mk
 ################################################################################
 include $(ROOT_DIR)/makefiles/user_idir.mk
 ################################################################################

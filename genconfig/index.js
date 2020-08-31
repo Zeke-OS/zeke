@@ -279,9 +279,12 @@ function evalExpression(data, expression) {
 
 function knob2Makefile(name, type, value) {
     if ('str' === type) {
-        return `${name}="${value}"`
+        if (value === '') {
+            return `${name}=#`;
+        }
+        return `${name} = ${value}`;
     } else if (['bool', 'boolChoice'].includes(type)) {
-        return `${name}=${value ? 'y' : 'n'}`;
+        return `${name} = ${value ? 'y' : 'n'}`;
     }
     return `${name}=${value}`;
 }

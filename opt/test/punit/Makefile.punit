@@ -27,8 +27,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(ROOT_DIR)/genconfig/buildconf.mk
-include $(ROOT_DIR)/genconfig/dist.mk
+include $(ROOT_DIR)/makefiles/buildconf.mk
+include $(ROOT_DIR)/makefiles/dist.mk
 
 # Dirs ########################################################################
 IDIR += $(ROOT_DIR)/include

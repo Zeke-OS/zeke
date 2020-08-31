@@ -26,7 +26,7 @@
 
 # Configuration files ##########################################################
 # Generic config
-include $(ROOT_DIR)/genconfig/buildconf.mk
+include $(ROOT_DIR)/makefiles/buildconf.mk
 include $(ROOT_DIR)/makefiles/commands.mk
 ################################################################################
 # We use suffixes because it's fun

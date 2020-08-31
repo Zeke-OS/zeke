@@ -1,4 +1,4 @@
-include $(ROOT_DIR)/genconfig/buildconf.mk
+include $(ROOT_DIR)/makefiles/buildconf.mk
 
 DIRS =#
 DIRS-$(configTESTS_FB) += fb

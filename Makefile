@@ -28,7 +28,7 @@
 # Configuration files ##########################################################
 export ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-include $(ROOT_DIR)/genconfig/buildconf.mk
+include $(ROOT_DIR)/makefiles/buildconf.mk
 include $(ROOT_DIR)/boot/boot.mk
 ################################################################################
 
