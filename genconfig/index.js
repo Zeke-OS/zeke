@@ -277,23 +277,37 @@ function evalExpression(data, expression) {
     return !!vm.runInNewContext(expression, prepareSandbox(data));
 }
 
-function knob2Makefile(name, type, value) {
+function knob2Makefile(name) {
+    const { path, type, choice } = configKnobMap[name];
+    const value = getValue(config, path);
+
     if ('str' === type) {
         if (value === '') {
             return `${name}=#`;
         }
         return `${name} = ${value}`;
-    } else if (['bool', 'boolChoice'].includes(type)) {
+    } else if ('bool' === type) {
         return `${name} = ${value ? 'y' : 'n'}`;
+    } else if ('boolChoice' === type) {
+        const v = value === choice;
+        return `${name} = ${v ? 'y' : 'n'}`;
     }
     return `${name}=${value}`;
 }
 
-function knob2C(name, type, value) {
+function knob2C(name) {
+    const { path, type, choice, makeOnly } = configKnobMap[name];
+    const value = getValue(config, path);
+    if (makeOnly) return null;
+
     if ('str' === type) {
         return `#define ${name} "${value}"`
-    } else if (['bool', 'boolChoice'].includes(type)) {
+    } else if ('bool' === type) {
         if (!value) return null;
+        return `#define ${name} 1`;
+    } else if ('boolChoice' === type) {
+        const v = value === choice;
+        if (!v) return null;
         return `#define ${name} 1`;
     } else if (type === 'tristate') {
         let tri;
@@ -335,17 +349,12 @@ ajv.compileAsync(schema).then(function (validate) {
 
     console.log('Makefile\n========');
     for (const k in configMap) {
-        const { path, type } = configKnobMap[k];
-        const value = getValue(config, path);
-        console.log(knob2Makefile(k, type, value));
+        console.log(knob2Makefile(k));
     }
 
     console.log('\nC\n=');
     for (const k in configMap) {
-        const { path, type, makeOnly } = configKnobMap[k];
-        const value = getValue(config, path);
-        if (makeOnly) continue;
-        const line = knob2C(k, type, value);
+        const line = knob2C(k);
         if (line) console.log(line);
     }
 }).catch(console.error);
