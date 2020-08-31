@@ -9,7 +9,7 @@ zeke-rootfs.img
 # Generated config
 .config*
 config*
-!config_schema.json
+!config_schema.yaml
 manifest
 
 # deps

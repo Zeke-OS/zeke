@@ -1,0 +1,70 @@
+---
+title: "Hardware Features"
+metaType: menu
+description: Hardware feature and abstraction configuration.
+properties:
+  atag:
+    title: "Support bootloader ATAGs"
+    metaType: bool
+    description: >-
+      Linux ATAGs support. ATAGs are used to describe the current hardware
+      configuration on some systems where a Linux compatible bootloader is
+      involved.
+
+      If unsure, say Y.
+    config: configATAG
+    depends: configHAVE_ATAGS
+    default: true
+  mp:
+    title: "Enable MP support"
+    metaType: bool
+    description: >-
+      Selecting configMP enables some MP safeguards but doesn't break anything
+      even if MP is not actually supported on the hardware.
+
+      If unsure, say Y.
+    config: configMP
+    depends: configHAVE_MP_CAP
+    default: false
+  mmu:
+    title: "MMU Support"
+    metaType: menuconfig
+    properties:
+      enabled:
+        metaType: bool
+        config: configMMU
+        depends: configHAVE_MMU
+        default: false
+      debug:
+        title: "MMU debugging"
+        metaType: bool
+        description: |-
+          Enable MMU debugging.
+        config: configMMU_DEBUG
+        depends: configMMU
+        default: false
+  uart:
+    title: "UART support"
+    metaType: bool
+    description: >-
+      UART support. This can be used by TTY drivers.
+
+      If unsure, say Y.
+    config: configUART
+    depends: configDEVFS
+    default: false
+  uartMaxPorts:
+    title: "Maximum number of UART ports"
+    metaType: int
+    description: >-
+      Maximum number of generic UART ports supported.
+    minimum: 1
+    maximum: 256
+    config: configUART_MAX_PORTS
+    depends: configUART
+    default: 2
+
+#source "kern/hal/emmc/Kconfig"
+#source "kern/hal/fb/Kconfig"
+#source "kern/hal/bcm2835/Kconfig"
+#source "kern/hal/rpi/Kconfig"

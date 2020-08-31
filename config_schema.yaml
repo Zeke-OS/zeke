@@ -200,6 +200,9 @@ properties:
               Ingenic JZ4780: configJZ4780
             depends: "((configJZ4780 && configARCH_MIPS) || !configJZ4780)"
     default: {}
+  hal:
+    $ref: "kern/hal/hal.yaml"
+    default: {}
   modules:
     title: "Modules"
     metaType: menu
