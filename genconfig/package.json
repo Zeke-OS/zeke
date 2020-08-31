@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ajv": "^6.12.4"
+    "ajv": "6.12.4",
+    "yaml": "1.10.0"
   }
 }

@@ -1,8 +1,9 @@
 const vm = require('vm');
 const { readFileSync, promises: fs } = require('fs');
 const Ajv = require('ajv');
+const YAML = require('yaml');
 
-const schema = JSON.parse(readFileSync(process.argv[2]));
+const schema = YAML.parse(readFileSync(process.argv[2], 'utf8'));
 const ajv = new Ajv({
     loadSchema: loadSchema,
     removeAdditional: 'all',
@@ -19,7 +20,9 @@ const configMap = {};
 const dependencies = [];
 
 async function loadSchema(uri) {
-    return JSON.parse(await fs.readFile(uri));
+    return uri.endsWith('.yaml')
+        ? YAML.parse(await fs.readFile(uri, 'utf8'))
+        : JSON.parse(await fs.readFile(uri));
 }
 
 function errorPathToPath(epath) {
@@ -322,7 +325,10 @@ function knob2C(name) {
     return `#define ${name} ${value}`;
 }
 
-const config = JSON.parse(readFileSync(process.argv[3]));
+const configFile = process.argv[3];
+const config = configFile.endsWith('.yaml')
+    ? YAML.parse(readFileSync(process.argv[3], 'utf8'))
+    : JSON.parse(readFileSync(process.argv[3]));
 ajv.compileAsync(schema).then(function (validate) {
     console.log('Knobs\n=====\n', Object.keys(configKnobMap), '\n');
 

@@ -1,0 +1,214 @@
+---
+"$schema": http://json-schema.org/draft-07/schema#
+title: "Zeke Configuration"
+metaType: menu
+properties:
+  build:
+    title: "Build Config"
+    metaType: menu
+    description: Configures the build environment
+    properties:
+      cc:
+        title: "C Compiler"
+        metaType: str
+        config: CC
+        makeOnly: true
+        default: clang
+      ccflags:
+        title: "CCFLAGS common to all build targets"
+        metaType: str
+        config: CCFLAGS
+        makeOnly: true
+        default: "-MD -MP -std=c99 -include sys/cdefs.h -Wall -O2"
+      opt:
+        title: "opt"
+        metaType: str
+        config: OPT
+        makeOnly: true
+        default: opt-3.4
+      oflags:
+        title: "opt flags"
+        metaType: str
+        config: OFLAGS
+        makeOnly: true
+        default: ''
+      llc:
+        title: "llc"
+        metaType: str
+        config: LLC
+        makeOnly: true
+        default: llc-3.4
+      llcflags:
+        title: llc flags
+        metaType: str
+        config: LLCFLAGS
+        makeOnly: true
+        default: ''
+      gnuarch:
+        metaType: str
+        config: GNUARCH
+        makeOnly: true
+        default: invalid-target
+      dist:
+        title: "dist"
+        metaType: menu
+        description: >-
+          Distribution user space configuration
+        properties:
+          ccflags:
+            title: "CCFLAGS common to all build targets"
+            metaType: str
+            config: USER_CCFLAGS
+            makeOnly: true
+            default: "-emit-llvm -ffreestanding -nostdlib -nostdinc"
+          oflags:
+            title: "opt flags"
+            metaType: str
+            config: USER_OFLAGS
+            makeOnly: true
+            default: "-std-compile-opts"
+          llcflags:
+            title: "llc flags"
+            metaType: str
+            config: USER_LLCFLAGS
+            makeOnly: true
+            default: "-mtriple=$(GNUARCH)"
+          asflags:
+            title: "as flags"
+            metaType: str
+            config: USER_ASFLAGS
+            makeOnly: true
+            default: ''
+          ldflags:
+            title: "ld flags"
+            metaType: str
+            config: USER_LDFLAGS
+            makeOnly: true
+            default: ''
+        default: {}
+    default: {}
+  target:
+    title: "Target Config"
+    metaType: menu
+    properties:
+      arch:
+        title: "CPU architecture"
+        metaType: boolChoice
+        choice:
+          ARM: configARCH_ARM
+          MIPS: configARCH_MIPS
+        default: ARM
+        select:
+        - knob: GNUARCH
+          value: arm-none-eabi
+          expression: configARCH_ARM
+        - knob: GNUARCH
+          value: mipsel-sde-eld
+          expression: configARCH_MIPS
+      have64BitCPU:
+        metaType: bool
+        config: configHAVE_64_BIT_CPU
+        default: false
+      haveHFP:
+        metaType: bool
+        config: configHAVE_HFP
+        default: false
+      haveMMU:
+        metaType: bool
+        config: configHAVE_MMU
+        default: false
+      haveMP:
+        metaType: bool
+        config: configHAVE_MP_CAP
+        default: false
+      useHFP:
+        title: "Use HW Floating Points"
+        metaType: bool
+        config: configUSE_HFP
+        depends: configHAVE_HFP
+        default: false
+      use64bit:
+        title: "64-bit CPU"
+        metaType: bool
+        config: config64_BIT_CPU
+        depends: configHAVE_64_BIT_CPU
+        default: false
+      qemuGuest:
+        title: "QEMU vm guest"
+        metaType: bool
+        config: configQEMU_GUEST
+        default: false
+      arm:
+        title: "ARM"
+        metaType: menu
+        "$comment": This needs to be disabled if !configARCH_ARM
+        properties:
+          profile:
+            metaType: boolChoice
+            choice:
+              A: configARM_PROFILE_A
+              R: configARM_PROFILE_R
+              M: configARM_PROFILE_M
+          clz:
+            metaType: bool
+            config: __ARM_FEATURE_CLZ
+            default: false
+          armArch:
+            title: "ARM Architecture Version"
+            metaType: boolChoice
+            choice:
+              ARMv4T: __ARM4T__
+              ARMv6: __ARM6__
+              ARMv6k: __ARM6K__
+              ARMv6M: __ARM6M__
+              ARMv6SM: __ARM6SM__
+              ARMv7M: __ARM7M__
+              ARMv7EM: __ARM7EM__
+              ARMv7A: __ARM7A__
+              ARMv7R: __ARM7R__
+            select:
+            - knob: configARM_PROFILE_A
+              expression: __ARM6M__ || __ARM6SM__ || __ARM7M__ || __ARM7EM__
+            - knob: configARM_PROFILE_R
+              expression: __ARM7A__
+            - knob: configARM_PROFILE_M
+              expression: __ARM7R__
+            - knob: __ARM_FEATURE_CLZ
+              expression: __ARM6__ || __ARM6K__ || __ARM7A__
+            - knob: configHAVE_MP_CAP
+              expression: __ARM6K__
+          cpu:
+            title: "CPU/MCU Model"
+            metaType: boolChoice
+            choice:
+              BCM2835: configBCM2835
+            depends: "((configBCM2835 && __ARM6K__) || !configBCM2835)"
+            select:
+            - knob: configHAVE_HFP
+              expression: configBCM2835
+            - knob: configHAVE_MMU
+              expression: configBCM2835
+      mips:
+        title: "MIPS"
+        metaType: menu
+        "$comment": This needs to be disabled if !configARCH_ARM
+        properties:
+          cpu:
+            title: "CPU/MCU Model"
+            metaType: boolChoice
+            choice:
+              Ingenic JZ4780: configJZ4780
+            depends: "((configJZ4780 && configARCH_MIPS) || !configJZ4780)"
+    default: {}
+  modules:
+    title: "Modules"
+    metaType: menu
+    description: >-
+      Select modules and their config
+    properties: {}
+    additionalProperties: false
+    default: {}
+required:
+- build
+- modules
+additionalProperties: false
