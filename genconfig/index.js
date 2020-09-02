@@ -1,11 +1,10 @@
 const vm = require('vm');
 const { readFileSync, promises: fs } = require('fs');
 const Ajv = require('ajv');
-const YAML = require('yaml');
+const { read: readYaml } = require('yaml-import');
 
-const schema = YAML.parse(readFileSync(process.argv[2], 'utf8'));
+const schema = readYaml(process.argv[2]);
 const ajv = new Ajv({
-    loadSchema: loadSchema,
     removeAdditional: 'all',
     useDefaults: true,
     verbose: true,
@@ -14,19 +13,17 @@ const ajv = new Ajv({
     strictDefaults: true,
     strictKeywords: true,
     strictNumbers: true,
+    inlineRefs: false,
 });
 const configKnobMap = {};
 const configMap = {};
 const dependencies = [];
 
-async function loadSchema(uri) {
-    return uri.endsWith('.yaml')
-        ? YAML.parse(await fs.readFile(uri, 'utf8'))
-        : JSON.parse(await fs.readFile(uri));
-}
+function objToPath(obj) {
+    const epath = obj.errorPath;
+    const path = epath.substring(2, epath.length - 1);
 
-function errorPathToPath(epath) {
-    return epath.substring(2, epath.length - 1);
+    return path;
 }
 
 ajv.addKeyword('types', {
@@ -49,7 +46,7 @@ ajv.addKeyword('metaType', {
         if (type === 'boolChoice' && choice) {
             for (const k in choice) {
                 configKnobMap[choice[k]] = {
-                    path: errorPathToPath(obj.errorPath),
+                    path: objToPath(obj),
                     type: parentSchema.metaType,
                     choice: k,
                     makeOnly: parentSchema.makeOnly
@@ -71,7 +68,7 @@ ajv.addKeyword('metaType', {
             }
         }
 
-        if (type === 'int') {
+        if (['int', 'hex', 'oct'].includes(type)) {
             return {
                 type: 'integer',
             };
@@ -132,7 +129,7 @@ ajv.addKeyword('config', {
     dependencies: ['default', 'metaType'],
     compile: (name, parentSchema, obj) => {
         configKnobMap[name] = {
-            path: errorPathToPath(obj.errorPath),
+            path: objToPath(obj),
             type: parentSchema.metaType,
             makeOnly: parentSchema.makeOnly
         };
@@ -326,10 +323,10 @@ function knob2C(name) {
 }
 
 const configFile = process.argv[3];
-const config = configFile.endsWith('.yaml')
-    ? YAML.parse(readFileSync(process.argv[3], 'utf8'))
-    : JSON.parse(readFileSync(process.argv[3]));
-ajv.compileAsync(schema).then(function (validate) {
+const config = readYaml(process.argv[3]);
+const validate = ajv.compile(schema);
+
+try {
     console.log('Knobs\n=====\n', Object.keys(configKnobMap), '\n');
 
     const valid = validate(config);
@@ -363,4 +360,6 @@ ajv.compileAsync(schema).then(function (validate) {
         const line = knob2C(k);
         if (line) console.log(line);
     }
-}).catch(console.error);
+} catch (err) {
+    console.log(err);
+}

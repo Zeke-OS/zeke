@@ -1,61 +1,7 @@
 # kern/Kconfig
 
-comment "Kernel options"
 
-source "kern/hal/Kconfig"
 
-menu "Memory Management"
-
-menu "Physical memory layout"
-
-config configKSTACK_START
-    hex "P kstack start"
-    default 0x00001000
-    range 0x00001000 0x00001000
-    ---help---
-    See configKSTACK_END.
-
-config configKSTACK_END
-    hex "P kstack end"
-    default 0x00007fff
-    range 0x00007fff 0x00007fff
-    ---help---
-    Kernel interrupt stacks used when the kernel enters to a kernel mode due to
-    a received interrupt.
-
-config configKERNEL_START
-    hex "P kernel caddr start"
-    default 0x00008000
-
-config configKERNEL_END
-    hex "P kernel caddr end"
-    default 0x003fffff
-
-config configPT_AREA_START
-    hex "P Page table area start"
-    default 0x00400000
-    depends on configMMU
-
-config configPT_AREA_END
-    hex "P Page table area end"
-    default 0x007FFFFF
-    depends on configMMU
-
-config configDYNMEM_START
-    hex "P dynmem start"
-    default 0x00800000
-    ---help---
-    Dynmem is the memory area used for dynamic memory allocations, for both
-    memory used inside the kernel as well as memory passed to the user space.
-    Though dynmem allocations are rarely used as such and some higher level
-    memory allocator us used instead, eg. vralloc (buf.h).
-
-config configDYNMEM_SIZE
-    hex "dynmem size"
-    default 0x800000
-    ---help---
-    Size of the dynmem memory area, must be less than the total available memory
-    on the hardware.
 
 endmenu
 

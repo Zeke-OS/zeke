@@ -1,30 +1,5 @@
 mainmenu "Zeke Configuration"
 
-menu "Target Config"
-source "genconfig/target.kconf"
-endmenu
-
-menu "Build Config"
-
-config configCOMMON_CCFLAGS
-    string "CCFLAGS common to all build targets"
-    default "-Wall -O2"
-    ---help---
-    CCFLAGS used for all builds.
-
-config configKERNEL_CCFLAGS
-    string "Kernel CCFLAGS"
-    default "-ggdb -Wundef -Wextra -Wno-unused-parameter"
-    ---help---
-    CCFLAGS used for kernel build.
-
-config configUSER_CCFLAGS
-    string "Userland CCFLAGS"
-    ---help---
-    CCFALGS used for userland build.
-
-endmenu
-
 menu "Kernel"
 source kern/Kconfig
 endmenu

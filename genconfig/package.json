@@ -13,6 +13,6 @@
   "license": "ISC",
   "dependencies": {
     "ajv": "6.12.4",
-    "yaml": "1.10.0"
+    "yaml-import": "2.0.0"
   }
 }

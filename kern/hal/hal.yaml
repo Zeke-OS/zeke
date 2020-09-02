@@ -58,11 +58,12 @@ properties:
     metaType: int
     description: >-
       Maximum number of generic UART ports supported.
-    minimum: 1
-    maximum: 256
     config: configUART_MAX_PORTS
     depends: configUART
+    minimum: 1
+    maximum: 256
     default: 2
+default: {}
 
 #source "kern/hal/emmc/Kconfig"
 #source "kern/hal/fb/Kconfig"
