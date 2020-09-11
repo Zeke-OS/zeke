@@ -1,5 +1,5 @@
 ---
-title: "Kernel options"
+title: "Kernel Options"
 metaType: menu
 description: Kernel configuration and subsystem selection.
 properties:
@@ -88,7 +88,303 @@ properties:
             config: configDYNMEM_SIZE
             default: 0x800000
         default: {}
+      virtLayout:
+        title: "Kernel virtual memory layout"
+        metaType: menu
+        properties:
+          tkStackStart:
+            title: "tkstack vaddr start"
+            metaType: hex
+            description: >-
+              See help on configTKSTACK_END.
+            config: configTKSTACK_START
+            depends: configMMU
+            minimum: 0x00000000
+            maximum: 0x00001000
+            default: 0x00001000
+          tkStackEnd:
+            title: "tkstack vaddr end"
+            metaType: hex
+            description: >-
+              Thread kernel stack starts from here. Currently this stack addr
+              must be within the first megabyte of the virtual memory address
+              space.
+            config: configTKSTACK_END
+            depends: configMMU
+            minimum: 0x00000fff
+            maximum: 0x00001fff
+            default: 0x00001fff
+          ksectStart:
+            title: "ksect start"
+            metaType: hex
+            description: >-
+              Ksects, kernel dynamic virtual sections, are mainly mainly used to
+              access memory mapped IO by using strongly ordered access on the
+              virtual ksect address.
+            config: configKSECT_START
+            default: 0x30000000
+          ksectEnd:
+            title: "ksect end"
+            metaType: hex
+            description: >-
+              Ksects, kernel dynamic virtual sections, are mainly mainly used to
+              access memory mapped IO by using strongly ordered access on the
+              virtual ksect address.
+            config: configKSECT_END
+            default: 0x50000000
+        default: {}
+      userLayout:
+        title: "User space process memory layout"
+        metaType: menu
+        properties:
+          execBase:
+            title: "Exec base address low limit"
+            metaType: hex
+            description: >-
+              Lowest base address allowed for loading sections from a binary
+              file.
+            config: configEXEC_BASE_LIMIT
+            default: 0x10000000
+          envBase:
+            title: "Process environment base address"
+            metaType: hex
+            description: >-
+              This sets the base address of the process arguments and
+              environment.
+            config: configUENV_BASE_ADDR
+            default: 0x0FFFF000
+        default: {}
     default: {}
+  sched:
+    !!import/single sched/sched.yaml
+  proc:
+    title: "Processes"
+    metaType: menu
+    properties:
+      maxproc:
+        title: "Maximum number of processes"
+        metaType: int
+        description: >-
+          Maximum number of processes in the system. The value should be big enough
+          because it can't be changed on runtime.
+        config: configMAXPROC
+        default: 50
+      defaultStackSize:
+        title: "Default stack size"
+        metaType: int
+        description: >-
+          Default stack size of a new process main().
+        config: configPROC_STACK_DFL
+        minimum: 4096
+        default: 8192
+      cow:
+        title: "Enable Copy-On-Access for processes"
+        metaType: bool
+        description: >-
+          Selects whether process memory regions shall be copied on demand as COW
+          (Copy-On-Write) or immediately when a process is forked. This will also
+          enable Copy-On-Read for allocators that support it.
+        config: configCOW_ENABLED
+        default: true
+      coreDumps:
+        title: "Core dump support"
+        metaType: bool
+        description: >-
+          Add a core dump support for processes. If this feature is enabled a
+          core dump support is added to the kernel and certain signals will
+          cause a core dump to be stored by default.
+
+          This should be enable normally. It might be necessary to disable this
+          to build a minimal system or if the target system has only read-only
+          file systems.
+        config: configCORE_DUMPS
+        default: true
+      hardLimits:
+        title: "Default hard limits"
+        metaType: menu
+        properties:
+          core:
+            title: "RLIMIT_CORE"
+            metaType: int
+            description: >-
+              Maximum size of a core file, in bytes.
+
+              -1 is no limit.
+            config: configRLIMIT_CORE
+            minimum: -1
+            default: -1
+          cpu:
+            title: "RLIMIT_CPU"
+            metaType: int
+            description: >-
+              Maximum amount of CPU time.
+
+              -1 is no limit.
+            config: configRLIMIT_CPU
+            minimum: -1
+            default: -1
+          data:
+            title: "RLIMIT_DATA"
+            metaType: int
+            description: >-
+              Maximum allowed data segment size.
+
+              -1 is no limit.
+            config: configRLIMIT_DATA
+            minimum: -1
+            default: -1
+          fsize:
+            title: "RLIMIT_FSIZE"
+            metaType: int
+            description: >-
+              File size limit of a process.
+
+              -1 is no limit.
+            config: configRLIMIT_FSIZE
+            minimum: -1
+            default: -1
+          nofile:
+            title: "RLIMIT_NOFILE"
+            metaType: int
+            description: >-
+              Limit on number of open files.
+
+              Can't be infinite (-1).
+            config: configRLIMIT_NOFILE
+            minimum: 8
+            maximum: 1024
+            default: 16
+          stack:
+            title: "RLIMIT_STACK"
+            metaType: int
+            description: >-
+              Maximum size of stack for a thread, in bytes.
+
+              -1 is no limit.
+            config: configRLIMIT_STACK
+            minimum: -1
+            default: -1
+          as:
+            title: "RLIMIT_AS"
+            metaType: int
+            description: >-
+              Limit on address space size of a process.
+
+              -1 is no limit.
+            config: configRLIMIT_AS
+            minimum: -1
+            default: -1
+        default: {}
+    default: {}
+  generic:
+    title: "Generic"
+    metaType: menu
+    properties:
+      maxTimers:
+        title: "Maximum number of kernel timers"
+        metaType: int
+        description: >-
+          Maximum number of kernel timers available.
+        config: configTIMERS_MAX
+        minimum: 15
+        maximum: 65535
+        default: 128
+      initStackSize:
+        title: "Init stack size"
+        metaType: int
+        description: >-
+          Stack size for init process main() thread.
+        config: configUSRINIT_SSIZE
+        default: 8192
+      rcuSyncHz:
+        title: "RCU synchronization interval [ms]"
+        metaType: int
+        description: >-
+          Automatic RCU synchronization runs once per interval set here, toggles
+          the clock and reclaims any unreclaimed garbage inserted to the
+          previous reclaim list.
+
+          Set to 0 to disable automatic synchronization.
+        config: configRCU_SYNC_HZ
+        minimum: 0
+        default: 1000
+    default: {}
+  fs:
+    !!import/single fs/fs.yaml
+  security:
+    title: "Security"
+    metaType: menu
+    properties:
+      suser:
+        title: "Enable super user privileges"
+        metaType: bool
+        description: >-
+          Processes with uid 0 have privilege by default. This knob sets default
+          value of suser_enabled sysctl variable to one.
+
+          If suser_enabled is set to zero, uid 0 is offers no special privilege
+          in the kernel security policy in most of the places. It can be also
+          set at runtime by using sysctl interface.
+        config: configSUSER
+        default: false
+      securelevel:
+        title: "Securelevel at boot"
+        metaType: int
+        config: configBOOT_SECURELEVEL
+        minimum: 0
+        default: 0
+    default: {}
+  kerror:
+    !!import/single kerror/kerror.yaml
+  debug:
+    title: "Kernel debugging"
+    metaType: menu
+    properties:
+      kassert:
+        title: "Kernel asserts"
+        metaType: bool
+        description: >-
+          Enable KASSERT asserts in the kernel. Selecting this option will
+          slightly slow down the kernel.
+        config: configKASSERT
+        default: false
+      kmem:
+        title: "kmem debugging"
+        metaType: bool
+        description: >-
+          Enable kmem init debug messages.
+        config: configKMEM_DEBUG
+        default: false
+      vralloc:
+        title: "VRalloc debugging"
+        metaType: bool
+        description: >-
+          Enable additional debugging assertions in vralloc.
+        config: configVRALLOC_DEBUG
+        default: false
+      klock:
+        title: "klock debugging"
+        metaType: menuconfig
+        description: >-
+          Debug kernel locks.
+        properties:
+          enabled:
+            metaType: bool
+            config: configLOCK_DEBUG
+            default: false
+          dlthres:
+            title: "Klock deadlock detection threshold"
+            metaType: int
+            description: >-
+              Try to detect spinlock deadlocks by using a try counter. Setting this option
+              to zero disables the deadlock detection.
+            config: configKLOCK_DLTHRES
+            depends: configLOCK_DEBUG
+            minimum: 0
+            default: 19
+    default: {}
+  libkern:
+    !!import/single libkern/libkern.yaml
+  kunit:
+    !!import/single kunit/kunit.yaml
 default: {}
-
-

@@ -1,0 +1,79 @@
+---
+title: "FatFs"
+metaType: menuconfig
+description: >-
+  The FatFs driver will allow the kernel to read and write MS-DOS based
+  file systems. This driver covers the FAT12, FAT16 and FAT32 file system
+  versions.
+
+  Some hardware platforms like raspberry may require a FAT boot partition,
+  so this driver is useful for accessing that partition as well.
+properties:
+  enabled:
+    metaType: bool
+    config: configFATFS
+    default: true
+    select:
+    - configFS_INPOOL
+    - configVFS_HASH
+  defaultCp:
+    title: "Default code page for FAT"
+    metaType: int
+    description: >-
+      This option sets the default OEM code page used for FAT file systems.
+      Incorrect setting of the code page can cause a file open failure.
+
+      The code page can be also selected dynamically by using the codepage mount
+      parameter.
+
+      At least the following code pages are supported:
+
+      *  932  - Japanese Shift_JIS (DBCS, OEM, Windows)
+      *  936  - Simplified Chinese GBK (DBCS, OEM, Windows)
+      *  949  - Korean (DBCS, OEM, Windows)
+      *  950  - Traditional Chinese Big5 (DBCS, OEM, Windows)
+      *  1250 - Central Europe (Windows)
+      *  1251 - Cyrillic (Windows)
+      *  1252 - Latin 1 (Windows)
+      *  1253 - Greek (Windows)
+      *  1254 - Turkish (Windows)
+      *  1255 - Hebrew (Windows)
+      *  1256 - Arabic (Windows)
+      *  1257 - Baltic (Windows)
+      *  1258 - Vietnam (OEM, Windows)
+      *  437  - U.S. (OEM)
+      *  720  - Arabic (OEM)
+      *  737  - Greek (OEM)
+      *  775  - Baltic (OEM)
+      *  850  - Multilingual Latin 1 (OEM)
+      *  858  - Multilingual Latin 1 + Euro (OEM)
+      *  852  - Latin 2 (OEM)
+      *  855  - Cyrillic (OEM)
+      *  866  - Russian (OEM)
+      *  857  - Turkish (OEM)
+      *  862  - Hebrew (OEM)
+      *  874  - Thai (OEM, Windows)
+    config: configFATFS_DEFAULT_CODEPAGE
+    minimum: 0
+    default: 437
+  unicode:
+    title: "FAT Unicode support"
+    metaType: bool
+    config: configFATFS_UNICODE
+    default: false
+  desiredvnodes:
+    title: "desiredvnodes"
+    metaType: int
+    description: >-
+      Controls the vnode hash table size.
+      This option should be set to the expected average maximum number of vnodes
+      required by the whole fatfs driver.
+    config: configFATFS_DESIREDVNODES
+    minimum: 0
+    default: 100
+  debug:
+    title: "Debugging"
+    metaType: bool
+    config: configFATFS_DEBUG
+    default: false
+default: {}

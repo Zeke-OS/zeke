@@ -1,0 +1,31 @@
+---
+title: "Ramfs"
+metaType: menuconfig
+description: >-
+  Provides an in-RAM file system that can be used before hardware backed file
+  systems are mounted. It also provides a mountpoint for pseudo file systems
+  during boot. Some file systems may also inherit ramfs and thus auto select it.
+properties:
+  enabled:
+    metaType: bool
+    config: configRAMFS
+    default: true
+    select:
+    - configFS_DEHTABLE
+    - configFS_INPOOL
+    - configVFS_HASH
+  desiredvnodes:
+    title: "desiredvnodes"
+    metaType: int
+    description: >-
+      Controls the vnode hash table size.
+      This option should be set to the expected average maximum number of vnodes
+      required by the whole ramfs driver.
+    config: configRAMFS_DESIREDVNODES
+    default: 100
+  debug:
+    title: "Debug mode"
+    metaType: bool
+    config: configRAMFS_DEBUG
+    default: false
+default: {}

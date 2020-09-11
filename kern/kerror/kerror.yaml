@@ -1,0 +1,81 @@
+---
+title: "Kernel Logging"
+metaType: menu
+properties:
+  enabled:
+    metaType: bool
+    config: configKLOGGER
+    default: true
+  bufSize:
+    title: "Lastlog buf size"
+    metaType: int
+    config: configKERROR_BUF_SIZE
+    minimum: 200
+    default: 4096
+  maxline:
+    title: "Maximum kerror line length"
+    metaType: int
+    config: configKERROR_MAXLEN
+    minimum: 80
+    default: 200
+  uart:
+    title: "Direct UART0 printing support"
+    metaType: bool
+    config: configKERROR_UART
+    depends: configUART
+    default: true
+  defaultLogger:
+    title: "Default klogger method"
+    metaType: int
+    description: >-
+      0 = No default logger
+
+      1 = Kerror buffer
+
+      2 = UART0
+    config: configDEF_KLOGGER
+    minimum: 0
+    maximum: 3
+    default: 2
+  logLevel:
+    title: "Log level"
+    description: >-
+      err
+
+      Additional error messages and asserts for serious errors that should not
+      occur in normal operation.
+
+      info
+
+      Additional information on warnings and errors.
+
+      debug
+
+      All debug messages and asserts.
+    metaType: boolChoice
+    choice:
+      crit: configDEBUG_CRIT
+      err: configDEBUG_ERR
+      warn: configDEBUG_WARN
+      info: configDEBUG_INFO
+      debug: configDEBUG_DEBUG
+    default: crit
+  dyndebug:
+    title: "Dyndebug"
+    metaType: bool
+    description: >-
+      Enable run-time configurable, dynamic debug, debug messages. Dyndebug
+      exposes an interface to /proc/dyndebug that can be controlled with
+      /sbin/dyndebug command.
+    config: configDYNDEBUG
+    depends: configKLOGGER
+    default: true
+  dyndebugBootp:
+    title: "Dyndebug boot params"
+    metaType: str
+    description: >-
+      Enable dynamic debug messages at boot time. List separators: ";, "
+    config: configDYNDEBUG_BOOTPARMS
+    depends: configDYNDEBUG
+    default: ""
+default: {}

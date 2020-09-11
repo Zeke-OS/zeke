@@ -1,0 +1,21 @@
+---
+title: "Library Routines"
+metaType: menu
+properties:
+  segtree:
+    title: "Generic min/max segment trees"
+    metaType: bool
+    description: >-
+      Generic min/max segment tree implementation.
+    config: configGENSEGTREE
+    default: false
+  subrhash:
+    title: "Kernel hash tables"
+    metaType: bool
+    description: >-
+      BSD kernel hash tables.
+
+      See hashinit(9)
+    config: configSUBR_HASH
+    default: false
+default: {}

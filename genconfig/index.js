@@ -15,6 +15,7 @@ const ajv = new Ajv({
     strictNumbers: true,
     inlineRefs: false,
 });
+require('ajv-errors')(ajv);
 const configKnobMap = {};
 const configMap = {};
 const dependencies = [];
@@ -90,7 +91,8 @@ ajv.addKeyword('metaType', {
                 allOf: [
                     {},
                     { not: {} }
-                ]
+                ],
+                errorMessage: `Invalid property type "${type}"`
             }
         }
     },
@@ -135,15 +137,28 @@ ajv.addKeyword('config', {
         };
 
         // TODO Validate that config is under correct type of object
-        return (value, dataPath) => {
+        return function validateConfig(value, dataPath) {
+            const errors = [];
             if (configMap[name]) {
-                return false;
-                // TODO Add error
+                errors.push({
+                    keyword: 'config',
+                    message: `The config name exists: "${name}"`,
+                    params: { keyword: 'config' }
+                });
             }
 
             if (!parentSchema.metaType) {
-                return false;
+                errors.push({
+                    keyword: 'config',
+                    message: 'metaType is not set',
+                    params: { keyword: 'config' }
+                });
             };
+
+            if (errors.length > 0) {
+                validateConfig.errors = errors;
+                return false;
+            }
 
             configMap[name] = true;
             return true;
@@ -164,9 +179,9 @@ ajv.addKeyword('depends', {
     }
 });
 ajv.addKeyword('select', {
-    //dependencies: ['config'],
     modifying: true,
-    validate: (...args) => {
+    errors: true,
+    validate: function validateSelect(...args) {
         let sel = args[0];
         const val = args[1];
         const data = args[6];
@@ -176,7 +191,7 @@ ajv.addKeyword('select', {
         if (typeof sel === 'string') {
             sel = [{ knob: sel, expression: 'true' }];
         } else if (Array.isArray(sel) && typeof sel[0] === 'string') {
-            sel = sel.map((s) => ({ knob: sel, expression: 'true' }));
+            sel = sel.map((s) => ({ knob: s, expression: 'true' }));
         } else if (!Array.isArray(sel)) {
             sel = [sel];
         }
@@ -184,6 +199,13 @@ ajv.addKeyword('select', {
         for (const { knob, value, expression } of sel) {
             if (evalExpression(data, expression)) {
                 if (!configKnobMap[knob]) {
+                    validateSelect.errors = [
+                        {
+                            keyword: 'select',
+                            message: `Select validation failed for ${knob}`,
+                            params: { keyword: 'select' }
+                        }
+                    ];
                     return false;
                 }
 
@@ -326,40 +348,36 @@ const configFile = process.argv[3];
 const config = readYaml(process.argv[3]);
 const validate = ajv.compile(schema);
 
-try {
-    console.log('Knobs\n=====\n', Object.keys(configKnobMap), '\n');
+console.log('Knobs\n=====\n', Object.keys(configKnobMap), '\n');
 
-    const valid = validate(config);
+const valid = validate(config);
 
-    if (!valid) {
-        console.log(JSON.stringify(validate.errors, null, 2));
-        process.exit(1);
+if (!valid) {
+    console.log(JSON.stringify(validate.errors, null, 2));
+    process.exit(1);
+}
+
+let passed = true;
+for (const dependency of dependencies) {
+    const [name, expression] = dependency;
+    if (!evalExpression(config, `!${name} || (${expression})`)) {
+        console.log(`"${name}" depends on: "${expression}"`);
+        passed = false;
     }
+}
+if (!passed) {
+    process.exit(1);
+}
 
-    let passed = true;
-    for (const dependency of dependencies) {
-        const [name, expression] = dependency;
-        if (!evalExpression(config, `!${name} || (${expression})`)) {
-            console.log(`"${name}" depends on: "${expression}"`);
-            passed = false;
-        }
-    }
-    if (!passed) {
-        process.exit(1);
-    }
+console.log('js\n==\n', JSON.stringify(config, null, 2), '\n');
 
-    console.log('js\n==\n', JSON.stringify(config, null, 2), '\n');
+console.log('Makefile\n========');
+for (const k in configMap) {
+    console.log(knob2Makefile(k));
+}
 
-    console.log('Makefile\n========');
-    for (const k in configMap) {
-        console.log(knob2Makefile(k));
-    }
-
-    console.log('\nC\n=');
-    for (const k in configMap) {
-        const line = knob2C(k);
-        if (line) console.log(line);
-    }
-} catch (err) {
-    console.log(err);
+console.log('\nC\n=');
+for (const k in configMap) {
+    const line = knob2C(k);
+    if (line) console.log(line);
 }

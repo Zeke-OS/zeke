@@ -1,0 +1,93 @@
+---
+title: "File Systems"
+metaType: menu
+properties:
+  mbr:
+    title: "MBR Support"
+    metaType: bool
+    description: >-
+      Read MBR and populate devices for drive partitions accordingly.
+    config: configMBR
+    depends: configDEVFS
+    default: true
+  rootfs:
+    title: "Root file system"
+    metaType: menu
+    properties:
+      name:
+        title: "FS name"
+        metaType: str
+        config: configROOTFS_NAME
+        default: "fatfs"
+      path:
+        title: "FS source path"
+        metaType: str
+        config: configROOTFS_PATH
+        default: "/dev/emmc0p1"
+      flags:
+        title: "Mount flags"
+        metaType: int
+        config: configROOTFS_FLAGS
+        default: 0
+      params:
+        title: "Params"
+        metaType: str
+        config: configROOTFS_PARMS
+        default: ""
+    default: {}
+  ramfs:
+    !!import/single ramfs/ramfs.yaml
+  devfs:
+    title: "devfs"
+    metaType: bool
+    config: configDEVFS
+    depends: configRAMFS
+    default: true
+  procfs:
+    title: "procfs"
+    metaType: bool
+    description: >-
+      Provides a Plan 9 -like process file system.
+    config: configPROCFS
+    depends: configRAMFS
+    default: true
+  fatfs:
+    !!import/single fatfs/fatfs.yaml
+  libs:
+    title: "FS libraries"
+    metaType: menu
+    properties:
+      inpool:
+        title: "inode pools"
+        metaType: bool
+        description: >-
+          inode pool speeds up the creation of new inodes in file systems.
+          A pool is used to get new preallocated inodes as well as destroying
+          and recyling old inodes. A file system may have unlimited amount of
+          pools as pools are handled as objects.
+
+          This is usually auto selected.
+        config: configFS_INPOOL
+        default: false
+      dehtable:
+        title: "Dirent hash table"
+        metaType: bool
+        config: configFS_DEHTABLE
+        default: false
+      hash:
+        title: "VFS Hash"
+        metaType: bool
+        description: >-
+          A vnode hashmap for file systems that have to cache vnode data in-core.
+
+          This is usually auto selected.
+        config: configVFS_HASH
+        select: configSUBR_HASH
+        default: false
+    default: {}
+  vrefDebug:
+    title: "fs vref debugging"
+    metaType: bool
+    config: configFS_VREF_DEBUG
+    default: false
+default: {}

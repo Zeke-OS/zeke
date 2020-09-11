@@ -1,0 +1,69 @@
+---
+title: "In-Kernel Unit Tests"
+metaType: menuconfig
+description: >-
+  KUnit is a port of PUnit for in-kernel testing. KUnit is only needed
+  if you are willing to run those tests. In-kernel tests may cause
+  serious stability issues or crash the kernel.
+  Tests are exported under sysctl debug.test tree and can be executed
+  by writing to a test node. Test log is then written to the kernel
+  logging facility.
+properties:
+  enabled:
+    metaType: bool
+    config: configKUNIT
+    default: false
+  reportOriented:
+    title: "Report oriented"
+    metaType: bool
+    config: configKUNIT_REPORT_ORIENTED
+    default: false
+  fs:
+    title: "fs"
+    metaType: bool
+    description: >-
+      Tests for vfs and filesystems.
+    config: configKUNIT_FS
+    default: false
+  generic:
+    title: "generic"
+    metaType: bool
+    description: >-
+      Tests for generic data structures.
+    config: configKUNIT_GENERIC
+    default: false
+  hal:
+    title: "hal"
+    metaType: bool
+    description: >-
+      Tests for HAL.
+    config: configKUNIT_HAL
+    default: false
+  kstring:
+    title: "kstring"
+    metaType: bool
+    description: >-
+      Tests for kstring library.
+    config: configKUNIT_KSTRING
+    default: false
+  rcu:
+    title: "rcu"
+    metaType: bool
+    description: >-
+      Tests for RCU subsystem.
+    config: configKUNIT_RCU
+    default: false
+  sched:
+    title: "sched"
+    metaType: bool
+    description: >-
+      Tests for schedulers.
+    config: configKUNIT_SCHED
+    default: false
+  vm:
+    title: "vm"
+    metaType: bool
+    description: >-
+      Tests for virtual memory related libraries and subsystems.
+    config: configKUNIT_VM
+    default: false

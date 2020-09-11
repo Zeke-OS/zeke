@@ -1,0 +1,37 @@
+---
+title: "Thread Scheduling"
+metaType: menu
+properties:
+  hz:
+    title: "Scheduler frequency [Hz]"
+    metaType: int
+    config: configSCHED_HZ
+    minimum: 100
+    maximum: 1000
+    default: 100
+  lavg:
+    title: "Load averages calculation period"
+    metaType: boolChoice
+    choice:
+      "5sec": configSCHED_LAVGPERIOD_5SEC
+      "11sec": configSCHED_LAVGPERIOD_11SEC
+    default: 5sec
+  schedAvg:
+    title: "Scheduling time average calculation"
+    metaType: bool
+    description: >-
+      Enable scheduling time average calculation. If enabled the scheduler
+      will provide the average time spent in a scheduler per CPU in sysctl.
+    config: configSCHED_TIME_AVG
+    default: true
+  freeq:
+    title: "Free queue size"
+    metaType: int
+    description: >-
+      Dead threads are freed in an interrupt handler so the actually freeing
+      of resources happens in the idle thread. This option controls the size
+      of the queue to store garbage thread_info pointers.
+    config: configSCHED_FREEQ_SIZE
+    minimum: 0
+    default: 100
+default: {}

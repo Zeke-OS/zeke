@@ -200,6 +200,8 @@ properties:
               Ingenic JZ4780: configJZ4780
             depends: "((configJZ4780 && configARCH_MIPS) || !configJZ4780)"
     default: {}
+  boot:
+    !!import/single boot/boot.yaml
   kern:
     !!import/single kern/kern.yaml
 required:
