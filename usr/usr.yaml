@@ -1,0 +1,15 @@
+---
+title: "Multi-User Util"
+metaType: menu
+properties:
+  examples:
+    title: "Examples"
+    metaType: bool
+    config: configUSR_EXAMPLES
+    default: false
+  games:
+    title: "Games"
+    metaType: bool
+    config: configUSR_GAMES
+    default: false
+default: {}

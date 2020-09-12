@@ -1,0 +1,22 @@
+---
+title: "Boot Loader Configuration"
+metaType: menu
+properties:
+  atags:
+    metaType: bool
+    config: configHAVE_ATAGS
+    "$comment": Select this if the platform specific bootloader will prepare ATAGs.
+    default: false
+  loader:
+    title: "Boot loader"
+    metaType: boolChoice
+    choice:
+      none: configBOOTLOADER_NONE
+      rpi: configBOOTLOADER_RPI
+      rpi0: configBOOTLOADER_RPI0
+    depends: "(configBCM2835 && (configBOOTLOADER_RPI || configBOOTLOADER_RPI0)) || !(configBOOTLOADER_RPI || configBOOTLOADER_RPI0)"
+    select:
+    - knob: configHAVE_ATAGS
+      expression: configBOOTLOADER_RPI
+    default: none
+default: {}

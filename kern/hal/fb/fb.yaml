@@ -1,0 +1,24 @@
+---
+title: "Framebuffer Support"
+metaType: menuconfig
+properties:
+  enabled:
+    metaType: bool
+    config: configFB
+    default: false
+  latin:
+    title: "Latin extension"
+    metaType: bool
+    config: configFB_FONT_LATIN
+    default: false
+  greek:
+    title: "Greek extension"
+    metaType: bool
+    config: configFB_FONT_GREEK
+    default: false
+  hiragana:
+    title: "Hiragana extension"
+    metaType: bool
+    config: configFB_FONT_HIRAGANA
+    default: false
+default: {}

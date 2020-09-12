@@ -66,9 +66,12 @@ properties:
         minimum: 1
         maximum: 256
         default: 2
+  emmc:
+    !!import/single emmc/emmc.yaml
+  fb:
+    !!import/single fb/fb.yaml
+  bcm2835:
+    !!import/single bcm2835/bcm2835.yaml
+  rpi:
+    !!import/single rpi/rpi.yaml
 default: {}
-
-#source "kern/hal/emmc/Kconfig"
-#source "kern/hal/fb/Kconfig"
-#source "kern/hal/bcm2835/Kconfig"
-#source "kern/hal/rpi/Kconfig"

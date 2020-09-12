@@ -1,0 +1,10 @@
+---
+title: "bin"
+metaType: menu
+properties:
+  minised:
+    title: "minised"
+    metaType: bool
+    config: configMINISED
+    default: true
+default: {}

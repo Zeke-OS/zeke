@@ -1,0 +1,41 @@
+---
+title: "BCM2835 Drivers"
+metaType: menu
+properties:
+  fb:
+    title: "BCM2835 FB support"
+    metaType: bool
+    description: >-
+      Support for BCM2835 videocore.
+    config: configBCM_FB
+    default: false
+    depends: "configFB && configBCM2835 && configBCM_MB"
+    select: configRPI_HW
+  info:
+    title: "BCM2835 info"
+    metaType: bool
+    config: configBCM_INFO
+    depends: "configBCM2835 && configBCM_MB"
+    default: false
+  jtag:
+    title: "BCM2835 JTAG support"
+    metaType: bool
+    config: configBCM_JTAG
+    depends: configBCM2835
+    default: false
+  mb:
+    title: "BCM2835 mailbox support"
+    metaType: bool
+    $comment: default y if configBCM2835
+    config: configBCM_MB
+    depends: configBCM2835
+    default: true
+  pm:
+    title: "BCM2835 PM support"
+    metaType: bool
+    description: >-
+      Enable BCM2835 Power Management support.
+    config: configBCM_PM
+    depends: "configBCM2835 && configBCM_MB"
+    default: false
+default: {}

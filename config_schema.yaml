@@ -214,6 +214,18 @@ properties:
     !!import/single boot/boot.yaml
   kern:
     !!import/single kern/kern.yaml
+  bin:
+    !!import/single bin/bin.yaml
+  etc:
+    !!import/single etc/etc.yaml
+  lib:
+    !!import/single lib/lib.yaml
+  sbin:
+    !!import/single sbin/sbin.yaml
+  usr:
+    !!import/single usr/usr.yaml
+  opt:
+    !!import/single opt/opt.yaml
 required:
 - build
 - target

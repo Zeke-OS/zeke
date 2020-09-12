@@ -1,0 +1,67 @@
+---
+title: "EMMC Driver"
+metaType: menuconfig
+description: >-
+  Generic EMMC Driver.
+properties:
+  enabled:
+    metaType: bool
+    config: configEMMC
+    depends: "configBCM2835 && configBCM_MB"
+    default: false
+  sd1v8:
+    title: "Enable 1.8V support"
+    metaType: bool
+    config: configEMMC_SD_1_8V_SUPPORT
+    default: true
+  sd4bit:
+    title: "Enable 4-bit support"
+    metaType: bool
+    config: configEMMC_SD_4BIT_DATA
+    default: true
+  sdxcMaxPerf:
+    title: "Enable SDXC maximum performance mode"
+    metaType: bool
+    description: >-
+      Enables SDXC maximum performance mode.
+      This option requires 150 mA current.
+
+      If unsure, say N.
+    config: configEMMC_SDXC_MAXIMUM_PERFORMANCE
+    default: false
+  dma:
+    title: "Enable SDMA support"
+    metaType: bool
+    config: configEMMC_SDMA_SUPPORT
+    default: false
+  int:
+    title: "Enable card interrupts"
+    metaType: bool
+    config: configEMMC_SD_CARD_INTERRUPTS
+    default: false
+  wr:
+    title: "Enable SD card write support (EXPERIMENTAL)"
+    metaType: bool
+    description: >-
+      Enable EXPERIMENTAL and possibly DANGEROUS SD card write support.
+
+      If unsure, say N.
+    config: configEMMC_WRITE_SUPPORT
+    default: false
+  implementation:
+    title: "EMMC Implementation"
+    metaType: boolChoice
+    description: >-
+      Select generic if configQEMU_GUEST is set.
+      Select configEMMC_BCM2708 if configBCM2835 is set.
+    choice:
+      generic: configEMMC_GENERIC
+      bcm2708: configEMMC_BCM2708
+    default: generic
+    depends: "((configEMMC_BCM2708 && configBCM2835 && configBCM_MB && configBCM_PM) || !configEMMC_BCM2708)"
+  debug:
+    title: "Debugging mode"
+    metaType: bool
+    config: configEMMC_DEBUG
+    default: false
+default: {}

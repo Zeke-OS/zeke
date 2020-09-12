@@ -1,0 +1,17 @@
+---
+title: "Raspberry PI drivers"
+metaType: menu
+properties:
+  mmio:
+    title: "Raspberry PI memory mapped HW support"
+    metaType: bool
+    config: configRPI_HW
+    depends: configBCM2835
+    default: false
+  leds:
+    title: "Raspberry PI leds"
+    metaType: bool
+    config: configRPI_LEDS
+    default: false
+    depends: configBCM2835
+default: {}

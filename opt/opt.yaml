@@ -1,0 +1,58 @@
+---
+title: "Optional Applications"
+metaType: menu
+properties:
+  test:
+    title: "Testing"
+    metaType: menu
+    properties:
+      reportOriented:
+        title: "Report oriented"
+        metaType: bool
+        description: >-
+          Report oriented mode prints more additional information like test module
+          and test case descriptions.
+        config: configPU_REPORT_ORIENTED
+        default: false
+      unixUnit:
+        title: "PUnit Unix Unit"
+        metaType: bool
+        config: configPU_UU
+        default: false
+      testSuites:
+        title: "Test Suites"
+        metaType: menu
+        properties:
+          fb:
+            title: "Framebuffer tests"
+            metaType: bool
+            config: configTESTS_FB
+            default: false
+          libc:
+            title: "Libc unit tests"
+            metaType: bool
+            config: configTESTS_LIBC
+            default: false
+          mman:
+            title: "Memory management tests (mmap)"
+            metaType: bool
+            config: configTESTS_MMAN
+            default: false
+          tty:
+            title: "TTY tests"
+            metaType: bool
+            config: configTESTS_TTY
+            default: false
+          pthread:
+            title: "Pthread tests"
+            metaType: bool
+            config: configTESTS_PTHREAD
+            default: false
+          unistd:
+            title: "Unistd tests"
+            metaType: bool
+            config: configTESTS_UNISTD
+            default: false
+        default: {}
+    default: {}
+default: {}

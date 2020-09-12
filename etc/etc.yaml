@@ -1,0 +1,10 @@
+---
+title: "Boot Loader Configuration"
+metaType: menu
+properties:
+  testing:
+    title: "Enable testing configs"
+    metaType: bool
+    config: configETC_TESTING
+    default: false
+default: {}
