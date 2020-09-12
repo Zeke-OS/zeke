@@ -24,7 +24,7 @@ function objToPath(obj) {
     const epath = obj.errorPath;
     const path = epath.substring(2, epath.length - 1);
 
-    return path;
+    return path.replace(/\//g, '.');
 }
 
 ajv.addKeyword('types', {
@@ -302,6 +302,10 @@ function evalExpression(data, expression) {
 function knob2Makefile(name) {
     const { path, type, choice } = configKnobMap[name];
     const value = getValue(config, path);
+
+    if (value === undefined) {
+        throw new Error(`${path} (${name}) is undefined`);
+    }
 
     if ('str' === type) {
         if (value === '') {
