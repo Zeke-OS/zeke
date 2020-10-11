@@ -52,6 +52,8 @@ properties:
       kernel:
         title: "Kernel"
         metaType: menu
+        description: >-
+          Kernel specific build options.
         properties:
           ccflags:
             title: "CCFLAGS"
@@ -63,7 +65,7 @@ properties:
         title: "User space"
         metaType: menu
         description: >-
-          Distribution user space configuration
+          User space specific build options.
         properties:
           ccflags:
             title: "CCFLAGS common to all user space build targets"
