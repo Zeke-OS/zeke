@@ -131,8 +131,8 @@ makefiles are mainly allowed to only append `IDIR` variable and all
 other variables should be more or less specific to the module makefile
 itself and should begin with the name of the module.
 
-An example of a module makefile is shown in listing
-[\[list:modulemk\]](#list:modulemk).
+A valid module makefile could look something like the following
+listing:
 
 ```makefile
 # Module example

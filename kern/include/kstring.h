@@ -2,8 +2,9 @@
  *******************************************************************************
  * @file    kstring.h
  * @author  Olli Vanhoja
- * @brief   String routines.
+ * @brief   String routines used within the kernel.
  * @section LICENSE
+ * Copyright (c) 2021 Olli Vanhoja <olli.vanhoja@gmail.com>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +43,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/types.h>
 #include <sys/linker_set.h>
 
 #define _TO_STR(x) #x
@@ -79,7 +81,7 @@ int strncmp(const char * str1, const char * str2, size_t n);
  */
 
 /**
- * @addtogroup strcpy strcpy, strncpy, strlcpy
+ * @addtogroup strcpy strcpy, strncpy, strlcpy, strscpy
  * @{
  */
 
@@ -109,14 +111,23 @@ char * strncpy(char * dst, const char * src, size_t n);
 
 /**
  * Copy src to string dst of size siz.
- * At most siz-1 characters
- * will be copied.  Always NUL terminates (unless siz == 0).
+ * At most siz-1 characters will be copied.
+ * Always NUL terminates (unless siz == 0).
  * @param dst is the destination.
  * @param src is the source C-string.
  * @param siz is the maximum size copied.
  * @return Returns strlen(src); if retval >= siz, truncation occurred.
  */
 size_t strlcpy(char * dst, const char * src, size_t siz);
+
+/**
+ * Copy src to string dst of size siz.
+ * If truncation occurs the dst string is NUL terminated and -E2BIG is returned.
+ * @return Returns the number of characters copied if src was fully copied until
+ *         a NUL character;
+ *         If the destination is truncated then -E2BIG is returned.
+ */
+ssize_t strscpy(char * dst, const char * src, size_t siz);
 
 /**
  * @}
@@ -127,7 +138,7 @@ const char * strstr(const char * str1, const char * str2);
 /**
  * Get string lenght.
  * @param str null terminated string.
- * @param max Maximum lenght counted.
+ * @param max Maximum length counted.
  */
 size_t strlenn(const char * str, size_t max);
 
