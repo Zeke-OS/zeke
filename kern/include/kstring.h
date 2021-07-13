@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   String routines used within the kernel.
  * @section LICENSE
- * Copyright (c) 2021 Olli Vanhoja <olli.vanhoja@gmail.com>
+ * Copyright (c) 2021 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -136,7 +136,7 @@ ssize_t strscpy(char * dst, const char * src, size_t siz);
 const char * strstr(const char * str1, const char * str2);
 
 /**
- * Get string lenght.
+ * Get string length.
  * @param str null terminated string.
  * @param max Maximum length counted.
  */
@@ -337,7 +337,7 @@ SET_DECLARE(ksprintf_formatters, struct ksprintf_formatter);
  *      %%      Replaced with a single %
  *
  * @param str Pointer to a buffer where the resulting string is stored.
- * @param maxlen Maximum lenght of str. Replacements may cause writing of more
+ * @param maxlen Maximum length of str. Replacements may cause writing of more
  *               than maxlen characters!
  * @param format String that contains a format string.
  * @param ... Depending on the format string, a sequence of additional

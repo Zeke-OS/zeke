@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Bitmap allocation functions.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2021 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -70,7 +70,7 @@ typedef uint32_t bitmap_t;
  * Search for a contiguous block of zeroes of block_len in bitmap.
  * @param[out] retval   is the index of the first contiguous block of requested
  *                      length.
- * @param block_len     is the lenght of contiguous block searched for.
+ * @param block_len     is the length of contiguous block searched for.
  * @param bitmap        is a bitmap of block reservations.
  * @param size          is the size of bitmap in bytes.
  * @return  Returns zero if a free block found; Value other than zero if there
@@ -84,7 +84,7 @@ int bitmap_block_search(size_t * retval, size_t block_len,
  * @param       start       is the index where lookup starts from.
  * @param[out] retval       is the index of the first contiguous block of
  *                          the requested length.
- * @param       block_len   is the lenght of contiguous block searched for.
+ * @param       block_len   is the length of contiguous block searched for.
  * @param       bitmap      is a bitmap of block reservations.
  * @param       size        is the size of bitmap in bytes.
  * @return  Returns zero if a free block found; Value other than zero if there

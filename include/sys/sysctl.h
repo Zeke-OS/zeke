@@ -145,7 +145,7 @@ struct _sysctl_args {
  * @param newp      is set to null if no write request is intended; Otherwise
  *                  newp is set to point to a buffer that contains the new
  *                  value to be written.
- * @param newlen    is the lenght of newp or 0.
+ * @param newlen    is the length of newp or 0.
  */
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
            void * newp, size_t newlen);
