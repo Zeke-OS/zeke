@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Dynmem management.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2021 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -62,12 +62,7 @@
  */
 #define DYNMEM_MAPSIZE  ((configDYNMEM_SIZE) / DYNMEM_PAGE_SIZE)
 
-#if E2BITMAP_SIZE(DYNMEM_MAPSIZE) > 0
 #define DYNMEM_BITMAPSIZE       E2BITMAP_SIZE(DYNMEM_MAPSIZE)
-#else
-#define DYNMEM_BITMAPSIZE       1
-#endif
-
 #define SIZEOF_DYNMEMMAP        (DYNMEM_MAPSIZE * sizeof(uint32_t))
 #define SIZEOF_DYNMEMMAP_BITMAP (DYNMEM_BITMAPSIZE * sizeof(uint32_t))
 
@@ -83,7 +78,7 @@ struct dynmem_desc {
  * Dynmemmap allocation table.
  */
 static struct dynmem_desc dynmemmap[DYNMEM_MAPSIZE];
-static uint32_t dynmemmap_bitmap[DYNMEM_BITMAPSIZE];
+static bitmap_t dynmemmap_bitmap[DYNMEM_BITMAPSIZE];
 
 /**
  * Struct for temporary storage.

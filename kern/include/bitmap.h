@@ -50,6 +50,12 @@
 
 typedef uint32_t bitmap_t;
 
+#define _BITMAP_MAX(a, b) \
+    ((a) > (b) ? (a) : (b))
+
+#define _BITMAP_CEILING(x, y) \
+    (((x) + (y) - (size_t)1) / (y))
+
 /**
  * Returns size of static bitmap in bits.
  * @param bmap Bitmap.
@@ -61,10 +67,11 @@ typedef uint32_t bitmap_t;
  * Convert from number of entries to bitmap size.
  * Unfortunately SIZEOF_BITMAP_T must be hard coded in this macro to make it
  * work it with #ifs.
- * @param entries Number of entries needed.
+ * @param nbits Number of entries needed.
  * @return Correct size for a bitmap_t array.
  */
-#define E2BITMAP_SIZE(entries) ((entries) / (4 * 8))
+#define E2BITMAP_SIZE(nbits) \
+    _BITMAP_CEILING(_BITMAP_MAX((size_t)(nbits), (size_t)32), 32)
 
 /**
  * Search for a contiguous block of zeroes of block_len in bitmap.
