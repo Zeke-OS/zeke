@@ -102,9 +102,20 @@ config configEXEC_BASE_LIMIT
 
 config configUENV_BASE_ADDR
     hex "Args & environ page base address"
-    default 0x0FFFF000
-    --help---
-    Base address for process arguments and environment.
+    default 0x0ffff000
+    ---help---
+    Base address for process arguments and environment. Technically this
+    can be located anywhere but it's convenient to have it before
+    configEXEC_BASE_LIMIT.
+
+config configUSER_VM_MAX
+    hex "User space address space end"
+    default 0x7fffffff
+    range 0x0 0xffffffff
+    ---help---
+    End limit for the user space virtual addresses.
+    For most of the memory mapping configEXEC_BASE_LIMIT will be used as the
+    lower limit, hence naturally this value must be greater than that.
 
 endmenu
 
