@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Page table mapper.
  * @section LICENSE
- * Copyright (c) 2019 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
+ * Copyright (c) 2019, 2021 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -136,7 +136,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
 
     /* TODO Transitional fix */
     if (pt->nr_tables == 0) {
-        KERROR(KERROR_WARN, "Transitional fix\n");
+        KERROR(KERROR_WARN, "nr_tables was 0, setting it to 1\n");
         pt->nr_tables = 1;
     }
 
@@ -152,7 +152,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         balign = PTM_COARSE;
         break;
     default:
-        KERROR(KERROR_ERR, "Invalid pt type");
+        KERROR(KERROR_ERR, "Invalid pt type\n");
         return -EINVAL;
     }
 
@@ -193,7 +193,7 @@ void ptmapper_free(mmu_pagetable_t * pt)
     size = bsize / MMU_PTSZ_COARSE;
 
     if (size == 0) {
-        KERROR(KERROR_ERR, "Attemp to free an invalid page table.\n");
+        KERROR(KERROR_ERR, "Attempt to free an invalid page table.\n");
         return;
     }
 
