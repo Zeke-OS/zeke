@@ -6,15 +6,15 @@ File System Abstraction
 
 ### General principles
 
-In this part of the documentation terms vnode and inode might be sometimes
+In this part of the documentation terms *vnode* and *inode* might be sometimes
 used interchangeably. Historically inode was a way to index files in the
 Unix file system and like. While Zeke continues to use this terminology it
 adds a concept of a vnode that is used as an abstraction level between
-actual the file systems and the VFS.  This is implemented mostly the same
+actual the file systems and the VFS. This is implemented mostly the same
 way as in most of modern Unices today.
 
 Another important term often used in the context of Zeke’s VFS is the
-superblock, it’s roughly an abstraction of an accessor to the meta data
+*superblock*, it’s roughly an abstraction of an accessor to the meta data
 or allocation table(s) of a physical (or virtual) file system. For example
 for FAT this means that every volume has a superblock in Zeke and the
 superblock can be used to access the file allocation table and other
@@ -47,23 +47,22 @@ method is always by a pointer reference to an object.
 ### Kernel interface
 
 The kernel interface to the actual file system drivers and file system
-superblocks is built around virtual function structs defined in the VFS
-header file `fs.h` and some user space header files defining unified
-data types.
+*superblocks* is built around virtual function structs defined in the VFS
+header file `fs.h` and some user space header files defining unified data types.
 
 A new file system is first registered to the kernel by passing a pointer
 to fs struct that is a complete interface for mounting a new superblock
 and interacting with the file system (note the difference between a file
 system (driver) and a file system superblock that is referencing to the
 actual data storage, while fs driver is accessing the superblock. The
-file system struct is shown in [\[list:fs\]](#list:fs).
+file system struct is shown in the listing following this text..
 
 When superblock is mounted a superblock struct pointer is returned. This
 pointer servers as the main interface to the newly mounted file system.
-Superblock is defined as in listing [\[list:fs\_sb\]](#list:fs_sb). By
-using superblock function calls it’s possible to get direct references
-to vnodes and vnode operations e.g. for modifying file contents or
-adding new hard links to a directory node.
+Superblock is defined as in the second listing after this text. By using
+superblock function calls it’s possible to get direct references to vnodes
+and vnode operations e.g. for modifying file contents or adding new hard
+links to a directory node.
 
 **fs struct definition.**
 
@@ -128,7 +127,7 @@ Fatfs driver is an implementation of the FAT file system in Zeke.
 - LFN support in ANSI/OEM or Unicode.
 
 Note that Microsoft Corporation holds a patent for LFN and commercial use might
-be prohibitten or it may require a license form the company. Therefore it’s also
+be prohibited or it may require a license form the company. Therefore it’s also
 possible to disable LFN support in Zeke if required.
 
 The complete documentation is available [here](fatfs/README.md).
@@ -396,8 +395,8 @@ to the provided `dev_info` in `vn_specinfo` of the device.
 
 There is some notable differences between devfs implementation of Zeke
 and other common devfs or device abstractions in some other operating
-systems, particularly Unices. First of all we don’t use majorminor
-combination as a device idetentifier, it’s only provided for
+systems, particularly Unices. First of all we don’t use **majorminor**
+combination as a device idententifier, it’s only provided for
 compatibility reasons and not used for anything actually.\[2\] So
 devices can’t be accessed by creating a device file anywhere in the
 system, device files in Zeke are very special and only ones that are
@@ -410,7 +409,7 @@ support buffered writes but it’s always hidden from the user space. In
 practice, it means that every user reading from a device file will
 always see the same state, eg. if one process would write by using block
 device and another one reading character device, the latter one would
-get either old data or corrputed data. In fact there is no reason to
+get either old data or corrupted data. In fact there is no reason to
 have different file types for different device types, block device files
 were designed to be a special file type for hard disks, for some reason,
 but it doesn’t make any sense to do it that way in a modern kernel. Thus

@@ -6,8 +6,8 @@ Pipes
 
 Zeke supports unidirectional
 <span data-acronym-label="POSIX" data-acronym-form="singular+short">POSIX</span>
-pipe IPC.  The implementation inherits nofs and it utilizes `queue_r` to
-provide lockess data transfer between a producer and a consumer. However,
+pipe IPC.  The implementation inherits *nofs* and it utilizes `queue_r` to
+provide lockless data transfer between a producer and a consumer. However,
 the current implementation doesn’t guarantee the atomicity the requirement
 set by
 <span data-acronym-label="POSIX" data-acronym-form="singular+short">POSIX</span>.
@@ -29,7 +29,7 @@ shmem
 shmem is a part of the IPC subsystem providing shared memory between processes
 and also to some device drivers like frame buffers.
 
-The userland interface to shmem is provided by `sys/mman.h`.
+The userland interface to shmem is provided by [sys/mman.h](/include/sys/mman.h).
 
 TODO Is it documented somewhere?
 

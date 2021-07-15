@@ -39,5 +39,4 @@ found.
 
 ### Read-Copy-Update (RCU)
 
-A novel version of Read-Copy-Update that attemps to be more realtime
-friendly.
+A novel version of Read-Copy-Update that attempts to be more realtime friendly.

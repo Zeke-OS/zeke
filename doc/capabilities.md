@@ -8,7 +8,7 @@ However, since we still do have a `root` user in the system, it's partially
 emulated by user space in the `login` command.
 
 Before going any further on what this all means, let's look into how Zeke's
-capabilites work.
+capabilities work.
 
 [sys/priv.h](/include/sys/priv.h) defines a number of capabilities that gives
 a process (or a user) some elevated privileges to commit system maintenance
