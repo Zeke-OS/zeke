@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MBR driver header.
  * @section LICENSE
+ * Copyright (c) 2021 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -36,6 +37,18 @@
 
 #include <fs/devfs.h>
 
+/**
+ * Try to find and register partitions from an MBR of a block device.
+ * The device doesn't need to have an MBR but if it does have it the function
+ * will try to register all the partitions found in it.
+ * @param fd is the file that has the block device open.
+ * @param[out] part_count if other than NULL is is set to the number of
+ *                        partitions found.
+ * @return  0 if partitions were registered and part_count is updated;
+ *          -ENODEV if the fd isn't a block device;
+ *          -ENOTSUP if no MBR was found or it was corrupted or invalid;
+ *          -ENOMEM if the function ran out of memory.
+ */
 int mbr_register(int fd, int * part_count);
 
 #endif /* MBR_H */

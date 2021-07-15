@@ -192,8 +192,10 @@ int mbr_register(int fd, int * part_count)
 
     file = fs_fildes_ref(curproc->files, fd, 1);
 
+    /*
+     * Check the validity of the parent device.
+     */
     parent_vnode = file->vnode;
-    parent = (struct dev_info *)parent_vnode->vn_specinfo;
     if (!(S_ISBLK(parent_vnode->vn_mode) || S_ISCHR(parent_vnode->vn_mode))) {
         KERROR(KERROR_ERR, "MBR: not a device\n");
 
@@ -201,7 +203,7 @@ int mbr_register(int fd, int * part_count)
         goto fail;
     }
 
-    /* Check the validity of the parent device. */
+    parent = (struct dev_info *)parent_vnode->vn_specinfo;
     if (!parent) {
         KERROR(KERROR_ERR, "MBR: invalid parent device\n");
 
