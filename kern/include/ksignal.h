@@ -5,6 +5,7 @@
  *
  * @brief   Header file for thread Signal Management in kernel (ksignal.c).
  * @section LICENSE
+ * Copyright (c) 2021 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -373,6 +374,35 @@ sigset_t * sigcompl(sigset_t * target, const sigset_t * set);
 
 /**
  * @}
+ */
+
+/*
+ * Functions that must be implemented by HAL.
+ */
+
+intptr_t ksignal_sys_signal_return(__user void * user_args);
+int ksignal_syscall_exit_stack_fixup_sighandler(int retval);
+
+/**
+ * Set the next stack frame properly for branching to a signal handler
+ * defined by sigaction.
+ *
+ * - arg1 = signum
+ * - arg2 = siginfo
+ * - arg3 = context
+ *
+ * and whatever is required for a proper return.
+ *
+ * @param signum        is the signal number interrupting the normal execution.
+ * @param action        describes the signal action and it's used to determine
+ *                      the next pc value.
+ */
+int ksignal_branch_sighandler(int signum,
+                              const struct ksigaction * restrict action,
+                              const siginfo_t * siginfo);
+
+/*
+ * End HAL functions.
  */
 
 #endif /* KSIGNAL_H */
