@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for kernel timers (timers.c).
  * @section LICENSE
+ * Copyright (c) 2021 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2013, 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -65,7 +66,7 @@ void timers_run(void);
  * @param thread_id thread id to add this timer for.
  * @param flags User modifiable flags (see: TIMERS_USER_FLAGS)-
  * @param usec delay to trigger from the time when enabled.
- * @returns Rerturns the timer idex if succesfully allocated;
+ * @returns Returns the timer index if successfully allocated;
  *          Otherwise -1 is returned to indicate the allocation failure.
  */
 int timers_add(void (*event_fn)(void *), void * event_arg,

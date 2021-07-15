@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
+ * Copyright (c) 2021 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -48,7 +49,7 @@ struct exec_loadfn {
 };
 
 /**
- * Declare a executable loader function.
+ * Declare an executable loader function.
  * @param fun is the name of the function.
  * @param namestr is a C string containing the name of the executable type.
  */

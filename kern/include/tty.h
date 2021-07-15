@@ -90,9 +90,9 @@ struct tty {
 
 /**
  * Allocate a prefilled dev + tty struct.
- * @param drv_name should be allocated from heap, refereced.
+ * @param drv_name should be allocated from heap, referenced.
  * @param dev_name device name, copied.
- * @param data_size is an additional allication made after the tty data that can
+ * @param data_size is an additional allocation made after the tty data that can
  *                  be used by the caller to store some driver specific data.
  *                  The idea is to simplify memory management and allocation
  *                  overhead by allocating memory in bigger blocks and less
